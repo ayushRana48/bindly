@@ -54,4 +54,3 @@ router.post('/auth/signUp',authController.signUpController)
 
 
 module.exports = router;
-//k
