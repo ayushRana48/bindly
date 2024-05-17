@@ -1,11 +1,10 @@
 // userControllers.ts
 
 
-const { createUser, getUser, updateUser, deleteUser,getAllUsers } = require('../transactions/usersTransactions');
+const { createUser, getUser, updateUser, deleteUser,getAllUsers,getUserByEmail } = require('../transactions/usersTransactions');
 
 // Controller for creating a new user
 async function createUserController(req, res) {
-  console.log("reachhs")
   const { username, email, name, pfp } = req.body;
 
   try {
@@ -37,6 +36,21 @@ async function getUserController(req, res) {
 }
 
 
+async function getUserByEmailController(req, res) {
+  const { email } = req.params;
+
+  try {
+    const { data, error } = await getUserByEmail(email);
+
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
+}
+
+
 async function getAllUsersController(req, res) {
   const { username } = req.params;
 
@@ -54,8 +68,7 @@ async function updateUserController(req, res) {
   const { username } = req.params;
   const updateParams = req.body;
 
-  console.log(username)
-  console.log(updateParams)
+
 
   try {
     const { data, error } = await updateUser(username, updateParams);
@@ -82,5 +95,5 @@ async function deleteUserController(req, res) {
 }
 
 
-module.exports={createUserController,deleteUserController,getUserController,updateUserController,getAllUsersController};
+module.exports={createUserController,deleteUserController,getUserController,updateUserController,getAllUsersController,getUserByEmailController};
 

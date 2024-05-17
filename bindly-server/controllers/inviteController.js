@@ -4,7 +4,6 @@ const  { createInvite, getAllInvites, getInvite, getInvitesByGroupId, getInvites
 
 // Controller for creating a new user
 async function createInviteController(req, res) {
-  console.log("reachhs")
   const { username,  groupId, strikes, moneypaid, moneyowed} = req.body;
 
   try {

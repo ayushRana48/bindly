@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
+import { useUserContext } from "../../UserContext";
 
 const SignUpScreen = () => {
     const [email, setEmail] = useState("");
@@ -14,6 +15,9 @@ const SignUpScreen = () => {
 
     const navigation = useNavigation();
 
+    const {email:email2,setEmail:setEmail2}= useUserContext();
+
+
 
     const [show, setShow] = useState(false)
     const [date, setDate] = useState(new Date())
@@ -23,7 +27,6 @@ const SignUpScreen = () => {
     }
 
     const submit = async () => {
-        console.log('whyIs it not')
 
         // Validate Names
         if (!firstName.trim() || !lastName.trim()) {
@@ -80,10 +83,9 @@ const SignUpScreen = () => {
         .then(({ status, body }) => {
             if (status === 200) {
                 // Navigate to confirm email page or handle the success scenario
-                navigation.navigate('Welcome');
+                setEmail2(email)
             } else {
                 // Handling different error messages from the server
-                console.log(body)
                 if (body.error) {
                     if (body.error.includes('duplicate key value violates unique constraint "users_pkey"')) {
                         setErrorMessage("Username already taken.");
@@ -91,7 +93,6 @@ const SignUpScreen = () => {
                         setErrorMessage("Email already taken.");
                     }
                     else if (body.error.includes("at least 6 characters")) {
-                        console.log('sdsd')
                         setErrorMessage("Password should be at least 6 characters");
                     }
                 }
@@ -105,7 +106,6 @@ const SignUpScreen = () => {
     };
 
     const toSignIn = () => {
-        console.log('sdsd')
         navigation.navigate('SignIn');
     }
 
@@ -237,6 +237,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         padding: 24,
         flex: 1,
+        justifyContent: 'center',
+
     },
     logoContainer: {
         marginBottom: 16,
@@ -266,7 +268,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     input: {
-        marginBottom: 6,
+        marginBottom: 8,
         height: 32,
         backgroundColor: '#f0f0f0',
         borderRadius: 4,

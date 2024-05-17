@@ -1,14 +1,16 @@
 
 
 const { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername,updateUserGroup, deleteUserGroup }= require('../transactions/usergroupTransactions');
+const { v4: uuidv4 } = require('uuid');
 
 // Controller for creating a new user
 async function createUserGroupController(req, res) {
-  console.log("reachhs")
   const { username,  groupId, strikes, moneypaid, moneyowed} = req.body;
+  const usergroupid = uuidv4();
+
 
   try {
-    const { data, error } = await createUserGroup(username, groupId, strikes, moneypaid, moneyowed);
+    const { data, error } = await createUserGroup(usergroupid,username, groupId, strikes, moneypaid, moneyowed);
 
     if (error) throw error;
     res.status(201).json(data);

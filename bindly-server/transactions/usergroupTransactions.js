@@ -1,53 +1,72 @@
 const { supabase } = require('../initSupabase');
 
 // Function to create a new group
-async function createUserGroup(username, groupid, strikes, moneypaid, moneyowed) {
+async function createUserGroup(usergroupid,username, groupid, strikes, moneypaid, moneyowed) {
   const { data, error } = await supabase
     .from('usergroup')
     .insert([
-      { username, groupid, strikes, moneypaid, moneyowed }
+      { usergroupid,username, groupid, strikes, moneypaid, moneyowed }
     ]);
-
   return { data, error };
 }
 
 // Function to get all groups
+// Function to get all groups
 async function getAllUserGroups() {
   const { data, error } = await supabase
     .from('usergroup')
-    .select('*');
+    .select(`
+      *,
+      groups:groups!inner(*)  -- Perform an inner join with the groups table
+    `);
 
   return { data, error };
 }
+
 
 // Function to get a group by groupId
-async function getUserGroup(userGroupId) {
+async function getUserGroupsByGroupId(groupid) {
   const { data, error } = await supabase
     .from('usergroup')
-    .select('*')
-    .eq('usergroupid', userGroupId);
+    .select(`
+      *,
+      groups:groups!inner(*)  -- Perform an inner join with the groups table
+    `)
+    .eq('groupid', groupid);
 
   return { data, error };
 }
 
+
+
 // Function to get groups by hostId
+// Function to get groups by username
 async function getUserGroupsByUsername(username) {
   const { data, error } = await supabase
     .from('usergroup')
-    .select('*')
+    .select(`
+      *,
+      groups:groups!inner(*)  -- Perform an inner join with the groups table
+    `)
     .eq('username', username);
 
   return { data, error };
 }
 
-async function getUserGroupsByGroupId(groupid) {
-    const { data, error } = await supabase
-      .from('usergroup')
-      .select('*')
-      .eq('groupid', groupid);
-  
-    return { data, error };
+
+// Function to get a group by userGroupId
+async function getUserGroup(userGroupId) {
+  const { data, error } = await supabase
+    .from('usergroup')
+    .select(`
+      *,
+      groups:groups!inner(*)  -- Perform an inner join with the groups table
+    `)
+    .eq('usergroupid', userGroupId);
+
+  return { data, error };
 }
+
 
 // Function to update a group
 async function updateUserGroup(usergroupid, updateParams) {

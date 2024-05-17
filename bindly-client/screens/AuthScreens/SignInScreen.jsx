@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert } from "react-native";
 import { useNavigation } from '@react-navigation/native';
+import { useUserContext } from "../../UserContext";
 
 
 const SignInScreen = () => {
@@ -9,13 +10,15 @@ const SignInScreen = () => {
     const [loading, setLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState("")
 
+    const {email,setEmail}= useUserContext();
+
 
 
     const navigation = useNavigation();
 
+ 
 
     const submit = async () => {
-        console.log('Attempting sign in for:', username, password);
 
         try {
             const response = await fetch(`http://localhost:3000/bindly/auth/signIn`, {
@@ -27,22 +30,14 @@ const SignInScreen = () => {
                 }),
             });
 
-            // if (!response.ok) {
-            //     throw new Error('Network response was not ok');
-            // }
-
+      
             const data = await response.json();
-            console.log('Response data:', data);
 
-            // if (!response.ok) {
-            //     console.log('Error received:', data.error);
-            //     throw new Error(data.error || 'Unknown error occurred'); // Use the error from the response if available.
-            // }
-
+      
             if (response.status === 200) {
                 // Navigate to confirm email page or handle the success scenario
-                console.log('Sign in successful, navigating to welcome screen.');
-                navigation.navigate('Welcome');
+                console.log('Sign in successful, navigating to Profile screen.');
+                setEmail(username)
             } else {
                 // Handling different error messages from the server
                 if (data.error) {
@@ -66,7 +61,6 @@ const SignInScreen = () => {
 
 
     const toSignUp = () => {
-        console.log('sdsd')
         navigation.navigate('SignUp');
     }
 
@@ -80,13 +74,14 @@ const SignInScreen = () => {
                 />
             </View>
 
-            <Text style={styles.label}>Username</Text>
+
+            <Text style={styles.label}>Email</Text>
             <TextInput
                 style={styles.input}
                 autoCapitalize='none'
                 value={username}
                 onChangeText={setUsername}
-                placeholder="username"
+                placeholder="email"
             />
 
             <Text style={styles.label}>Password</Text>
@@ -123,8 +118,9 @@ const SignInScreen = () => {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: 'white',
-        padding: 24,
+        padding: 32,
         flex: 1,
+        justifyContent: 'center',
     },
     logoContainer: {
         marginBottom: 64,

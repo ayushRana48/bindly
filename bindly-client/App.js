@@ -1,23 +1,25 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import Nav from './Nav';
+import { UserProvider } from './UserContext';
+import { GroupsProvider } from './screens/GroupsContext';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <UserProvider>
+        <View style={styles.container}>
+          <Nav style={{ flex: 1 }}></Nav>
+          {/* <Text>sfsfsf</Text> */}
+        </View>
+    </UserProvider>
+
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    backgroundColor: 'white',
+    justifyContent: 'center', // This will center the content vertically
+  }
 });
-
-
-//ss

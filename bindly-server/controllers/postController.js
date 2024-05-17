@@ -4,7 +4,6 @@ const { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername,
 
 // Controller for creating a new user
 async function createPostController(req, res) {
-  console.log("reachhs")
   const { username,  groupId, strikes, moneypaid, moneyowed} = req.body;
 
   try {

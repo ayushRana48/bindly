@@ -1,12 +1,26 @@
 const { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup } = require('../transactions/groupTranasctions.js');
+const { createUserGroup} = require('../transactions/usergroupTransactions.js');
+const { v4: uuidv4 } = require('uuid');
 
 async function createGroupController(req, res) {
-  const { groupname, description, moneypot, week, startdate, timeleft, hostId } = req.body;
+  console.log('groupppcontrolllaaa')
+  const groupid = uuidv4();
+
+  const { groupname, description, buyin, week, startdate, timeleft, hostId,enddate,image } = req.body;
+
   try {
-    const { data, error } = await createGroup(groupname, hostId, description, moneypot, week, startdate, timeleft);
+    const { data, error } = await createGroup(groupid,groupname, hostId, description, buyin, week, startdate, timeleft,enddate,image);
+
 
     if (error) throw error;
-    res.status(201).json(data);
+
+    console.log('here')
+    const usergroupid = uuidv4();
+
+
+    const {data2,error2} = await createUserGroup(usergroupid,hostId,groupid)
+    if (error2) throw error;
+    res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

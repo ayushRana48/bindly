@@ -22,7 +22,18 @@ async function getUser(username) {
   const { data, error } = await supabase
     .from('users')
     .select('*')
-    .eq('username', username);
+    .eq('username', username)
+    .single();
+
+  return { data, error };
+}
+
+async function getUserByEmail(email) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single();
 
   return { data, error };
 }
@@ -65,4 +76,4 @@ async function deleteUser(username) {
   return { data, error };
 }
 
-module.exports = { createUser, getUser, updateUser, deleteUser, getAllUsers };
+module.exports = { createUser, getUser, updateUser, deleteUser, getAllUsers,getUserByEmail };

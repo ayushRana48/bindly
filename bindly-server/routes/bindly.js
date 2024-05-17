@@ -14,6 +14,7 @@ router.get('/users/',userController.getAllUsersController)
 router.get('/users/:username',userController.getUserController)
 router.delete('/users/deleteUser/:username',userController.deleteUserController)
 router.put('/users/updateUser/:username',userController.updateUserController)
+router.get('/users/email/:email',userController.getUserByEmailController)
 
 router.post('/group/createGroup',groupController.createGroupController)
 router.get('/group/:groupId',groupController.getGroupController)
@@ -51,6 +52,8 @@ router.put('/post/updateUsergroup/:postId',postController.updatePostController)
 
 router.post('/auth/signIn',authController.signInController)
 router.post('/auth/signUp',authController.signUpController)
+router.post('/auth/signOut',authController.signOutController)
+router.get('/auth/getUser',authController.getUserController)
 
 
 module.exports = router;
