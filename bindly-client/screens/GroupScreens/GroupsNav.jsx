@@ -5,6 +5,8 @@ import GroupListScreen from './GroupListScreen';
 import NewGroupScreen from './NewGroupScreen';
 import GroupScreen from './GroupScreen';
 import { useUserContext } from "../../UserContext";
+import GroupSetting from './GroupSettingScreen';
+import GroupEditScreen from './GroupEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +20,9 @@ export default function GroupsNav() {
                 <Stack.Screen name="GroupsList" component={GroupListScreen} />
                 <Stack.Screen name="NewGroup" component={NewGroupScreen} />
                 <Stack.Screen name="Group" component={GroupScreen} />
+                <Stack.Screen name="GroupSetting" component={GroupSetting} />
+                <Stack.Screen name="GroupEdit" component={GroupEditScreen} />
+
             </Stack.Navigator>
     );
 }

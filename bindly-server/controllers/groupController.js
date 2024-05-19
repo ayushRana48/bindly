@@ -6,10 +6,10 @@ async function createGroupController(req, res) {
   console.log('groupppcontrolllaaa')
   const groupid = uuidv4();
 
-  const { groupname, description, buyin, week, startdate, timeleft, hostId,enddate,image } = req.body;
+  const { groupname, description, buyin, week, startdate, timeleft, hostId,enddate,image,tasksperweek } = req.body;
 
   try {
-    const { data, error } = await createGroup(groupid,groupname, hostId, description, buyin, week, startdate, timeleft,enddate,image);
+    const { data, error } = await createGroup(groupid,groupname, hostId, description, buyin, week, startdate, timeleft,enddate,image,tasksperweek);
 
 
     if (error) throw error;
@@ -66,8 +66,10 @@ async function getGroupsByHostIdController(req, res) {
 async function updateGroupController(req, res) {
   const { groupId } = req.params;
 
+
+  console.log(groupId,'here')
   try {
-    const { data, error } = await updateGroup(Number(groupId), req.body);
+    const { data, error } = await updateGroup(groupId, req.body);
 
     if (error) throw error;
     res.status(200).json(data);

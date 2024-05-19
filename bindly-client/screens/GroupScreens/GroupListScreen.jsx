@@ -18,6 +18,10 @@ const GroupListScreen = () => {
         navigation.navigate('NewGroup')
      
     }
+
+    useEffect(()=>{
+        console.log(groups,'from the loist')
+    },[groups])
     
 
     const getAllGroups= async()=>{
@@ -33,7 +37,7 @@ const GroupListScreen = () => {
 
             const list = res.map(r=>r.groups);
             console.log(list,'listt')
-            setGroups(g=>[...g,...list])
+            setGroups(g=>[...list])
             console.log(res,'helloRes')
 
             console.log(res[0].groups,'sdd232323d')
