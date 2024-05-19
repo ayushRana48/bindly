@@ -1,12 +1,18 @@
 const { supabase } = require('../initSupabase');
+const { v4: uuidv4 } = require('uuid');
 
 // Function to create a new group
 async function createInvite(senderid, receiverid, groupid) {
+  const inviteid = uuidv4()
+
+  console.log('here')
   const { data, error } = await supabase
     .from('invite')
     .insert([
-      { senderid, receiverid, groupid }
-    ]);
+      { inviteid,senderid, receiverid, groupid }
+    ]).select().single();
+
+    console.log(data,error,'at transaction')
 
   return { data, error };
 }

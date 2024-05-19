@@ -4,10 +4,11 @@ const  { createInvite, getAllInvites, getInvite, getInvitesByGroupId, getInvites
 
 // Controller for creating a new user
 async function createInviteController(req, res) {
-  const { username,  groupId, strikes, moneypaid, moneyowed} = req.body;
+  console.log('at controller')
+  const { senderid, receiverid, groupid} = req.body;
 
   try {
-    const { data, error } = await createInvite(username, groupId, strikes, moneypaid, moneyowed);
+    const { data, error } = await createInvite(senderid, receiverid, groupid);
 
     if (error) throw error;
     res.status(201).json(data);

@@ -7,6 +7,8 @@ import GroupScreen from './GroupScreen';
 import { useUserContext } from "../../UserContext";
 import GroupSetting from './GroupSettingScreen';
 import GroupEditScreen from './GroupEditScreen';
+import MembersListScreen from './MembersListScreen';
+import InviteMembersScreen from './InviteMembersScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +24,8 @@ export default function GroupsNav() {
                 <Stack.Screen name="Group" component={GroupScreen} />
                 <Stack.Screen name="GroupSetting" component={GroupSetting} />
                 <Stack.Screen name="GroupEdit" component={GroupEditScreen} />
+                <Stack.Screen name = "MembersList" component={MembersListScreen}/>
+                <Stack.Screen name = "InviteMembers" component={InviteMembersScreen}/>
 
             </Stack.Navigator>
     );

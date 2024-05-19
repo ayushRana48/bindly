@@ -26,15 +26,47 @@ async function getAllUserGroups() {
 
 // Function to get a group by groupId
 async function getUserGroupsByGroupId(groupid) {
-  const { data, error } = await supabase
+  const { data: userGroupData, error: userGroupError } = await supabase
     .from('usergroup')
     .select(`
       *,
-      groups:groups!inner(*)  -- Perform an inner join with the groups table
+      users:users!inner(*)  -- Perform an inner join with the groups table
     `)
-    .eq('groupid', groupid);
+    .eq('groupid', groupid)
 
-  return { data, error };
+    console.log(userGroupData,'d')
+  console.log(userGroupError,'e')
+
+  if (userGroupError) {
+    return { data: null, error: userGroupError };
+  }
+
+  // Assuming all groupIds are the same, get the first groupId
+  const groupId = userGroupData[0]?.groupid;
+
+  // Fetch the group information once
+  const { data: groupData, error: groupError } = await supabase
+    .from('groups')
+    .select('*')
+    .eq('groupid', groupId)
+    .single();
+
+  if (groupError) {
+    return { data: null, error: groupError };
+  }
+
+  // Extract the members (user information)
+  // const members = userGroupData.map(userGroup => {userGroup.users});
+
+  // Structure the final result
+  const result = {
+    members:userGroupData,
+    group: groupData,
+  };
+
+  console.log(result,'sdsdsd')
+
+  return { data: result, error: groupError };
 }
 
 

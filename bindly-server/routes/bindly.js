@@ -7,6 +7,7 @@ const usergroupController = require('../controllers/userGroupController.js');
 const historyController =  require('../controllers/historyController.js');
 const postController =  require('../controllers/postController.js');
 const authController =  require('../controllers/authController.js');
+const inviteController =  require('../controllers/inviteController.js');
 
 
 router.post('/users/createUser',userController.createUserController)
@@ -31,6 +32,9 @@ router.get('/usergroup/getUsergroupByUsername/:username',usergroupController.get
 router.get('/usergroup/getUsergroupByGroup/:groupId',usergroupController.getUserGroupsByGroupIdController)
 router.delete('/usergroup/deleteUsergroup/:usergroupId',usergroupController.deleteUserGroupController)
 router.put('/usergroup/updateUsergroup/:usergroupId',usergroupController.updateUserGroupController)
+
+
+router.post('/invite/createInvite',inviteController.createInviteController)
 
 
 router.post('/history/createHistory', historyController.createHistoryController);

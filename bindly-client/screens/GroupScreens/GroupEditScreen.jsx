@@ -40,31 +40,6 @@ const GroupEditScreen = () => {
     const [groupid, setGroupid] = useState('')
     const [timeStamp, setTimeStamp] = useState('')
 
-    const getAllGroups= async()=>{
-
-        try{
-            const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
-                headers: { 'Content-Type': 'application/json' },
-            });
-            console.log(response,'jellodsad')
-
-
-            const res = await response.json();
-
-            const list = res.map(r=>r.groups);
-            console.log(list,'listt')
-            setGroups(g=>[...list])
-            console.log(res,'helloRes')
-
-            console.log(res[0].groups,'sdd232323d')
-
-        }
-        catch(error){
-            console.log(error)
-        }
-    }
-
-
 
     function setNumWeeksF(startDate, endDate) {
         let start = new Date(startDate);
@@ -299,7 +274,7 @@ const GroupEditScreen = () => {
                 <Text style={{ color: "red" }}>cancel</Text>
             </Pressable>
             <View style={styles.logoContainer}>
-                <Text style={styles.title}>Create Group</Text>
+                <Text style={styles.title}>Edit Group</Text>
             </View>
 
             <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>

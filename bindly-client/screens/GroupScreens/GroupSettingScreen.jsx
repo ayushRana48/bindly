@@ -27,6 +27,8 @@ const GroupSetting = () => {
     const [imageSrc, setImageSrc] = useState(placeholder)
 
 
+
+
     useEffect(() => {
         if (groupData) {
             setGroupName(groupData.groupname)
@@ -81,6 +83,11 @@ const GroupSetting = () => {
         }
     }
 
+
+    const toMembers=()=>{
+        navigation.navigate("MembersList", { groupData: groupData });
+    }
+
     const isPastDate = new Date(groupData.startdate) < new Date();
 
 
@@ -133,6 +140,12 @@ const GroupSetting = () => {
 
             <Text style={styles.label}>Tasks Per Week</Text>
             <Text style={styles.input} >{taskPerWeek}</Text>
+
+            <View style={{alignItems: 'center'}}>
+                <Pressable style={styles.viewMembers} onPress={toMembers}>
+                    <Text style={{color:'white', fontSize:18, fontWeight:'600'}}>View Members</Text>
+                </Pressable>
+            </View>
         </View>
     );
 };
@@ -152,9 +165,15 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     cancel: {
+        backgroundColor:'red',
+        zIndex: 10,
+        height:40,
+        width:40,
         position: 'absolute',
         top: 50,
-        left: 30
+        left: 30,
+        alignItems:'center',
+        justifyContent:'center'
     },
     edit: {
         position: 'absolute',
@@ -252,6 +271,17 @@ const styles = StyleSheet.create({
     bold: {
         fontWeight: 'bold',
     },
+    viewMembers:{
+        justifyContent:'center',
+        alignItems:'center',
+        backgroundColor:'dodgerblue',
+        width:180,
+        height:40,
+        padding:10,
+        borderRadius:8,
+        marginTop:20
+
+    }
 });
 
 export default GroupSetting;
