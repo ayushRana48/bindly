@@ -35,6 +35,9 @@ router.put('/usergroup/updateUsergroup/:usergroupId',usergroupController.updateU
 
 
 router.post('/invite/createInvite',inviteController.createInviteController)
+router.get('/invite/getInviteByReciever/:reciverId',inviteController.getInvitesByRecieverController)
+router.post('/invite/acceptInvite',inviteController.acceptInviteController)
+router.delete('/invite/deleteInvite/:inviteId',inviteController.deleteInviteController)
 
 
 router.post('/history/createHistory', historyController.createHistoryController);

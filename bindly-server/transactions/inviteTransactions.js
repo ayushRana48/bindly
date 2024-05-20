@@ -9,10 +9,10 @@ async function createInvite(senderid, receiverid, groupid) {
   const { data, error } = await supabase
     .from('invite')
     .insert([
-      { inviteid,senderid, receiverid, groupid }
+      { inviteid, senderid, receiverid, groupid }
     ]).select().single();
 
-    console.log(data,error,'at transaction')
+  console.log(data, error, 'at transaction')
 
   return { data, error };
 }
@@ -47,21 +47,24 @@ async function getInvitesBySender(username) {
 }
 
 async function getInvitesByReciever(username) {
-    const { data, error } = await supabase
-      .from('invite')
-      .select('*')
-      .eq('receiverid', username);
-  
-    return { data, error };
-  }
+  const { data, error } = await supabase
+    .from('invite')
+    .select(`
+      *,
+      groups:groups!inner(*)  -- Perform an inner join with the groups table
+    `)
+    .eq('receiverid', username);
+
+  return { data, error };
+}
 
 async function getInvitesByGroupId(groupid) {
-    const { data, error } = await supabase
-      .from('invite')
-      .select('*')
-      .eq('groupid', groupid);
-  
-    return { data, error };
+  const { data, error } = await supabase
+    .from('invite')
+    .select('*')
+    .eq('groupid', groupid);
+
+  return { data, error };
 }
 
 // Function to update a group
@@ -76,12 +79,17 @@ async function updateInvite(inviteid, updateParams) {
 
 // Function to delete a group
 async function deleteInvite(inviteid) {
+  console.log(inviteid)
   const { data, error } = await supabase
     .from('invite')
     .delete()
-    .eq('inviteid', inviteid);
+    .eq('inviteid', inviteid)
+    .select().single();
+
+  console.log('deleteTran',data)
+  console.log('deleteTran',error)
 
   return { data, error };
 }
 
-module.exports = { createInvite, getAllInvites, getInvite, getInvitesByGroupId, getInvitesBySender,getInvitesByReciever,updateInvite, deleteInvite };
+module.exports = { createInvite, getAllInvites, getInvite, getInvitesByGroupId, getInvitesBySender, getInvitesByReciever, updateInvite, deleteInvite };

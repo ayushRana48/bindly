@@ -1,6 +1,8 @@
 
 
 const  { createInvite, getAllInvites, getInvite, getInvitesByGroupId, getInvitesBySender,getInvitesByReciever,updateInvite, deleteInvite } = require('../transactions/inviteTransactions');
+const { createUserGroup }= require('../transactions/usergroupTransactions');
+const { v4: uuidv4 } = require('uuid');
 
 // Controller for creating a new user
 async function createInviteController(req, res) {
@@ -11,10 +13,42 @@ async function createInviteController(req, res) {
     const { data, error } = await createInvite(senderid, receiverid, groupid);
 
     if (error) throw error;
-    res.status(201).json(data);
+    res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+}
+
+
+async function acceptInviteController(req,res){
+  const { inviteId, receiverid, groupid} = req.body;
+
+  const usergroupId=uuidv4()
+  console.log(inviteId,'inviteIDDDDDD')
+
+  try {
+    const { data, error } = await deleteInvite(inviteId);
+
+    console.log(error,'UPHEER??')
+
+
+    if (error) throw error;
+    
+    const { data: userGroupData, error: createUserGroupError } = await createUserGroup(usergroupId, receiverid, groupid);
+
+    console.log(userGroupData, 'inTrann');
+    console.log(createUserGroupError, 'fromTrann');
+
+    if (createUserGroupError) throw createUserGroupError;
+
+    res.status(200).json(userGroupData);
+
+
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+
+
 }
 
 
@@ -52,7 +86,7 @@ async function getInvitesBySenderController(req, res) {
     const { senderId } = req.params;
   
     try {
-      const { data, error } = await getInvitesBySender(username);
+      const { data, error } = await getInvitesBySender(senderId);
   
       if (error) throw error;
       res.status(200).json(data);
@@ -65,7 +99,7 @@ async function getInvitesBySenderController(req, res) {
     const { reciverId } = req.params;
   
     try {
-      const { data, error } = await getInvitesByReciever(username);
+      const { data, error } = await getInvitesByReciever(reciverId);
   
       if (error) throw error;
       res.status(200).json(data);
@@ -105,18 +139,19 @@ async function updateInviteController(req, res) {
 
 // Controller for deleting a user
 async function deleteInviteController(req, res) {
-  const { InviteId } = req.params;
+  const { inviteId } = req.params;
+  console.log('here',inviteId)
 
   try {
-    const { data, error } = await deleteInvite(InviteId);
+    const { data, error } = await deleteInvite(inviteId);
 
     if (error) throw error;
-    res.status(204).send();
+    res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 }
 
 
-module.exports={createInviteController,deleteInviteController,getAllInvitesController,updateInviteController,getInviteController,getInvitesByGroupIdController,getInvitesByRecieverController,getInvitesBySenderController};
+module.exports={createInviteController,deleteInviteController,getAllInvitesController,updateInviteController,getInviteController,getInvitesByGroupIdController,getInvitesByRecieverController,getInvitesBySenderController,acceptInviteController};
 

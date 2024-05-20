@@ -2,11 +2,15 @@ const { supabase } = require('../initSupabase');
 
 // Function to create a new group
 async function createUserGroup(usergroupid,username, groupid, strikes, moneypaid, moneyowed) {
+  console.log(usergroupid,username, groupid,'WEE ARE HEERE')
   const { data, error } = await supabase
     .from('usergroup')
     .insert([
-      { usergroupid,username, groupid, strikes, moneypaid, moneyowed }
-    ]);
+      { usergroupid,username, groupid }
+    ]).select().single();
+
+  console.log(data,'from createUG tran'),
+  console.log(error,'from createUG tran')
   return { data, error };
 }
 
