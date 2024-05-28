@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert,Modal } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert,Modal,TouchableWithoutFeedback } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
@@ -43,10 +43,8 @@ const NewGroupScreen = () => {
         quality: 1,
       });
   
-      console.log(result);
   
       if (!result.canceled) {
-        console.log(result.assets[0].uri)
         setImageSrc({ uri: result.assets[0].uri });
         setOpenModal(false)
 
@@ -63,10 +61,8 @@ const NewGroupScreen = () => {
                 aspect:[1,1],
                 quality:1,
             })
-            console.log(result);
     
             if (!result.canceled) {
-              console.log(result.assets[0].uri)
               setImageSrc({ uri: result.assets[0].uri });
               setOpenModal(false)
           }
@@ -81,10 +77,6 @@ const NewGroupScreen = () => {
         setOpenModal(false)
     }
   
-
-    useEffect(()=>{
-        console.log(imageSrc,'from')
-    },[imageSrc])
 
 
     const navigation = useNavigation();
@@ -142,8 +134,7 @@ const NewGroupScreen = () => {
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + numWeeks * 7);
 
-        console.log(startDate)
-        console.log(endDate)
+
 
         let img=imageSrc;
         if(imageSrc==placeholder){
@@ -151,7 +142,7 @@ const NewGroupScreen = () => {
         }
 
 
-        fetch(`http://localhost:3000/bindly/group/createGroup`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/createGroup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -170,14 +161,11 @@ const NewGroupScreen = () => {
 
                 if (status === 200) {
                     // Navigate to confirm email page or handle the success scenario
-                    console.log(body)
                     setGroups(g=>[...g,body])
                     navigation.navigate("Group", { groupData: body });
                 } else {
                     // Handling different error messages from the server
-                    // if (body.error) {
-                    //     console.log(body.error, 'kjdsfbzlskdjferror')
-                    // }
+            
                 }
             })
             .catch(error => {
@@ -219,28 +207,31 @@ const NewGroupScreen = () => {
 
 
             <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Group Photo</Text>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
-                        <Pressable style={styles.modalButton} onPress={takeImage}>
-                            <Image style={{width:40,height:40, marginBottom:5}}source={cameraIcon}/>
-                            <Text>Camera</Text>
-                        </Pressable>
-                        <Pressable style={styles.modalButton} onPress={pickImage}>
-                            <Image style={{width:40,height:40, marginBottom:5}}source={galleryIcon}/>
-                            <Text >Gallery</Text>
-                        </Pressable>
-                        <Pressable style={styles.modalButton} onPress={(removeImage)}>
-                            <Image style={{width:40,height:40, marginBottom:5}} source={trashIcon}/>
-                            <Text >Remove</Text>
-                        </Pressable>
-                        
-                        </View>
-                        
+                <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Group Photo</Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
+                                    <Pressable style={styles.modalButton} onPress={takeImage}>
+                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={cameraIcon} />
+                                        <Text>Camera</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.modalButton} onPress={pickImage}>
+                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={galleryIcon} />
+                                        <Text>Gallery</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.modalButton} onPress={removeImage}>
+                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={trashIcon} />
+                                        <Text>Remove</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        </TouchableWithoutFeedback>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
+
             <Text style={styles.label}>Group Name</Text>
             <TextInput
                 style={styles.input}

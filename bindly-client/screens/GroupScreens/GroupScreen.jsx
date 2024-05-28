@@ -15,16 +15,13 @@ const GroupScreen = () => {
 
   useEffect(() => {
     // Append a timestamp to force image refresh
-    console.log('IMAHEEE FIXX')
     setImageUrl(groupData.pfp);
     
     
   }, [groupData.pfp]);
 
 
-  useEffect(()=>{
-    console.log(groupData)
-  },[])
+ 
 
   const back = () => {
     navigation.navigate('GroupsList');

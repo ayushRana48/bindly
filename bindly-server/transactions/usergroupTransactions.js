@@ -2,15 +2,13 @@ const { supabase } = require('../initSupabase');
 
 // Function to create a new group
 async function createUserGroup(usergroupid,username, groupid, strikes, moneypaid, moneyowed) {
-  console.log(usergroupid,username, groupid,'WEE ARE HEERE')
   const { data, error } = await supabase
     .from('usergroup')
     .insert([
       { usergroupid,username, groupid }
     ]).select().single();
 
-  console.log(data,'from createUG tran'),
-  console.log(error,'from createUG tran')
+
   return { data, error };
 }
 
@@ -38,8 +36,7 @@ async function getUserGroupsByGroupId(groupid) {
     `)
     .eq('groupid', groupid)
 
-    console.log(userGroupData,'d')
-  console.log(userGroupError,'e')
+
 
   if (userGroupError) {
     return { data: null, error: userGroupError };
@@ -68,7 +65,6 @@ async function getUserGroupsByGroupId(groupid) {
     group: groupData,
   };
 
-  console.log(result,'sdsdsd')
 
   return { data: result, error: groupError };
 }

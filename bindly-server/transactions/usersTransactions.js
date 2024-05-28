@@ -1,4 +1,72 @@
+const fs = require('fs');
+const path = require('path');
 const { supabase } = require('../initSupabase');
+
+async function uploadFile(filePath, bucketName, fileName,timestamp, newTimeStamp) {
+  let fileUrl = "";
+
+
+  try {
+
+    
+    if (filePath) {
+      const fileUri = filePath.replace('file://', '');
+      const fileData = fs.readFileSync(fileUri);
+      const fileExt = path.extname(fileUri).substring(1);
+
+      // Delete the old file if oldFileUrl is provided
+      if(timestamp){
+        const oldFileName = `${fileName}-${timestamp.substring(0,timestamp.length-6)}Z.${fileExt}`;
+
+
+        const { error: deleteError } = await supabase.storage
+          .from(bucketName)
+          .remove([oldFileName]);
+
+          if (deleteError && deleteError.message !== 'The resource was not found') {
+            console.error('Error deleting old file:', deleteError);
+            return { fileUrl: null, error: deleteError };
+          }
+      }
+  
+      
+
+      const { data: imageData, error: imageError } = await supabase.storage
+        .from(bucketName)
+        .upload(`${fileName}-${newTimeStamp}.${fileExt}`, fileData, {
+          contentType: `image/${fileExt}`,
+          upsert: true,
+        });
+
+      if (imageError) {
+        console.error('Error uploading file:', imageError);
+        return { fileUrl: null, error: imageError };
+      } else {
+        fileUrl = `https://lxnzgnvhkrgxpfsokwos.supabase.co/storage/v1/object/public/${bucketName}/${fileName}-${newTimeStamp}.${fileExt}`;
+      }
+    }
+
+    else{
+      if(timestamp){
+        const oldFileName = `${fileName}-${timestamp}.${fileExt}`;
+
+        const { error: deleteError } = await supabase.storage
+          .from(bucketName)
+          .remove([oldFileName]);
+
+          if (deleteError && deleteError.message !== 'The resource was not found') {
+            console.error('Error deleting old file:', deleteError);
+            return { fileUrl: null, error: deleteError };
+          }
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    return { fileUrl: null, error };
+  }
+
+  return { fileUrl, error: null };
+}
 
 // Create a new user
 async function createUser(username, email, name, pfp) {
@@ -49,20 +117,32 @@ async function getAllUsers() {
 
 // Update user details
 async function updateUser(username, updateParams) {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .update(updateParams)
-      .eq('username', username)
+  const newTimeStamp= new Date(Date.now()).toISOString();
+  let fileUrl = updateParams.pfp;
 
-    if (error) {
-      console.log(error)
-      throw error;
+  if (updateParams.pfp) {
+    const { fileUrl: newFileUrl, error: uploadError } = await uploadFile(updateParams.pfp, 'userProfiles',username,updateParams.lastpfpupdate,newTimeStamp);
+
+    if (uploadError) {
+      return { data: null, error: uploadError };
     }
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error: error.message };
+
+    fileUrl = newFileUrl;
   }
+
+  if(fileUrl==undefined){
+    fileUrl=""
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .update({ ...updateParams, pfp: fileUrl,lastpfpupdate:newTimeStamp })
+    .eq('username', username)
+    .select()
+    .single();
+
+  return { data, error };
+
 }
 
 

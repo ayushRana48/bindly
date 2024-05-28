@@ -31,14 +31,9 @@ const InviteItem = ({ inviteData,removeInvite }) => {
 
     },[])
 
-    const click= ()=>{
-        console.log(inviteId)
-    }
-
 
     const acceptInvite = async ()=>{
-        console.log('callMeee')
-        fetch(`http://localhost:3000/bindly/invite/acceptInvite`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/acceptInvite`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -51,8 +46,7 @@ const InviteItem = ({ inviteData,removeInvite }) => {
             .then(({ status, body }) => {
 
                 if (status === 200) {
-                    console.log(body,'healloooo')
-                    console.log(inviteData.groups)
+            
                     setGroups(g=>[...g,inviteData.groups])
                     removeInvite(inviteId)
 
@@ -70,9 +64,7 @@ const InviteItem = ({ inviteData,removeInvite }) => {
 
 
     const rejectInvite = async ()=>{
-        console.log('here')
-        console.log(`http://localhost:3000/bindly/invite/deleteInvite/${inviteId}`)
-        fetch(`http://localhost:3000/bindly/invite/deleteInvite/${inviteId}`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/deleteInvite/${inviteId}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
         })
@@ -80,11 +72,9 @@ const InviteItem = ({ inviteData,removeInvite }) => {
             .then(({ status, body }) => {
 
                 if (status === 200) {
-                    console.log(body,'helloooo')
                     removeInvite(inviteId)
                 } else {
                   
-                    console.log(body)
                 }
             })
             .catch(error => {
@@ -99,7 +89,7 @@ const InviteItem = ({ inviteData,removeInvite }) => {
     
 
     return (
-        <Pressable style={styles.container} onPress={click} >
+        <Pressable style={styles.container} >
             <Image
                 style={{ width: 50, height: 50, borderRadius: 8 }}
                 source={imageUrl ? { uri: imageUrl } : placeholder}

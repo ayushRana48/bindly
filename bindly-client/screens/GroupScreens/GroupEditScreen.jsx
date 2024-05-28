@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
@@ -57,7 +57,6 @@ const GroupEditScreen = () => {
         // Calculate the number of weeks
         let diffWeeks = diffDays / 7;
 
-        console.log(diffWeeks, 'ewwwdkeas')
 
         setNumWeeks(diffWeeks.toString())
     }
@@ -71,7 +70,7 @@ const GroupEditScreen = () => {
             setNumWeeksF(groupData.startdate, groupData.enddate);
 
             if (groupData.pfp) {
-                setImageSrc({ uri:groupData.pfp })
+                setImageSrc({ uri: groupData.pfp })
             }
 
             setBuyIn(groupData.buyin.toString())
@@ -82,9 +81,7 @@ const GroupEditScreen = () => {
     }, [groupData])
 
 
-    useEffect(() => {
-        console.log(buyIn, 'slkfjsdligds')
-    }, [buyIn])
+
 
 
     const pickImage = async () => {
@@ -96,10 +93,8 @@ const GroupEditScreen = () => {
             quality: 1,
         });
 
-        console.log(result);
 
         if (!result.canceled) {
-            console.log(result.assets[0].uri)
             setImageSrc({ uri: result.assets[0].uri });
             setOpenModal(false)
 
@@ -116,10 +111,8 @@ const GroupEditScreen = () => {
                 aspect: [1, 1],
                 quality: 1,
             })
-            console.log(result);
 
             if (!result.canceled) {
-                console.log(result.assets[0].uri)
                 setImageSrc({ uri: result.assets[0].uri });
                 setOpenModal(false)
             }
@@ -135,9 +128,7 @@ const GroupEditScreen = () => {
     }
 
 
-    useEffect(() => {
-        console.log(imageSrc, 'from')
-    }, [imageSrc])
+
 
 
     const navigation = useNavigation();
@@ -158,56 +149,52 @@ const GroupEditScreen = () => {
     }
 
     const submit = async () => {
+        console.log('confirm');
 
         // Validate Names
         if (!groupName.trim()) {
-            setErrorMessage("Enter Group Name");
+            console.error("Enter Group Name");
             return;
         }
 
         // Validate Passwords
-
         if (!description.trim()) {
-            setErrorMessage("Please enter description.");
+            console.error("Please enter description.");
             return;
         }
 
         if (!startDate) {
-            setErrorMessage("Please enter start date.");
+            console.error("Please enter start date.");
             return;
         }
 
         if (!numWeeks) {
-            setErrorMessage("Please enter number of weeks.");
+            console.error("Please enter number of weeks.");
             return;
         }
 
         if (!buyIn) {
-            setErrorMessage("Please enter buy in");
+            console.error("Please enter buy in");
             return;
         }
 
         if (!taskPerWeek) {
-            setErrorMessage("Please enter number of tasks per week");
+            console.error("Please enter number of tasks per week");
             return;
         }
 
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + numWeeks * 7);
 
-        console.log(startDate)
-        console.log(endDate)
-
         let img = imageSrc;
         if (imageSrc == placeholder) {
-            img = ""
+            img = "";
         }
 
+        console.log(img)
 
-        console.log(groupid)
         if (groupid) {
-
-            fetch(`http://localhost:3000/bindly/group/updateGroup/${groupid}`, {
+            fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupid}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -217,45 +204,31 @@ const GroupEditScreen = () => {
                     startdate: startDate,
                     enddate: endDate,
                     hostid: user.username,
-                    pfp: img.uri,
+                    pfp: img?.uri,
                     tasksperweek: taskPerWeek,
-                    lastpfpupdate:timeStamp
+                    lastpfpupdate: timeStamp
                 }),
             })
                 .then(response => response.json().then(data => ({ status: response.status, body: data })))
                 .then(async ({ status, body }) => {
-
                     if (status === 200) {
-                        // Navigate to confirm email page or handle the success scenario
-                        console.log(body)
                         setGroups(currentGroups => {
-                            return currentGroups.map(group => 
+                            return currentGroups.map(group =>
                                 group.groupid === body.groupid ? body : group
                             );
                         });
-                    
-                    // await getAllGroups(); 
-
-                     navigation.navigate("Group", { groupData: body });
+                        navigation.navigate("Group", { groupData: body });
                     } else {
-                        // Handling different error messages from the server
-                        // if (body.error) {
-                        //     console.log(body.error, 'kjdsfbzlskdjferror')
-                        // }
+                        console.error(body.error || "An error occurred. Please try again.");
                     }
                 })
                 .catch(error => {
-                    console.log(error)
-                    // In case the fetch fails
-                    Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+                    console.log(error);
                 });
+        } else {
+            console.error("No group ID provided.");
         }
-        else {
-            console.log('no group id')
-        }
-        // All validations passed
     };
-
 
 
     const onChange = ({ type }, selctedDate) => {
@@ -287,28 +260,31 @@ const GroupEditScreen = () => {
 
 
             <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Group Photo</Text>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
-                            <Pressable style={styles.modalButton} onPress={takeImage}>
-                                <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={cameraIcon} />
-                                <Text>Camera</Text>
-                            </Pressable>
-                            <Pressable style={styles.modalButton} onPress={pickImage}>
-                                <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={galleryIcon} />
-                                <Text >Gallery</Text>
-                            </Pressable>
-                            <Pressable style={styles.modalButton} onPress={(removeImage)}>
-                                <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={trashIcon} />
-                                <Text >Remove</Text>
-                            </Pressable>
-
-                        </View>
-
+                <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Group Photo</Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
+                                    <Pressable style={styles.modalButton} onPress={takeImage}>
+                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={cameraIcon} />
+                                        <Text>Camera</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.modalButton} onPress={pickImage}>
+                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={galleryIcon} />
+                                        <Text>Gallery</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.modalButton} onPress={removeImage}>
+                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={trashIcon} />
+                                        <Text>Remove</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        </TouchableWithoutFeedback>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
+
             <Text style={styles.label}>Group Name</Text>
             <TextInput
                 style={styles.input}

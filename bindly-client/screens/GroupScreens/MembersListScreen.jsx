@@ -22,20 +22,16 @@ const MembersListScreen = () => {
     navigation.navigate('InviteMembers', {groupData:groupData})
   }
 
-  useEffect(() => {
-    console.log(groups, 'from the list');
-  }, [groups]);
+
 
   const getAllMembers = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByGroup/${groupData.groupid}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByGroup/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const res = await response.json();
 
-      console.log(res.members,'asdliasjdla')
-      console.log(res.group)
-    //   setGroup(res.group);
+
       setMembers(res.members);
     } catch (error) {
       console.log(error);

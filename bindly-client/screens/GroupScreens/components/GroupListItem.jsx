@@ -12,7 +12,6 @@ const GroupListItem = ({ groupData }) => {
   useEffect(() => {
     // Append a timestamp to force image refresh
     setImageUrl(groupData.pfp);
-    console.log(imageUrl,'sdwsdsadsdflsdnfjosadn')
   }, [groupData.pfp,groups]);
 
   const toGroup = () => {

@@ -68,12 +68,12 @@ const SignUpScreen = () => {
             return;
         }
 
-            fetch(`http://localhost:3000/bindly/auth/signUp`, {
+            fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signUp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 username: username,
-                email: email,
+                email: email.toLowerCase(),
                 firstName: firstName,
                 lastName: lastName,
                 password: password,

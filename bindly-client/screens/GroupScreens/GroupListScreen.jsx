@@ -19,28 +19,20 @@ const GroupListScreen = () => {
      
     }
 
-    useEffect(()=>{
-        console.log(groups,'from the loist')
-    },[groups])
-    
 
     const getAllGroups= async()=>{
 
         try{
-            const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
-            console.log(response,'jellodsad')
 
 
             const res = await response.json();
 
             const list = res.map(r=>r.groups);
-            console.log(list,'listt')
             setGroups(g=>[...list])
-            console.log(res,'helloRes')
-
-            console.log(res[0].groups,'sdd232323d')
+           
 
         }
         catch(error){

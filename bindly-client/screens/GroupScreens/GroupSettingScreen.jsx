@@ -45,14 +45,7 @@ const GroupSetting = () => {
     }, [groupData])
 
 
-    useEffect(()=>{
-        console.log(groupData,'from SETTTINGSKJFNSJF')
-    },[])
 
-    useEffect(()=>{
-        console.log(startDate)
-        console.log(imageSrc)
-    },[startDate])
 
 
     const navigation = useNavigation();
@@ -66,13 +59,11 @@ const GroupSetting = () => {
     }
 
     const toEdit=()=>{
-        console.log('ehejhd')
-        console.log(isPastDate)
+
         if(isPastDate){
             Alert.alert("Can't edit already started")
         }
         else{
-            console.log('hereee')
             try{
             navigation.navigate("GroupEdit", { groupData: groupData });
             }

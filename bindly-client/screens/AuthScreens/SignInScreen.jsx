@@ -21,11 +21,11 @@ const SignInScreen = () => {
     const submit = async () => {
 
         try {
-            const response = await fetch(`http://localhost:3000/bindly/auth/signIn`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signIn`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    email: username,
+                    email: username.toLowerCase(),
                     password: password,
                 }),
             });
@@ -36,7 +36,6 @@ const SignInScreen = () => {
       
             if (response.status === 200) {
                 // Navigate to confirm email page or handle the success scenario
-                console.log('Sign in successful, navigating to Profile screen.');
                 setEmail(username)
             } else {
                 // Handling different error messages from the server

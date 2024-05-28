@@ -66,18 +66,21 @@ async function getAllUsersController(req, res) {
 // Controller for updating a user's details
 async function updateUserController(req, res) {
   const { username } = req.params;
+  console.log('controller')
+  console.log(req.params)
+  console.log(req.body)
   const updateParams = req.body;
 
 
 
-  try {
-    const { data, error } = await updateUser(username, updateParams);
+  // try {
+  //   const { data, error } = await updateUser(username, updateParams);
 
-    if (error) throw error;
-    res.status(200).json(data);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
+  //   if (error) throw error;
+  //   res.status(200).json(data);
+  // } catch (error) {
+  //   res.status(400).json({ error: error.message });
+  // }
 }
 
 // Controller for deleting a user

@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const serverless = require('serverless-http');
+
 const app = express();
 const port = 3000;
 
@@ -8,7 +10,7 @@ app.use(cors()); // Enable CORS for all requests
 app.use(express.json()); // Parse JSON bodies
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/hello', (req, res) => {
   res.send('Hello World!');
 });
 
@@ -19,3 +21,6 @@ app.use('/bindly', require('./routes/bindly'));
 app.listen(port, () => {
   console.log(`Listening app listening at ${port}`);
 });
+
+
+// module.exports.handler=serverless(app)

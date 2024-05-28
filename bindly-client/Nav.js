@@ -17,9 +17,8 @@ export default function Nav() {
 
     useEffect(() => {
         const getUser = async () => {
-            console.log('here')
             try {
-                const response = await fetch(`http://localhost:3000/bindly/auth/getUser`, {
+                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/getUser`, {
                     headers: { 'Content-Type': 'application/json' },
                 });
                 const data = await response.json();

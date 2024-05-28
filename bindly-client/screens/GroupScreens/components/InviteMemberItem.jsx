@@ -12,7 +12,7 @@ const InviteMemberItem = ({ memberData,groupData }) => {
     const { user } = useUserContext()
 
     const sendInvite = async ()=>{
-        fetch(`http://localhost:3000/bindly/invite/createInvite`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/createInvite`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -26,14 +26,8 @@ const InviteMemberItem = ({ memberData,groupData }) => {
 
                 if (status === 200) {
                     // Navigate to confirm email page or handle the success scenario
-                    console.log(body)
                 } else {
-                    // Handling different error messages from the server
-                    // if (body.error) {
-                    //     console.log(body.error, 'kjdsfbzlskdjferror')
-                    // }
-                    console.log(body)
-
+                  
                 }
             })
             .catch(error => {

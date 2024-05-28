@@ -6,7 +6,6 @@ const { v4: uuidv4 } = require('uuid');
 
 // Controller for creating a new user
 async function createInviteController(req, res) {
-  console.log('at controller')
   const { senderid, receiverid, groupid} = req.body;
 
   try {
@@ -24,20 +23,17 @@ async function acceptInviteController(req,res){
   const { inviteId, receiverid, groupid} = req.body;
 
   const usergroupId=uuidv4()
-  console.log(inviteId,'inviteIDDDDDD')
 
   try {
     const { data, error } = await deleteInvite(inviteId);
 
-    console.log(error,'UPHEER??')
 
 
     if (error) throw error;
     
     const { data: userGroupData, error: createUserGroupError } = await createUserGroup(usergroupId, receiverid, groupid);
 
-    console.log(userGroupData, 'inTrann');
-    console.log(createUserGroupError, 'fromTrann');
+ 
 
     if (createUserGroupError) throw createUserGroupError;
 
@@ -140,7 +136,6 @@ async function updateInviteController(req, res) {
 // Controller for deleting a user
 async function deleteInviteController(req, res) {
   const { inviteId } = req.params;
-  console.log('here',inviteId)
 
   try {
     const { data, error } = await deleteInvite(inviteId);

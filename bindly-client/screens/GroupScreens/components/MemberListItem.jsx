@@ -10,6 +10,16 @@ const MemberListItem = ({ memberData,groupData }) => {
     const [imageUrl, setImageUrl] = useState("");
     const { groups } = useGroupsContext()
     const { user } = useUserContext()
+
+    useEffect(()=>{
+      
+
+        if (memberData.users.pfp) {
+            setImageUrl(memberData.users.pfp )
+
+        }
+
+    },[memberData])
     
 
     return (

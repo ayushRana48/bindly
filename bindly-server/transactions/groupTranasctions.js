@@ -5,25 +5,20 @@ const { supabase } = require('../initSupabase');
 async function uploadFile(filePath, bucketName, fileName,timestamp, newTimeStamp) {
   let fileUrl = "";
 
-  console.log('here')
-  // console.log()
 
 
   try {
 
     
     if (filePath) {
-      console.log('here1')
       const fileUri = filePath.replace('file://', '');
       const fileData = fs.readFileSync(fileUri);
       const fileExt = path.extname(fileUri).substring(1);
 
       // Delete the old file if oldFileUrl is provided
       if(timestamp){
-        console.log('here2')
         const oldFileName = `${fileName}-${timestamp.substring(0,timestamp.length-6)}Z.${fileExt}`;
 
-        console.log(oldFileName,'oldFileName')
 
         const { error: deleteError } = await supabase.storage
           .from(bucketName)
@@ -49,7 +44,6 @@ async function uploadFile(filePath, bucketName, fileName,timestamp, newTimeStamp
         return { fileUrl: null, error: imageError };
       } else {
         fileUrl = `https://lxnzgnvhkrgxpfsokwos.supabase.co/storage/v1/object/public/${bucketName}/${fileName}-${newTimeStamp}.${fileExt}`;
-        console.log('File URL:', fileUrl);
       }
     }
 
@@ -83,22 +77,17 @@ async function createGroup(groupid, groupname, hostid, description, buyin, week,
   const { fileUrl, error: uploadError } = await uploadFile(filePath, 'groupProfiles', groupid,null,timestamp);
 
 
-  console.log(fileUrl, 'it work')
   if (uploadError) {
-    console.log(uploadError,'waaat')
     return { data: null, error: uploadError };
   }
 
-  console.log('next')
 
   let time= timestamp
-    console.log(time)
 
   if(fileUrl.length==0){
     time=null
   }
 
-  console.log(time)
 
   const { data, error } = await supabase
     .from('groups')
@@ -121,8 +110,7 @@ async function createGroup(groupid, groupname, hostid, description, buyin, week,
     .select()
     .single();
 
-  console.log(data,'ysyayaya')
-  console.log(error,'ysyayaya')
+
 
   return { data, error };
 }
@@ -162,9 +150,6 @@ async function updateGroup(groupid, updateParams) {
   const newTimeStamp= new Date(Date.now()).toISOString();
   let fileUrl = updateParams.pfp;
 
-  console.log(updateParams,'yooyoyoyyoooyyo')
-  console.log(fileUrl,'yooyoyoyyoooyyo')
-
   if (updateParams.pfp) {
     const { fileUrl: newFileUrl, error: uploadError } = await uploadFile(updateParams.pfp, 'groupProfiles',groupid,updateParams.lastpfpupdate,newTimeStamp);
 
@@ -175,7 +160,6 @@ async function updateGroup(groupid, updateParams) {
     fileUrl = newFileUrl;
   }
 
-  console.log(fileUrl,'slfkjnsdlknsdlk;kJDSF')
   if(fileUrl==undefined){
     fileUrl=""
   }
@@ -187,9 +171,7 @@ async function updateGroup(groupid, updateParams) {
     .select()
     .single();
 
-    console.log(data)
 
-    console.log(error)
 
   return { data, error };
 

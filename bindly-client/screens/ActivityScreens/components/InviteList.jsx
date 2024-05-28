@@ -14,16 +14,13 @@ const InviteList = () => {
     };
 
     const getAllInvites = async () => {
-        console.log('call');
 
         try {
-            const response = await fetch(`http://localhost:3000/bindly/invite/getInviteByReciever/${user.username}`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getInviteByReciever/${user.username}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
-            console.log(response, 'jellodsad');
 
             const res = await response.json();
-            console.log(res, 'helloRes');
             setInvites(res);
         } catch (error) {
             console.log(error);

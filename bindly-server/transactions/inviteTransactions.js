@@ -5,14 +5,12 @@ const { v4: uuidv4 } = require('uuid');
 async function createInvite(senderid, receiverid, groupid) {
   const inviteid = uuidv4()
 
-  console.log('here')
   const { data, error } = await supabase
     .from('invite')
     .insert([
       { inviteid, senderid, receiverid, groupid }
     ]).select().single();
 
-  console.log(data, error, 'at transaction')
 
   return { data, error };
 }
@@ -79,15 +77,12 @@ async function updateInvite(inviteid, updateParams) {
 
 // Function to delete a group
 async function deleteInvite(inviteid) {
-  console.log(inviteid)
   const { data, error } = await supabase
     .from('invite')
     .delete()
     .eq('inviteid', inviteid)
     .select().single();
 
-  console.log('deleteTran',data)
-  console.log('deleteTran',error)
 
   return { data, error };
 }

@@ -3,7 +3,6 @@ const { createUserGroup} = require('../transactions/usergroupTransactions.js');
 const { v4: uuidv4 } = require('uuid');
 
 async function createGroupController(req, res) {
-  console.log('groupppcontrolllaaa')
   const groupid = uuidv4();
 
   const { groupname, description, buyin, week, startdate, timeleft, hostId,enddate,image,tasksperweek } = req.body;
@@ -14,7 +13,6 @@ async function createGroupController(req, res) {
 
     if (error) throw error;
 
-    console.log('here')
     const usergroupid = uuidv4();
 
 
@@ -67,7 +65,6 @@ async function updateGroupController(req, res) {
   const { groupId } = req.params;
 
 
-  console.log(groupId,'here')
   try {
     const { data, error } = await updateGroup(groupId, req.body);
 

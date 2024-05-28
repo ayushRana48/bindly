@@ -7,7 +7,7 @@ export const GroupsProvider = ({ children }) => {
     const [currentGroup,setCurrentGroup]=useState()
 
     useEffect(()=>{
-        console.log(groups,'from gorups context')
+        console.log(groups,'from groups context')
     },[groups])
 
 
