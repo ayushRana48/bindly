@@ -21,8 +21,9 @@ router.post('/group/createGroup',groupController.createGroupController)
 router.get('/group/:groupId',groupController.getGroupController)
 router.get('/group/getGroupByHost/:hostId',groupController.getGroupsByHostIdController)
 router.get('/group/',groupController.getAllGroupsController)
-router.delete('/group/deleteGroup/:groupId',groupController.deleteGroupController)
+router.delete('/group/deleteGroup',groupController.deleteGroupController)
 router.put('/group/updateGroup/:groupId',groupController.updateGroupController)
+router.put('/group/changeHost',groupController.changeHostController)
 
 
 router.post('/usergroup/createUsergroup',usergroupController.createUserGroupController)
@@ -30,14 +31,16 @@ router.get('/usergroup/:usergroupId',usergroupController.getUserGroupController)
 router.get('/usergroup/',usergroupController.getAllUserGroupsController)
 router.get('/usergroup/getUsergroupByUsername/:username',usergroupController.getUserGroupsByUsernameontroller)
 router.get('/usergroup/getUsergroupByGroup/:groupId',usergroupController.getUserGroupsByGroupIdController)
-router.delete('/usergroup/deleteUsergroup/:usergroupId',usergroupController.deleteUserGroupController)
 router.put('/usergroup/updateUsergroup/:usergroupId',usergroupController.updateUserGroupController)
-
+router.delete('/usergroup/leaveGroup',usergroupController.leaveGroupController)
+router.delete('/usergroup/kickUser',usergroupController.kickUserController)
 
 router.post('/invite/createInvite',inviteController.createInviteController)
 router.get('/invite/getInviteByReciever/:reciverId',inviteController.getInvitesByRecieverController)
+router.get('/invite/getInviteByGroup/:groupId',inviteController.getInvitesByGroupIdController)
 router.post('/invite/acceptInvite',inviteController.acceptInviteController)
 router.delete('/invite/deleteInvite/:inviteId',inviteController.deleteInviteController)
+router.get('/invite/getAvailableInvites/:groupId',inviteController.getAvailableInvites)
 
 
 router.post('/history/createHistory', historyController.createHistoryController);

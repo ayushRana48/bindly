@@ -15,8 +15,14 @@ const MembersListScreen = () => {
   const route = useRoute();
   const { groupData } = route.params;
 
-  const [group, setGroup] = useState();
+
+
   const [members, setMembers] = useState([]);
+
+  const kickMember = (username)=>{
+    setMembers(m => m.filter(h=>h.username!==username))
+  }
+
 
   const toInvite = ()=>{
     navigation.navigate('InviteMembers', {groupData:groupData})
@@ -60,11 +66,11 @@ const MembersListScreen = () => {
 
      
 
-      {members.length === 0 && group? (
+      {members.length === 0 && groupData? (
         <Text style={styles.NoGroups}>No Members</Text>
       ) : (
         <ScrollView style={styles.groupList}>
-            {members.map((m)=><MemberListItem memberData={m} groupData={groupData}></MemberListItem>)}
+            {members.map((m)=><MemberListItem memberData={m} groupData={groupData} kickMember={kickMember}></MemberListItem>)}
         </ScrollView>
       )}
     </View>

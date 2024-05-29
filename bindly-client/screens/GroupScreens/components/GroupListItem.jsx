@@ -18,6 +18,8 @@ const GroupListItem = ({ groupData }) => {
     navigation.navigate("Group", { groupData: groupData });
   }
 
+
+
   return (
     <Pressable style={styles.container} onPress={toGroup}>
       <Image

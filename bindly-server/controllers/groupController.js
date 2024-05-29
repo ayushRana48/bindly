@@ -1,4 +1,4 @@
-const { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup } = require('../transactions/groupTranasctions.js');
+const { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup } = require('../transactions/groupTransactions.js');
 const { createUserGroup} = require('../transactions/usergroupTransactions.js');
 const { v4: uuidv4 } = require('uuid');
 
@@ -76,17 +76,75 @@ async function updateGroupController(req, res) {
 }
 
 async function deleteGroupController(req, res) {
-  const { groupId } = req.params;
+  const { username, groupId } = req.body;
+
+  console.log(username,groupId)
 
   try {
-    const { data, error } = await deleteGroup(Number(groupId));
+    const { data: groupData, error: groupError } = await getGroup(groupId);
+    console.log(groupData)
 
-    if (error) throw error;
-    res.sendStatus(200);
+    if (groupError) {
+      return res.status(400).json({ error: 'Error fetching group data' });
+    }
+
+    if (username !== groupData.hostid) {
+      return res.status(400).json({ error: 'Cannot delete, not the host' });
+    }
+
+    if (Date.now() > new Date(groupData.startdate)) {
+      return res.status(400).json({ error: 'Cannot delete, group already started' });
+    }
+
+    const { data, error } = await deleteGroup(groupId);
+
+    if (error) {
+      return res.status(400).json({ error });
+    }
+
+    console.log('here')
+
+    res.status(200).json({'message':'success'});
+  } catch (error) {
+    console.log('her2e')
+
+    res.status(400).json({ error: error.message });
+  }
+}
+
+
+
+async function changeHostController(req, res) {
+  const { username, groupId,newHost} = req.body;
+
+  try {
+    const { data: groupData, error: groupError } = await getGroup(groupId);
+
+    if (groupError) {
+      return res.status(400).json({ error: 'Error fetching group data' });
+    }
+
+    if (username !== groupData.hostid) {
+      return res.status(400).json({ error: 'Cannot change, not the host currenlty' });
+    }
+
+    if (Date.now() > new Date(groupData.startdate)) {
+      return res.status(400).json({ error: 'Cannot change, group already started' });
+    }
+
+    const { data, error } = await updateGroup(groupId,{hostid:newHost});
+
+    if (error) {
+      return res.status(400).json({ error });
+    }
+
+    res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 }
+
+
 
 module.exports = {
   createGroupController,
@@ -94,5 +152,6 @@ module.exports = {
   getGroupController,
   getGroupsByHostIdController,
   updateGroupController,
-  deleteGroupController
+  deleteGroupController,
+  changeHostController
 };

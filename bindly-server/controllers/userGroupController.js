@@ -2,7 +2,7 @@
 
 const { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername,updateUserGroup, deleteUserGroup }= require('../transactions/usergroupTransactions');
 const { v4: uuidv4 } = require('uuid');
-
+const { getGroup }= require('../transactions/groupTransactions');
 // Controller for creating a new user
 async function createUserGroupController(req, res) {
   const { username,  groupId, strikes, moneypaid, moneyowed} = req.body;
@@ -91,20 +91,75 @@ async function updateUserGroupController(req, res) {
   }
 }
 
-// Controller for deleting a user
-async function deleteUserGroupController(req, res) {
-  const { usergroupId } = req.params;
+
+
+async function leaveGroupController(req, res) {
+  const { username, groupId } = req.body;
 
   try {
-    const { data, error } = await deleteUserGroup(usergroupId);
+    const { data: groupData, error: groupError } = await getGroup(groupId);
 
-    if (error) throw error;
-    res.status(204).send();
+    if (groupError) {
+      return res.status(400).json({ error: 'Error fetching group data' });
+    }
+
+    if (username === groupData.hostid) {
+      return res.status(400).json({ error: 'Cannot leave group as host' });
+    }
+
+    if (Date.now() > new Date(groupData.startdate)) {
+      return res.status(400).json({ error: 'Cannot leave group, group already started' });
+    }
+
+    const { data, error } = await deleteUserGroup(username, groupId);
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json({ message: 'Successfully left the group' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(404).json({ error: error.message });
   }
 }
 
 
-module.exports={createUserGroupController,deleteUserGroupController,getAllUserGroupsController,updateUserGroupController,getUserGroupController,getUserGroupsByGroupIdController,getUserGroupsByUsernameontroller};
+
+async function kickUserController(req, res) {
+  const { username, groupId,kickedUser } = req.body;
+
+  try {
+    const { data: groupData, error: groupError } = await getGroup(groupId);
+
+    if (groupError) {
+      return res.status(400).json({ error: 'Error fetching group data' });
+    }
+
+    console.log(username,groupData)
+
+    if (username !== groupData.hostid) {
+      return res.status(400).json({ error: 'Cannot kick, not host' });
+    }
+
+    if (Date.now() > new Date(groupData.startdate)) {
+      return res.status(400).json({ error: 'Cannot kick, group already started' });
+    }
+
+    const { data, error } = await deleteUserGroup(kickedUser, groupId);
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json({ message: 'Successfully left the group' });
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
+}
+
+
+
+
+
+module.exports={createUserGroupController,getAllUserGroupsController,updateUserGroupController,getUserGroupController,getUserGroupsByGroupIdController,getUserGroupsByUsernameontroller,leaveGroupController,kickUserController};
 

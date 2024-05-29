@@ -5,13 +5,24 @@ import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
 
-const InviteMemberItem = ({ memberData,groupData }) => {
+const InviteMemberItem = ({ memberData, groupData, changeInviteStatus }) => {
     const navigation = useNavigation();
     const [imageUrl, setImageUrl] = useState("");
     const { groups } = useGroupsContext()
     const { user } = useUserContext()
 
-    const sendInvite = async ()=>{
+    useEffect(() => {
+
+
+        if (memberData.pfp) {
+            setImageUrl(memberData.pfp)
+
+        }
+
+    }, [memberData])
+
+
+    const sendInvite = async () => {
         fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/createInvite`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -25,9 +36,10 @@ const InviteMemberItem = ({ memberData,groupData }) => {
             .then(({ status, body }) => {
 
                 if (status === 200) {
+                    changeInviteStatus(memberData.username)
                     // Navigate to confirm email page or handle the success scenario
                 } else {
-                  
+
                 }
             })
             .catch(error => {
@@ -39,7 +51,7 @@ const InviteMemberItem = ({ memberData,groupData }) => {
     }
 
 
-    
+
 
     return (
         <Pressable style={styles.container} >
@@ -48,10 +60,10 @@ const InviteMemberItem = ({ memberData,groupData }) => {
                 source={imageUrl ? { uri: imageUrl } : placeholder}
             />
             <Text style={styles.name}>{memberData.username}</Text>
-                <Pressable style={styles.status} onPress={sendInvite}>
-                    <Text style={{color:'white',fontWeight:400, fontSize:18}}>+</Text> 
-                </Pressable>
-            
+            {memberData.invited ? <Text style={{ marginLeft: 'auto',}}>invited</Text> : <Pressable style={styles.status} onPress={sendInvite}>
+                <Text style={{ color: 'white', fontWeight: 400, fontSize: 18 }}>+</Text>
+            </Pressable>
+            }
         </Pressable>
     );
 };
@@ -78,13 +90,13 @@ const styles = StyleSheet.create({
     status: {
         fontSize: 14,
         marginLeft: 'auto',
-        height:30,
-        width:30,
-        padding:2,
-        justifyContent:'center',
-        alignItems:'center',
-        backgroundColor:'#08d43f',
-        borderRadius:8
+        height: 30,
+        width: 30,
+        padding: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#08d43f',
+        borderRadius: 8
     },
 });
 

@@ -111,13 +111,22 @@ async function updateUserGroup(usergroupid, updateParams) {
 }
 
 // Function to delete a group
-async function deleteUserGroup(usergroupid) {
-  const { data, error } = await supabase
-    .from('usergroup')
-    .delete()
-    .eq('usergroupid', usergroupid);
 
-  return { data, error };
+async function deleteUserGroup(username, groupId) {
+  try {
+    const { data, error } = await supabase
+      .from('usergroup')
+      .delete()
+      .eq('username', username)
+      .eq('groupid', groupId);
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    return { data: 'Successfully deleted' };
+  } catch (error) {
+    return { error: error.message };
+  }
 }
-
 module.exports = { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername,updateUserGroup, deleteUserGroup };

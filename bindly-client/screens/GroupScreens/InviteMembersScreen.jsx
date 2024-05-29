@@ -7,6 +7,8 @@ import InviteMemberItem from "./components/InviteMemberItem";
 
 const InviteMembersScreen = () => {
   const [users, setUsers] = useState([]);
+  const [usersInGroup,setUsersInGroup]=useState([])
+  const [invites,setInvites]=useState([])
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
 
@@ -15,23 +17,39 @@ const InviteMembersScreen = () => {
 
   const{user} = useUserContext()
 
+  const changeInviteStatus = (username) => {
+    const updatedUsers = users.map(user => {
+      if (user.username === username) {
+        return {
+          ...user,
+          invited: true
+        };
+      }
+      return user;
+    });
+    setUsers(updatedUsers);
+  }
+
 
   // Fetch all users when the component mounts
   useEffect(() => {
-    const fetchUsers = async () => {
+
+    const fetchAllAvailableUsers = async () => {
+      console.log(`http://localhost3000/bindly/invite/getAvailableInvites/${groupData.groupid}`)
       try {
-        const response = await fetch('https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users', {
+        const response = await fetch(`http://localhost:3000/bindly/invite/getAvailableInvites/${groupData.groupid}`, {
           headers: { 'Content-Type': 'application/json' },
         });
         const res = await response.json();
+        console.log(res)
         setUsers(res);
         setFilteredUsers(res);
+        console.log(res,'getAvailableInvites')
       } catch (error) {
         console.error(error);
       }
     };
-
-    fetchUsers();
+    fetchAllAvailableUsers()
   }, []);
 
   // Filter users based on the search term
@@ -44,7 +62,7 @@ const InviteMembersScreen = () => {
       );
       setFilteredUsers(filtered.slice(0, 10));
     }
-  }, [searchTerm, users]);
+  }, [searchTerm, users,usersInGroup]);
 
   return (
     <View style={styles.container}>
@@ -60,7 +78,7 @@ const InviteMembersScreen = () => {
         <Text style={styles.noMembers}>No members found</Text>
       ) : (
         <ScrollView style={styles.groupList}>
-            {filteredUsers.map((m)=><InviteMemberItem memberData={m} groupData={groupData}></InviteMemberItem>)}
+            {filteredUsers.map((m)=><InviteMemberItem key={m.username} memberData={m} groupData={groupData} changeInviteStatus={changeInviteStatus}></InviteMemberItem>)}
         </ScrollView>
       )}
     </View>
