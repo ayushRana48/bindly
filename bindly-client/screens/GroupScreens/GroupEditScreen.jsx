@@ -200,7 +200,7 @@ const GroupEditScreen = () => {
 
                 console.log(imgBase64)
 
-                const response = await fetch(`http://localhost:3000/bindly/group/updateGroup/${groupid}`, {
+                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupid}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

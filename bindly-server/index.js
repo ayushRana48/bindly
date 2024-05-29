@@ -7,10 +7,11 @@ const bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
 
-app.use((req, res, next) => {
-  console.log(`Received request with content-length: ${req.headers['content-length']} bytes`);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`Received request with content-length: ${req.headers['content-length']} bytes`);
+//   next();
+// });
+
 // Middleware
 app.use(cors()); // Enable CORS for all requests
 app.use(bodyParser.json({limit: '10mb', extended: true}));
@@ -19,16 +20,16 @@ app.use(bodyParser.text({ limit: '10mb' }));
 
 // Routes
 app.get('/hello', (req, res) => {
-  res.send('Hello World!');
+  res.send('Hello2 World!');
 });
 
 app.use('/bindly', require('./routes/bindly'));
 
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Listening app listening at ${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`Listening app listening at ${port}`);
+// });
 
 
-// module.exports.handler=serverless(app)
+module.exports.handler=serverless(app)

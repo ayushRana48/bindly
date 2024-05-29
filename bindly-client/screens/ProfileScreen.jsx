@@ -79,7 +79,7 @@ const ProfileScreen = () => {
         }
 
 
-        fetch(`http://localhost:3000/bindly/users/updateUser/${user.username}`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users/updateUser/${user.username}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
