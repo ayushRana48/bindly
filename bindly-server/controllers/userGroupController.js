@@ -13,7 +13,7 @@ async function createUserGroupController(req, res) {
     const { data, error } = await createUserGroup(usergroupid,username, groupId, strikes, moneypaid, moneyowed);
 
     if (error) throw error;
-    res.status(201).json(data);
+    res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

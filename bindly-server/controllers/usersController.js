@@ -7,11 +7,12 @@ const { createUser, getUser, updateUser, deleteUser,getAllUsers,getUserByEmail }
 async function createUserController(req, res) {
   const { username, email, name, pfp } = req.body;
 
+
   try {
     const { data, error } = await createUser(username, email, name, pfp);
 
     if (error) throw error;
-    res.status(201).json(data);
+    res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -31,7 +32,7 @@ async function getUserController(req, res) {
     if (error) throw error;
     res.status(200).json(data);
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 }
 
@@ -66,21 +67,19 @@ async function getAllUsersController(req, res) {
 // Controller for updating a user's details
 async function updateUserController(req, res) {
   const { username } = req.params;
-  console.log('controller')
-  console.log(req.params)
-  console.log(req.body)
+
   const updateParams = req.body;
 
 
 
-  // try {
-  //   const { data, error } = await updateUser(username, updateParams);
+  try {
+    const { data, error } = await updateUser(username, updateParams);
 
-  //   if (error) throw error;
-  //   res.status(200).json(data);
-  // } catch (error) {
-  //   res.status(400).json({ error: error.message });
-  // }
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 }
 
 // Controller for deleting a user

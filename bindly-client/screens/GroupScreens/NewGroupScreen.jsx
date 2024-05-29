@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert,Modal,TouchableWithoutFeedback } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
@@ -12,7 +12,8 @@ import trashIcon from "../../assets/trashIcon.png"
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { nodeModuleNameResolver } from "typescript";
-
+import compressImage from "../../utils/compressImage";
+import blobToBase64 from "../../utils/blobToBase64";
 
 const NewGroupScreen = () => {
 
@@ -31,52 +32,54 @@ const NewGroupScreen = () => {
     const [taskPerWeek, setTaskPerWeek] = useState(0);
     const [show, setShow] = useState(false)
     const [errorMessage, setErrorMessage] = useState("")
-    const [imageSrc,setImageSrc]=useState(placeholder)
-    const[openModal,setOpenModal]=useState(false)
+    const [imageSrc, setImageSrc] = useState(placeholder)
+    const [openModal, setOpenModal] = useState(false)
 
     const pickImage = async () => {
-      // No permissions request is necessary for launching the image library
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
-  
-  
-      if (!result.canceled) {
-        setImageSrc({ uri: result.assets[0].uri });
-        setOpenModal(false)
+        // No permissions request is necessary for launching the image library
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
 
-    }
+
+        if (!result.canceled) {
+            const compressedUri = await compressImage(result.assets[0].uri);
+            setImageSrc({ uri: compressedUri });
+            setOpenModal(false)
+
+        }
     };
 
     const takeImage = async () => {
         // No permissions request is necessary for launching the image library
-        try{
+        try {
             await ImagePicker.requestCameraPermissionsAsync();
             let result = await ImagePicker.launchCameraAsync({
-                cameraType:ImagePicker.CameraType.front,
-                allowsEditing:true,
-                aspect:[1,1],
-                quality:1,
+                cameraType: ImagePicker.CameraType.front,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 1,
             })
-    
-            if (!result.canceled) {
-              setImageSrc({ uri: result.assets[0].uri });
-              setOpenModal(false)
-          }
-        }
-        catch(error){
-            console.log(error)
-        }    
-      };
 
-    const removeImage=()=>{
+            if (!result.canceled) {
+                const compressedUri = await compressImage(result.assets[0].uri);
+                setImageSrc({ uri: compressedUri });
+                setOpenModal(false)
+            }
+        }
+        catch (error) {
+            console.log(error)
+        }
+    };
+
+    const removeImage = () => {
         setImageSrc(placeholder)
         setOpenModal(false)
     }
-  
+
 
 
     const navigation = useNavigation();
@@ -86,7 +89,7 @@ const NewGroupScreen = () => {
 
 
 
-    const cancel=()=>{
+    const cancel = () => {
         navigation.navigate("GroupsList")
     }
 
@@ -97,85 +100,94 @@ const NewGroupScreen = () => {
     }
 
     const submit = async () => {
-
+        console.log('confirm');
+    
         // Validate Names
         if (!groupName.trim()) {
             setErrorMessage("Enter Group Name");
             return;
         }
-
+    
         // Validate Passwords
-
         if (!description.trim()) {
             setErrorMessage("Please enter description.");
             return;
         }
-
+    
         if (!startDate) {
             setErrorMessage("Please enter start date.");
             return;
         }
-
+    
         if (!numWeeks) {
             setErrorMessage("Please enter number of weeks.");
             return;
         }
-
+    
         if (!buyIn) {
             setErrorMessage("Please enter buy in");
             return;
         }
-
+    
         if (!taskPerWeek) {
             setErrorMessage("Please enter number of tasks per week");
             return;
         }
-
+    
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + numWeeks * 7);
-
-
-
-        let img=imageSrc;
-        if(imageSrc==placeholder){
-            img=""
+    
+        let img = imageSrc;
+        if (imageSrc === placeholder) {
+            img = "";
         }
+    
+        let imgBase64 = "";
 
-
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/createGroup`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                groupname: groupName,
-                description: description,
-                buyin: buyIn,
-                startdate: startDate,
-                enddate: endDate,
-                hostId: user.username,
-                image:img?.uri,
-                tasksperweek:taskPerWeek
-            }),
-        })
-            .then(response => response.json().then(data => ({ status: response.status, body: data })))
-            .then(({ status, body }) => {
-
-                if (status === 200) {
-                    // Navigate to confirm email page or handle the success scenario
-                    setGroups(g=>[...g,body])
-                    navigation.navigate("Group", { groupData: body });
-                } else {
-                    // Handling different error messages from the server
-            
-                }
-            })
-            .catch(error => {
-                console.log(error)
-                // In case the fetch fails
-                Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        console.log(img,'imggggg')
+        if (img.uri) {
+            try {
+                const compressedUri = await compressImage(img.uri);
+                const response = await fetch(compressedUri);
+                const blob = await response.blob();
+                imgBase64 = await blobToBase64(blob);
+            } catch (error) {
+                console.log("Error compressing or converting image: ", error);
+                setErrorMessage("Error processing image. Please try again.");
+                return;
+            }
+        }
+    
+        try {
+            const response = await fetch(`http://localhost:3000/bindly/group/createGroup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    groupname: groupName,
+                    description: description,
+                    buyin: buyIn,
+                    startdate: startDate,
+                    enddate: endDate,
+                    hostId: user.username,
+                    image: imgBase64,
+                    tasksperweek: taskPerWeek
+                }),
             });
-        // All validations passed
+    
+            const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
+    
+            if (status === 200) {
+                setGroups(g => [...g, body]);
+                navigation.navigate("Group", { groupData: body });
+            } else {
+                console.error(body.error || "An error occurred. Please try again.");
+                setErrorMessage(body.error || "An error occurred. Please try again.");
+            }
+        } catch (error) {
+            console.log("Fetch error: ", error);
+            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        }
     };
-
 
 
     const onChange = ({ type }, selctedDate) => {
@@ -191,17 +203,17 @@ const NewGroupScreen = () => {
     return (
         <View style={styles.container}>
             <Pressable style={styles.cancel} onPress={cancel}>
-                <Text style={{color:"red"}}>cancel</Text>
+                <Text style={{ color: "red" }}>cancel</Text>
             </Pressable>
             <View style={styles.logoContainer}>
                 <Text style={styles.title}>Create Group</Text>
             </View>
 
-            <View style={{marginLeft:'auto',marginRight:'auto', position:'relative'}}>
-                <Image style={{width:80, height:80, borderRadius:8}} source={imageSrc}>
+            <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
+                <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc}>
                 </Image>
-                <Pressable style={{position:'absolute',bottom:-15, right:-15, borderColor:'black', borderWidth:1, borderRadius:20}} onPress={()=> setOpenModal(true)}>
-                    <Image style={{width:40, height:40, borderRadius:8}} source={camera}/>
+                <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 20 }} onPress={() => setOpenModal(true)}>
+                    <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
                 </Pressable>
             </View>
 
@@ -335,7 +347,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 10,
         alignItems: 'center',
-        margin:'auto',
+        margin: 'auto',
         justifyContent: 'center',
     },
     modalTitle: {
@@ -349,17 +361,17 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         alignItems: 'center',
         marginBottom: 10,
-        width:80,
-        height:80
+        width: 80,
+        height: 80
     },
     modalButtonText: {
         fontSize: 16,
         color: '#333',
     },
-    cancel:{
-        position:'absolute',
-        top:50,
-        left:30
+    cancel: {
+        position: 'absolute',
+        top: 50,
+        left: 30
     },
     logoContainer: {
         marginTop: 36,

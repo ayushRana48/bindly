@@ -1,13 +1,21 @@
 const express = require('express');
 const cors = require('cors');
 const serverless = require('serverless-http');
+const bodyParser = require('body-parser');
+
 
 const app = express();
 const port = 3000;
 
+app.use((req, res, next) => {
+  console.log(`Received request with content-length: ${req.headers['content-length']} bytes`);
+  next();
+});
 // Middleware
 app.use(cors()); // Enable CORS for all requests
-app.use(express.json()); // Parse JSON bodies
+app.use(bodyParser.json({limit: '10mb', extended: true}));
+app.use(bodyParser.urlencoded({limit: "10mb", extended: true, parameterLimit:50000}));
+app.use(bodyParser.text({ limit: '10mb' }));
 
 // Routes
 app.get('/hello', (req, res) => {

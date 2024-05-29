@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, StyleSheet, Pressable,Modal,Alert,TouchableWithoutFeedback} from "react-native";
+import { View, Text, Image, StyleSheet, Pressable, Modal, Alert, TouchableWithoutFeedback } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../UserContext";
 import placeholder from "../assets/GroupIcon.png"
@@ -8,19 +8,21 @@ import cameraIcon from "../assets/cameraIcon.png"
 import galleryIcon from "../assets/galleryIcon.png"
 import trashIcon from "../assets/trashIcon.png"
 import * as ImagePicker from 'expo-image-picker';
+import compressImage from "../utils/compressImage";
+import blobToBase64 from "../utils/blobToBase64";
 
 const ProfileScreen = () => {
 
-    const {email,user,setEmail}= useUserContext();
+    const { email, user, setEmail } = useUserContext();
     const [imageSrc, setImageSrc] = useState(placeholder)
     const [openModal, setOpenModal] = useState(false)
 
 
-    useEffect(()=>{
+    useEffect(() => {
         if (user.pfp) {
-            setImageSrc({ uri:user.pfp })
+            setImageSrc({ uri: user.pfp })
         }
-    },[user])
+    }, [user])
 
 
     const navigation = useNavigation();
@@ -34,10 +36,10 @@ const ProfileScreen = () => {
         });
 
         if (!result.canceled) {
-            const uri = result.assets[0].uri;
-            setImageSrc({ uri });
+            const compressedUri = await compressImage(result.assets[0].uri);
+            setImageSrc({ uri: compressedUri });
             setOpenModal(false);
-            submitPicture(uri);
+            submitPicture(compressedUri);
         }
     };
 
@@ -52,10 +54,10 @@ const ProfileScreen = () => {
             });
 
             if (!result.canceled) {
-                const uri = result.assets[0].uri;
-                setImageSrc({ uri });
+                const compressedUri = await compressImage(result.assets[0].uri);
+                setImageSrc({ uri: compressedUri });
                 setOpenModal(false);
-                submitPicture(uri);
+                submitPicture(compressedUri);
             }
         } catch (error) {
             console.log(error);
@@ -69,11 +71,19 @@ const ProfileScreen = () => {
     };
 
     const submitPicture = async (uri) => {
+        let imgBase64 = "";
+        if (uri) {
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            imgBase64 = await blobToBase64(blob);
+        }
+
+
         fetch(`http://localhost:3000/bindly/users/updateUser/${user.username}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                pfp: uri,
+                pfp: imgBase64,
                 lastpfpupdate: user.timestamp
             }),
         })
@@ -112,7 +122,7 @@ const ProfileScreen = () => {
         try {
             const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signOut`, {
                 headers: { 'Content-Type': 'application/json' },
-                method:"POST",
+                method: "POST",
                 headers: { 'Content-Type': 'application/json' },
 
             });

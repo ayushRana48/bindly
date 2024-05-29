@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet,Modal, Alert,TouchableWithoutFeedback } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
+import compressImage from "../../utils/compressImage";
+import blobToBase64 from "../../utils/blobToBase64";
+import placeholder from "../../assets/GroupIcon.png"
+import camera from "../../assets/Camera.png"
+import cameraIcon from "../../assets/cameraIcon.png"
+import galleryIcon from "../../assets/galleryIcon.png"
+import trashIcon from "../../assets/trashIcon.png"
+import * as ImagePicker from 'expo-image-picker';
+
 
 const SignUpScreen = () => {
     const [email, setEmail] = useState("");
@@ -12,10 +21,13 @@ const SignUpScreen = () => {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    const [openModal, setOpenModal] = useState(false)
+    const [imageSrc, setImageSrc] = useState(placeholder)
+
 
     const navigation = useNavigation();
 
-    const {email:email2,setEmail:setEmail2}= useUserContext();
+    const { email: email2, setEmail: setEmail2 } = useUserContext();
 
 
 
@@ -25,6 +37,54 @@ const SignUpScreen = () => {
     const toggleDatepicker = () => {
         setShow(!show)
     }
+
+
+    const pickImage = async () => {
+        // No permissions request is necessary for launching the image library
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+
+        if (!result.canceled) {
+            const compressedUri = await compressImage(result.assets[0].uri);
+            setImageSrc({ uri: compressedUri });
+            setOpenModal(false)
+
+        }
+    };
+
+    const takeImage = async () => {
+        // No permissions request is necessary for launching the image library
+        try {
+            await ImagePicker.requestCameraPermissionsAsync();
+            let result = await ImagePicker.launchCameraAsync({
+                cameraType: ImagePicker.CameraType.front,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 1,
+            })
+
+            if (!result.canceled) {
+                const compressedUri = await compressImage(result.assets[0].uri);
+                setImageSrc({ uri: compressedUri });
+                setOpenModal(false)
+            }
+        }
+        catch (error) {
+            console.log(error)
+        }
+    };
+
+    const removeImage = () => {
+        setImageSrc(placeholder)
+        setOpenModal(false)
+    }
+
+
 
     const submit = async () => {
 
@@ -68,7 +128,20 @@ const SignUpScreen = () => {
             return;
         }
 
-            fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signUp`, {
+        let img = imageSrc;
+        if (imageSrc == placeholder) {
+            img = "";
+        }
+
+        let imgBase64 = "";
+        if (img.uri) {
+            const response = await fetch(img.uri);
+            const blob = await response.blob();
+            imgBase64 = await blobToBase64(blob);
+        }
+
+
+        fetch(`http://localhost:3000/bindly/auth/signUp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -77,31 +150,32 @@ const SignUpScreen = () => {
                 firstName: firstName,
                 lastName: lastName,
                 password: password,
+                pfp: imgBase64,
             }),
         })
-        .then(response => response.json().then(data => ({ status: response.status, body: data })))
-        .then(({ status, body }) => {
-            if (status === 200) {
-                // Navigate to confirm email page or handle the success scenario
-                setEmail2(email)
-            } else {
-                // Handling different error messages from the server
-                if (body.error) {
-                    if (body.error.includes('duplicate key value violates unique constraint "users_pkey"')) {
-                        setErrorMessage("Username already taken.");
-                    } else if (body.error.includes("User already registered")) {
-                        setErrorMessage("Email already taken.");
-                    }
-                    else if (body.error.includes("at least 6 characters")) {
-                        setErrorMessage("Password should be at least 6 characters");
+            .then(response => response.json().then(data => ({ status: response.status, body: data })))
+            .then(({ status, body }) => {
+                if (status === 200) {
+                    // Navigate to confirm email page or handle the success scenario
+                    setEmail2(email)
+                } else {
+                    // Handling different error messages from the server
+                    if (body.error) {
+                        if (body.error.includes('duplicate key value violates unique constraint "users_pkey"')) {
+                            setErrorMessage("Username already taken.");
+                        } else if (body.error.includes("User already registered")) {
+                            setErrorMessage("Email already taken.");
+                        }
+                        else if (body.error.includes("at least 6 characters")) {
+                            setErrorMessage("Password should be at least 6 characters");
+                        }
                     }
                 }
-            }
-        })
-        .catch(error => {
-            // In case the fetch fails
-            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
-        });
+            })
+            .catch(error => {
+                // In case the fetch fails
+                Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+            });
         // All validations passed
     };
 
@@ -123,12 +197,47 @@ const SignUpScreen = () => {
     return (
         <View style={styles.container}>
             <View style={styles.logoContainer}>
-                <Image
+                {/* <Image
                     source={require("../../assets/logo.png")}
                     style={styles.logo}
-                />
+                /> */}
                 <Text style={styles.title}>Sign Up</Text>
             </View>
+
+            <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative',marginBottom:20 }}>
+                <Image style={{ width: 180, height: 180, borderRadius: 8 }} source={imageSrc}>
+                </Image>
+                <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 40 }} onPress={() => setOpenModal(true)}>
+                    <Image style={{ width: 50, height: 50, borderRadius: 10 }} source={camera} />
+                </Pressable>
+            </View>
+
+            <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
+                <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>User Photo</Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
+                                    <Pressable style={styles.modalButton} onPress={takeImage}>
+                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={cameraIcon} />
+                                        <Text>Camera</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.modalButton} onPress={pickImage}>
+                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={galleryIcon} />
+                                        <Text >Gallery</Text>
+                                    </Pressable>
+                                    <Pressable style={styles.modalButton} onPress={removeImage}>
+                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={trashIcon} />
+                                        <Text >Remove</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
+
 
             <View style={styles.row}>
                 <View style={styles.halfInputContainer}>
@@ -198,13 +307,13 @@ const SignUpScreen = () => {
 
             {show && (
                 <View>
-                    <DateTimePicker mode="date" display="spinner" value={date} onChange={onChange} style={{ height: 120 }} maximumDate={new Date()}/>
+                    <DateTimePicker mode="date" display="spinner" value={date} onChange={onChange} style={{ height: 120 }} maximumDate={new Date()} />
 
-                        <View style={styles.centeredRow}>
-                            <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
-                                <Text style={styles.buttonText}>Done</Text>
-                            </Pressable>
-                        </View>
+                    <View style={styles.centeredRow}>
+                        <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
+                            <Text style={styles.buttonText}>Done</Text>
+                        </Pressable>
+                    </View>
                 </View>
             )}
 
@@ -315,10 +424,43 @@ const styles = StyleSheet.create({
     },
     linkText: {
         color: 'dodgerblue',
-        textAlign:'center'
+        textAlign: 'center'
     },
     bold: {
         fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        width: 350,
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+        margin: 'auto',
+        justifyContent: 'center',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 20,
+    },
+    modalButton: {
+        paddingTop: 10,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 5,
+        alignItems: 'center',
+        marginBottom: 10,
+        width: 80,
+        height: 80
+    },
+    modalButtonText: {
+        fontSize: 16,
+        color: '#333',
     },
 });
 

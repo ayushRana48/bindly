@@ -1,36 +1,32 @@
 const { supabase } = require('../initSupabase');
+const { createUser} = require('../transactions/usersTransactions');
 
 
 async function signUpController(req, res) {
-    const { username, email, firstName, lastName, password } = req.body;
+    const { username, email, firstName, lastName, password,pfp } = req.body;
 
     const { data: dataUser, error } = await supabase.auth.signUp({
         email,
         password,
     });
 
-  
 
+
+  
     if (error) {
         return res.status(400).json({ error: error.message });
     }
 
-    const userId = dataUser.user?.id;
 
-    const { data: profileData, error: profileError } = await supabase
-        .from('users')
-        .insert({
-            email,
-            firstName,
-            lastName,
-            username,
-        });
+    // Use the createUser function to create the user profile
+    const { data: profileData, error: profileError } = await createUser(username, email, firstName,lastName, pfp);
 
     if (profileError) {
         return res.status(400).json({ error: profileError.message });
     }
 
     return res.status(200).json({ message: "success" });
+
 }
 
 

@@ -11,9 +11,11 @@ import galleryIcon from "../../assets/galleryIcon.png"
 import trashIcon from "../../assets/trashIcon.png"
 import * as ImagePicker from 'expo-image-picker';
 import { useRoute } from '@react-navigation/native';
-
+import compressImage from "../../utils/compressImage";
+import blobToBase64 from "../../utils/blobToBase64";
 
 const GroupEditScreen = () => {
+
 
     const today = new Date();
 
@@ -95,7 +97,8 @@ const GroupEditScreen = () => {
 
 
         if (!result.canceled) {
-            setImageSrc({ uri: result.assets[0].uri });
+            const compressedUri = await compressImage(result.assets[0].uri);
+            setImageSrc({ uri: compressedUri });
             setOpenModal(false)
 
         }
@@ -113,7 +116,8 @@ const GroupEditScreen = () => {
             })
 
             if (!result.canceled) {
-                setImageSrc({ uri: result.assets[0].uri });
+                const compressedUri = await compressImage(result.assets[0].uri);
+                setImageSrc({ uri: compressedUri });
                 setOpenModal(false)
             }
         }
@@ -151,33 +155,27 @@ const GroupEditScreen = () => {
     const submit = async () => {
         console.log('confirm');
 
-        // Validate Names
+        // Validate form fields
         if (!groupName.trim()) {
             console.error("Enter Group Name");
             return;
         }
-
-        // Validate Passwords
         if (!description.trim()) {
             console.error("Please enter description.");
             return;
         }
-
         if (!startDate) {
             console.error("Please enter start date.");
             return;
         }
-
         if (!numWeeks) {
             console.error("Please enter number of weeks.");
             return;
         }
-
         if (!buyIn) {
             console.error("Please enter buy in");
             return;
         }
-
         if (!taskPerWeek) {
             console.error("Please enter number of tasks per week");
             return;
@@ -191,45 +189,52 @@ const GroupEditScreen = () => {
             img = "";
         }
 
-        console.log(img)
-
         if (groupid) {
-            fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupid}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    groupname: groupName,
-                    description: description,
-                    buyin: buyIn,
-                    startdate: startDate,
-                    enddate: endDate,
-                    hostid: user.username,
-                    pfp: img?.uri,
-                    tasksperweek: taskPerWeek,
-                    lastpfpupdate: timeStamp
-                }),
-            })
-                .then(response => response.json().then(data => ({ status: response.status, body: data })))
-                .then(async ({ status, body }) => {
-                    if (status === 200) {
-                        setGroups(currentGroups => {
-                            return currentGroups.map(group =>
-                                group.groupid === body.groupid ? body : group
-                            );
-                        });
-                        navigation.navigate("Group", { groupData: body });
-                    } else {
-                        console.error(body.error || "An error occurred. Please try again.");
-                    }
-                })
-                .catch(error => {
-                    console.log(error);
+            try {
+                let imgBase64 = "";
+                if (img.uri) {
+                    const response = await fetch(img.uri);
+                    const blob = await response.blob();
+                    imgBase64 = await blobToBase64(blob);
+                }
+
+                console.log(imgBase64)
+
+                const response = await fetch(`http://localhost:3000/bindly/group/updateGroup/${groupid}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        groupname: groupName,
+                        description: description,
+                        buyin: buyIn,
+                        startdate: startDate,
+                        enddate: endDate,
+                        hostid: user.username,
+                        pfp: imgBase64,
+                        tasksperweek: taskPerWeek,
+                        lastpfpupdate: timeStamp
+                    }),
                 });
+
+                const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
+
+                if (status === 200) {
+                    setGroups(currentGroups => {
+                        return currentGroups.map(group =>
+                            group.groupid === body.groupid ? body : group
+                        );
+                    });
+                    navigation.navigate("Group", { groupData: body });
+                } else {
+                    console.error(body.error || "An error occurred. Please try again.");
+                }
+            } catch (error) {
+                console.log(error);
+            }
         } else {
             console.error("No group ID provided.");
         }
     };
-
 
     const onChange = ({ type }, selctedDate) => {
         if (type == 'set') {
