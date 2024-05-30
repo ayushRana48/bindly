@@ -39,7 +39,8 @@ async function getGroupController(req, res) {
   const { groupId } = req.params;
 
   try {
-    const { data, error } = await getGroup(Number(groupId));
+    const { data, error } = await getGroup(groupId);
+
 
     if (error) throw error;
     res.status(200).json(data);
@@ -78,21 +79,19 @@ async function updateGroupController(req, res) {
 async function deleteGroupController(req, res) {
   const { username, groupId } = req.body;
 
-  console.log(username,groupId)
 
   try {
     const { data: groupData, error: groupError } = await getGroup(groupId);
-    console.log(groupData)
 
     if (groupError) {
       return res.status(400).json({ error: 'Error fetching group data' });
     }
 
-    if (username !== groupData.hostid) {
+    if (username !== groupData.group.hostid) {
       return res.status(400).json({ error: 'Cannot delete, not the host' });
     }
 
-    if (Date.now() > new Date(groupData.startdate)) {
+    if (Date.now() > new Date( groupData.group.startdate)) {
       return res.status(400).json({ error: 'Cannot delete, group already started' });
     }
 
@@ -102,11 +101,9 @@ async function deleteGroupController(req, res) {
       return res.status(400).json({ error });
     }
 
-    console.log('here')
 
     res.status(200).json({'message':'success'});
   } catch (error) {
-    console.log('her2e')
 
     res.status(400).json({ error: error.message });
   }
@@ -123,12 +120,11 @@ async function changeHostController(req, res) {
     if (groupError) {
       return res.status(400).json({ error: 'Error fetching group data' });
     }
-
-    if (username !== groupData.hostid) {
+    if (username !==  groupData.group.hostid) {
       return res.status(400).json({ error: 'Cannot change, not the host currenlty' });
     }
 
-    if (Date.now() > new Date(groupData.startdate)) {
+    if (Date.now() > new Date( groupData.group.startdate)) {
       return res.status(400).json({ error: 'Cannot change, group already started' });
     }
 

@@ -5,14 +5,14 @@ import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
 
-const MemberListItem = ({ memberData, groupData,kickMember }) => {
+const MemberListItem = ({ memberData,kickMember }) => {
     const navigation = useNavigation();
     const [imageUrl, setImageUrl] = useState("");
     const [isModalVisible, setModalVisible] = useState(false);
-    const { groups } = useGroupsContext();
+    const { groups,groupData,setGroupData } = useGroupsContext();
     const { user } = useUserContext();
 
-    const isPastDate = new Date(groupData.startdate) < new Date();
+    const isPastDate = new Date(groupData.group.startdate) < new Date();
 
     useEffect(() => {
         if (memberData.users.pfp) {
@@ -26,17 +26,24 @@ const MemberListItem = ({ memberData, groupData,kickMember }) => {
 
     const changeHost = async () => {
         try {
-            const response = await fetch('http://localhost:3000/bindly/group/changeHost', {
+            const response = await fetch('https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/changeHost', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     username: user.username,
-                    groupId: groupData.groupid,
+                    groupId: groupData.group.groupid,
                     newHost: memberData.username,
                 }),
             });
+            setGroupData(g => ({
+                ...g,
+                group: {
+                  ...g.group,
+                  host: memberData.username
+                }
+              }));
             const data = await response.json();
             if (response.ok) {
                 Alert.alert("Success", "Host changed successfully");
@@ -53,14 +60,14 @@ const MemberListItem = ({ memberData, groupData,kickMember }) => {
 
     const kickUser = async () => {
         try {
-            const response = await fetch('http://localhost:3000/bindly/usergroup/kickUser', {
+            const response = await fetch('https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/kickUser', {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     username: user.username,
-                    groupId: groupData.groupid,
+                    groupId: groupData.group.groupid,
                     kickedUser: memberData.username,
                 }),
             });
@@ -87,8 +94,8 @@ const MemberListItem = ({ memberData, groupData,kickMember }) => {
                 source={imageUrl ? { uri: imageUrl } : placeholder}
             />
             <Text style={styles.name}>{memberData.username}</Text>
-           {memberData.username == groupData.hostid && <Text style={{fontWeight:'bold',marginLeft:20}}>H</Text>}
-            {user.username == groupData.hostid && user.username!==memberData.username && !isPastDate &&
+           {memberData.username == groupData.group.hostid && <Text style={{fontWeight:'bold',marginLeft:20}}>H</Text>}
+            {user.username == groupData.group.hostid && user.username!==memberData.username && !isPastDate &&
                 <Pressable style={styles.status} onPress={toggleModal}>
                     <Text>i</Text>
                 </Pressable>

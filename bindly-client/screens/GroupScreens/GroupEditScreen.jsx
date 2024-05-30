@@ -10,84 +10,74 @@ import cameraIcon from "../../assets/cameraIcon.png"
 import galleryIcon from "../../assets/galleryIcon.png"
 import trashIcon from "../../assets/trashIcon.png"
 import * as ImagePicker from 'expo-image-picker';
-import { useRoute } from '@react-navigation/native';
 import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
 
 const GroupEditScreen = () => {
-
-
     const today = new Date();
-
-    // Create a new Date object for tomorrow
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const route = useRoute();
-    const { groupData } = route.params;
-
-
-
+    const { setGroups, setGroupData, groupData: gd } = useGroupsContext();
+    const { user } = useUserContext();
 
     const [groupName, setGroupName] = useState("");
     const [description, setDescription] = useState("");
-    const [startDate, setStartDate] = useState(tomorrow);
+    const [startDate, setStartDate] = useState(tomorrow.toISOString().split('T')[0]);
     const [numWeeks, setNumWeeks] = useState(0);
     const [buyIn, setBuyIn] = useState(0);
     const [taskPerWeek, setTaskPerWeek] = useState(0);
-    const [show, setShow] = useState(false)
-    const [errorMessage, setErrorMessage] = useState("")
-    const [imageSrc, setImageSrc] = useState(placeholder)
-    const [openModal, setOpenModal] = useState(false)
-    const [groupid, setGroupid] = useState('')
-    const [timeStamp, setTimeStamp] = useState('')
+    const [show, setShow] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [imageSrc, setImageSrc] = useState(placeholder);
+    const [openModal, setOpenModal] = useState(false);
+    const [groupid, setGroupid] = useState('');
+    const [timeStamp, setTimeStamp] = useState('');
 
+    const parseDateString = (dateString) => {
+        const [year, month, day] = dateString.split('-');
+        return new Date(year, month - 1, day);
+    };
 
-    function setNumWeeksF(startDate, endDate) {
-        let start = new Date(startDate);
-        let end = new Date(endDate);
+    const setNumWeeksF = (startDate, endDate) => {
+        const start = parseDateString(startDate);
+        const end = parseDateString(endDate);
 
-        // Calculate the difference in days
-        let timeDiff = end.getTime() - start.getTime();
-        let diffDays = Math.floor(timeDiff / (1000 * 3600 * 24));
+        const timeDiff = end.getTime() - start.getTime();
+        const diffDays = Math.floor(timeDiff / (1000 * 3600 * 24));
 
-        // Ensure the difference is a multiple of 7
         if (diffDays % 7 !== 0) {
-            throw new Error("The difference between startDate and endDate must be a multiple of 7.");
+            throw new Error(`The difference between startDate and endDate must be a multiple of 7. Start Date: ${startDate}, End Date: ${endDate}`);
         }
 
-        // Calculate the number of weeks
-        let diffWeeks = diffDays / 7;
+        const diffWeeks = diffDays / 7;
+        setNumWeeks(diffWeeks.toString());
+    };
 
-
-        setNumWeeks(diffWeeks.toString())
-    }
-
+    const formatDateString = (dateString) => {
+        const date = parseDateString(dateString);
+        return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+    };
 
     useEffect(() => {
-        if (groupData) {
-            setGroupName(groupData.groupname)
-            setDescription(groupData.description)
-            setStartDate(new Date(groupData.startdate))
-            setNumWeeksF(groupData.startdate, groupData.enddate);
+        if (gd.group) {
+            setGroupName(gd.group.groupname);
+            setDescription(gd.group.description);
+            setStartDate(gd.group.startdate);
+            setNumWeeksF(gd.group.startdate, gd.group.enddate);
 
-            if (groupData.pfp) {
-                setImageSrc({ uri: groupData.pfp })
+            if (gd.group.pfp) {
+                setImageSrc({ uri: gd.group.pfp });
             }
 
-            setBuyIn(groupData.buyin.toString())
-            setTaskPerWeek(groupData.tasksperweek.toString())
-            setGroupid(groupData.groupid)
-            setTimeStamp(groupData.lastpfpupdate)
+            setBuyIn(gd.group.buyin.toString());
+            setTaskPerWeek(gd.group.tasksperweek.toString());
+            setGroupid(gd.group.groupid);
+            setTimeStamp(gd.group.lastpfpupdate);
         }
-    }, [groupData])
-
-
-
-
+    }, [gd]);
 
     const pickImage = async () => {
-        // No permissions request is necessary for launching the image library
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
             allowsEditing: true,
@@ -95,17 +85,14 @@ const GroupEditScreen = () => {
             quality: 1,
         });
 
-
         if (!result.canceled) {
             const compressedUri = await compressImage(result.assets[0].uri);
             setImageSrc({ uri: compressedUri });
-            setOpenModal(false)
-
+            setOpenModal(false);
         }
     };
 
     const takeImage = async () => {
-        // No permissions request is necessary for launching the image library
         try {
             await ImagePicker.requestCameraPermissionsAsync();
             let result = await ImagePicker.launchCameraAsync({
@@ -113,49 +100,34 @@ const GroupEditScreen = () => {
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 1,
-            })
+            });
 
             if (!result.canceled) {
                 const compressedUri = await compressImage(result.assets[0].uri);
                 setImageSrc({ uri: compressedUri });
-                setOpenModal(false)
+                setOpenModal(false);
             }
-        }
-        catch (error) {
-            console.log(error)
+        } catch (error) {
+            console.log(error);
         }
     };
 
     const removeImage = () => {
-        setImageSrc(placeholder)
-        setOpenModal(false)
-    }
-
-
-
-
+        setImageSrc(placeholder);
+        setOpenModal(false);
+    };
 
     const navigation = useNavigation();
 
-    const { user } = useUserContext();
-    const { setGroups } = useGroupsContext();
-
-
-
     const cancel = () => {
-        navigation.goBack()
-    }
-
-
+        navigation.goBack();
+    };
 
     const toggleDatepicker = () => {
-        setShow(!show)
-    }
+        setShow(!show);
+    };
 
     const submit = async () => {
-        console.log('confirm');
-
-        // Validate form fields
         if (!groupName.trim()) {
             console.error("Enter Group Name");
             return;
@@ -181,11 +153,11 @@ const GroupEditScreen = () => {
             return;
         }
 
-        const endDate = new Date(startDate);
+        const endDate = parseDateString(startDate);
         endDate.setDate(endDate.getDate() + numWeeks * 7);
 
         let img = imageSrc;
-        if (imageSrc == placeholder) {
+        if (imageSrc === placeholder) {
             img = "";
         }
 
@@ -198,8 +170,6 @@ const GroupEditScreen = () => {
                     imgBase64 = await blobToBase64(blob);
                 }
 
-                console.log(imgBase64)
-
                 const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupid}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -208,11 +178,11 @@ const GroupEditScreen = () => {
                         description: description,
                         buyin: buyIn,
                         startdate: startDate,
-                        enddate: endDate,
+                        enddate: endDate.toISOString().split('T')[0],
                         hostid: user.username,
                         pfp: imgBase64,
                         tasksperweek: taskPerWeek,
-                        lastpfpupdate: timeStamp
+                        lastpfpupdate: timeStamp,
                     }),
                 });
 
@@ -224,6 +194,22 @@ const GroupEditScreen = () => {
                             group.groupid === body.groupid ? body : group
                         );
                     });
+
+                    setGroupData(g => ({
+                        ...g,
+                        group: {
+                            ...g.group,
+                            groupname: groupName,
+                            description: description,
+                            buyin: buyIn,
+                            startdate: startDate,
+                            enddate: endDate.toISOString().split('T')[0],
+                            hostid: user.username,
+                            pfp: body.pfp,
+                            tasksperweek: taskPerWeek,
+                            lastpfpupdate: timeStamp,
+                        },
+                    }));
                     navigation.navigate("Group", { groupData: body });
                 } else {
                     console.error(body.error || "An error occurred. Please try again.");
@@ -236,15 +222,13 @@ const GroupEditScreen = () => {
         }
     };
 
-    const onChange = ({ type }, selctedDate) => {
+    const onChange = ({ type }, selectedDate) => {
         if (type == 'set') {
-            const currentDate = selctedDate
-            setStartDate(currentDate)
+            const currentDate = selectedDate;
+            setStartDate(currentDate.toISOString().split('T')[0]);
+        } else {
         }
-        else {
-            toggleDatepicker()
-        }
-    }
+    };
 
     return (
         <View style={styles.container}>
@@ -256,13 +240,11 @@ const GroupEditScreen = () => {
             </View>
 
             <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
-                <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc}>
-                </Image>
+                <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc} />
                 <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 20 }} onPress={() => setOpenModal(true)}>
                     <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
                 </Pressable>
             </View>
-
 
             <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
                 <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
@@ -310,8 +292,20 @@ const GroupEditScreen = () => {
 
             <Text style={styles.label}>Start Date</Text>
             <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-                <Text >{startDate.toLocaleDateString()}</Text>
+            <Text>{formatDateString(startDate)}</Text>
             </Pressable>
+
+            {show && (
+                <View>
+                    <DateTimePicker mode="date" display="spinner" value={parseDateString(startDate)} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
+                    <View style={styles.centeredRow}>
+                        <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
+                            <Text style={styles.buttonText}>Done</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            )}
+
             <Text style={styles.label}>Weeks</Text>
             <TextInput
                 style={styles.input}
@@ -321,18 +315,6 @@ const GroupEditScreen = () => {
                 placeholder="5"
                 keyboardType="numeric"
             />
-
-            {show && (
-                <View>
-                    <DateTimePicker mode="date" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
-
-                    <View style={styles.centeredRow}>
-                        <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
-                            <Text style={styles.buttonText}>Done</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            )}
 
             <Text style={styles.label}>Buy In</Text>
             <TextInput
@@ -353,8 +335,6 @@ const GroupEditScreen = () => {
                 placeholder="5"
                 keyboardType="numeric"
             />
-
-
 
             {!show && (
                 <View style={styles.centeredRow}>
@@ -378,8 +358,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         padding: 24,
         flex: 1,
-        // justifyContent: 'center',
-
     },
     modalOverlay: {
         flex: 1,
@@ -408,7 +386,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 10,
         width: 80,
-        height: 80
+        height: 80,
     },
     modalButtonText: {
         fontSize: 16,
@@ -417,7 +395,7 @@ const styles = StyleSheet.create({
     cancel: {
         position: 'absolute',
         top: 50,
-        left: 30
+        left: 30,
     },
     logoContainer: {
         marginTop: 36,
@@ -463,7 +441,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#f0f0f0',
         borderRadius: 4,
         marginBottom: 12,
-
     },
     centeredRow: {
         alignItems: 'center',
@@ -498,7 +475,7 @@ const styles = StyleSheet.create({
     },
     linkText: {
         color: 'dodgerblue',
-        textAlign: 'center'
+        textAlign: 'center',
     },
     bold: {
         fontWeight: 'bold',

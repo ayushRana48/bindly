@@ -7,9 +7,9 @@ import { useRoute } from '@react-navigation/native';
 import placeholder from "../../assets/GroupIcon.png";
 import backArrow from '../../assets/backArrow.png';
 
+
 const GroupSetting = () => {
   const route = useRoute();
-  const { groupData } = route.params;
 
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
@@ -21,34 +21,37 @@ const GroupSetting = () => {
 
   const navigation = useNavigation();
   const { user } = useUserContext();
-  const { setGroups } = useGroupsContext();
+  const { setGroups,setGroupData,groupData:gd } = useGroupsContext();
+
+
+
 
   useEffect(() => {
-    if (groupData) {
-      setGroupName(groupData.groupname);
-      setDescription(groupData.description);
-      setStartDate(groupData.startdate);
-      setEndDate(groupData.enddate);
-      if (groupData.pfp) {
-        setImageSrc({ uri: groupData.pfp });
+    if (gd?.group) {
+      setGroupName(gd?.group.groupname);
+      setDescription(gd?.group.description);
+      setStartDate(new Date(gd?.group.startdate).toLocaleDateString());
+      setEndDate(new Date(gd?.group.enddate).toLocaleDateString());
+      if (gd?.group.pfp) {
+        setImageSrc({ uri: gd?.group.pfp });
       }
-      setBuyIn(groupData.buyin);
-      setTaskPerWeek(groupData.tasksperweek);
+      setBuyIn(gd?.group.buyin);
+      setTaskPerWeek(gd?.group.tasksperweek);
     }
-  }, [groupData]);
+  }, [gd]);
 
   const back = () => {
     navigation.goBack();
   };
 
-  const isPastDate = new Date(groupData.startdate) < new Date();
+  const isPastDate = new Date(gd?.group.startdate) < new Date();
 
   const toEdit = () => {
     if (isPastDate) {
       Alert.alert("Can't edit already started");
     } else {
       try {
-        navigation.navigate("GroupEdit", { groupData: groupData });
+        navigation.navigate("GroupEdit");
       } catch (err) {
         console.log(err);
       }
@@ -56,7 +59,7 @@ const GroupSetting = () => {
   };
 
   const toMembers = () => {
-    navigation.navigate("MembersList", { groupData: groupData });
+    navigation.navigate("MembersList");
   };
 
   const leaveGroup =async ()=>{
@@ -65,28 +68,29 @@ const GroupSetting = () => {
         return;
     }
 
-    if(user.username === groupData.hostid ){
+    if(user.username === gd?.group.hostid ){
         Alert.alert('Can not leave, you are the host')
         return;
 
     }
 
     try {
-        const response = await fetch(`http:/localhost:3000/bindly/usergroup/leaveGroup`, {
+        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/leaveGroup`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 username: user.username,
-                groupId: groupData.groupid,
+                groupId: gd.group.groupid,
             }),
         });
 
         const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
         if (status === 200) {
-            setGroups(g => g.filter(h=>h.groupid!==groupData.groupid));
-            console.log('back to groups')
+            setGroups(g => g.filter(h=>h.groupid!==gd.group.groupid));
             navigation.navigate("GroupsList");
+            setGroupData(null);
+
         } else {
             console.error(body.error || "An error occurred. Please try again.");
         }
@@ -105,26 +109,25 @@ const GroupSetting = () => {
 
     }
 
+
     try {
-        const response = await fetch(`http:/localhost:3000/bindly/group/deleteGroup`, {
+        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/deleteGroup`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 username: user.username,
-                groupId: groupData.groupid,
+                groupId: gd.group.groupid,
             }),
         });
 
         const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
         if (status === 200) {
-            setGroups(g => g.filter(h=>h.groupid!==groupData.groupid));
-            console.log('back to groups')
-            console.log(body,'bodyyyy')
+            setGroups(g => g.filter(h=>h.groupid!==gd.group.groupid));
             navigation.navigate("GroupsList");
+            setGroupData(null);
         } else {
             console.error(body.error || "An error occurred. Please try again.");
-            setErrorMessage(body.error || "An error occurred. Please try again.");
         }
     } catch (error) {
         console.log("Fetch error: ", error);
@@ -139,7 +142,7 @@ const GroupSetting = () => {
         <Image style={{ height: 40, width: 40 }} source={backArrow} />
       </Pressable>
 
-      {user.username === groupData.hostid && (
+      {user.username === gd.group.hostid && (
         <Pressable style={styles.edit} onPress={toEdit}>
           <Text style={{ color: isPastDate ? "gray" : "blue" }}>Edit</Text>
         </Pressable>
@@ -184,7 +187,7 @@ const GroupSetting = () => {
         </Pressable>
       </View>
 
-      {user.username === groupData.hostid && (
+      {user.username === gd.group.hostid && (
         <View style={{ alignItems: 'center' }}>
           <Pressable
             style={[styles.deleteGroup, { backgroundColor: isPastDate ? 'gray' : '#f04343' }]}

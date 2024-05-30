@@ -103,11 +103,11 @@ async function leaveGroupController(req, res) {
       return res.status(400).json({ error: 'Error fetching group data' });
     }
 
-    if (username === groupData.hostid) {
+    if (username ===  groupData.group.hostid) {
       return res.status(400).json({ error: 'Cannot leave group as host' });
     }
 
-    if (Date.now() > new Date(groupData.startdate)) {
+    if (Date.now() > new Date( groupData.group.startdate)) {
       return res.status(400).json({ error: 'Cannot leave group, group already started' });
     }
 
@@ -135,13 +135,12 @@ async function kickUserController(req, res) {
       return res.status(400).json({ error: 'Error fetching group data' });
     }
 
-    console.log(username,groupData)
 
-    if (username !== groupData.hostid) {
+    if (username !==  groupData.group.hostid) {
       return res.status(400).json({ error: 'Cannot kick, not host' });
     }
 
-    if (Date.now() > new Date(groupData.startdate)) {
+    if (Date.now() > new Date( groupData.group.startdate)) {
       return res.status(400).json({ error: 'Cannot kick, group already started' });
     }
 

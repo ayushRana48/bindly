@@ -14,6 +14,8 @@ const GroupListItem = ({ groupData }) => {
     setImageUrl(groupData.pfp);
   }, [groupData.pfp,groups]);
 
+
+
   const toGroup = () => {
     navigation.navigate("Group", { groupData: groupData });
   }

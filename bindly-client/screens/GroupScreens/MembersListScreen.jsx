@@ -10,10 +10,9 @@ import invite from '../../assets/invite.png';
 
 const MembersListScreen = () => {
   const navigation = useNavigation();
-  const { groups } = useGroupsContext();
+  const { groups, groupData:g2, setGroupData } = useGroupsContext();
   const { user } = useUserContext();
   const route = useRoute();
-  const { groupData } = route.params;
 
 
 
@@ -21,24 +20,32 @@ const MembersListScreen = () => {
 
   const kickMember = (username)=>{
     setMembers(m => m.filter(h=>h.username!==username))
+    setGroupData(g => ({
+      ...g,
+      usergroup: g.group.usergroup.filter(h => h.username !== username)
+    }));
   }
 
 
   const toInvite = ()=>{
-    navigation.navigate('InviteMembers', {groupData:groupData})
+    navigation.navigate('InviteMembers')
   }
 
 
 
   const getAllMembers = async () => {
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByGroup/${groupData.groupid}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByGroup/${g2.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const res = await response.json();
 
 
       setMembers(res.members);
+      setGroupData(g => ({
+        ...g,
+       usergroup: res.members
+        }));
     } catch (error) {
       console.log(error);
     }
@@ -60,17 +67,17 @@ const MembersListScreen = () => {
         </Pressable>
 
     <View style={styles.groupname}>
-        <Text style={{fontSize:15}}>{groupData.groupname} Members</Text>
+        <Text style={{fontSize:15}}>{g2.group.groupname} Members</Text>
        
       </View>
 
      
 
-      {members.length === 0 && groupData? (
+      {members.length === 0 && g2.group? (
         <Text style={styles.NoGroups}>No Members</Text>
       ) : (
         <ScrollView style={styles.groupList}>
-            {members.map((m)=><MemberListItem memberData={m} groupData={groupData} kickMember={kickMember}></MemberListItem>)}
+            {members.map((m)=><MemberListItem memberData={m} kickMember={kickMember}></MemberListItem>)}
         </ScrollView>
       )}
     </View>

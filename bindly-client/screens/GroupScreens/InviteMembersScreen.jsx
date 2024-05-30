@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useRoute } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
+import { useGroupsContext } from "../GroupsContext";
 import placeholder from "../../assets/GroupIcon.png"
 import InviteMemberItem from "./components/InviteMemberItem";
 
@@ -13,9 +14,9 @@ const InviteMembersScreen = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
 
   const route = useRoute();
-  const { groupData } = route.params;
 
   const{user} = useUserContext()
+  const {groupData:gd,setGroupData} = useGroupsContext()
 
   const changeInviteStatus = (username) => {
     const updatedUsers = users.map(user => {
@@ -35,16 +36,13 @@ const InviteMembersScreen = () => {
   useEffect(() => {
 
     const fetchAllAvailableUsers = async () => {
-      console.log(`http://localhost3000/bindly/invite/getAvailableInvites/${groupData.groupid}`)
       try {
-        const response = await fetch(`http://localhost:3000/bindly/invite/getAvailableInvites/${groupData.groupid}`, {
+        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
           headers: { 'Content-Type': 'application/json' },
         });
         const res = await response.json();
-        console.log(res)
         setUsers(res);
         setFilteredUsers(res);
-        console.log(res,'getAvailableInvites')
       } catch (error) {
         console.error(error);
       }
@@ -78,7 +76,7 @@ const InviteMembersScreen = () => {
         <Text style={styles.noMembers}>No members found</Text>
       ) : (
         <ScrollView style={styles.groupList}>
-            {filteredUsers.map((m)=><InviteMemberItem key={m.username} memberData={m} groupData={groupData} changeInviteStatus={changeInviteStatus}></InviteMemberItem>)}
+            {filteredUsers.map((m)=><InviteMemberItem key={m.username} memberData={m} groupData={gd.group} changeInviteStatus={changeInviteStatus}></InviteMemberItem>)}
         </ScrollView>
       )}
     </View>

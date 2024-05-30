@@ -9,9 +9,7 @@ import camera from "../../assets/Camera.png"
 import cameraIcon from "../../assets/cameraIcon.png"
 import galleryIcon from "../../assets/galleryIcon.png"
 import trashIcon from "../../assets/trashIcon.png"
-import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
-import { nodeModuleNameResolver } from "typescript";
 import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
 
@@ -85,7 +83,7 @@ const NewGroupScreen = () => {
     const navigation = useNavigation();
 
     const { user } = useUserContext();
-    const { setGroups } = useGroupsContext();
+    const { setGroups,setGroupData } = useGroupsContext();
 
 
 
@@ -100,7 +98,6 @@ const NewGroupScreen = () => {
     }
 
     const submit = async () => {
-        console.log('confirm');
     
         // Validate Names
         if (!groupName.trim()) {
@@ -144,7 +141,6 @@ const NewGroupScreen = () => {
     
         let imgBase64 = "";
 
-        console.log(img,'imggggg')
         if (img.uri) {
             try {
                 const compressedUri = await compressImage(img.uri);
@@ -178,7 +174,8 @@ const NewGroupScreen = () => {
     
             if (status === 200) {
                 setGroups(g => [...g, body]);
-                navigation.navigate("Group", { groupData: body });
+                setGroupData({group:body,usergroup:user,invite:[],post:[],history:[]})
+                navigation.navigate("Group", {groupData:body});
             } else {
                 console.error(body.error || "An error occurred. Please try again.");
                 setErrorMessage(body.error || "An error occurred. Please try again.");

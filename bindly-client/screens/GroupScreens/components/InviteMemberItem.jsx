@@ -5,10 +5,10 @@ import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
 
-const InviteMemberItem = ({ memberData, groupData, changeInviteStatus }) => {
+const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
     const navigation = useNavigation();
     const [imageUrl, setImageUrl] = useState("");
-    const { groups } = useGroupsContext()
+    const { groups,groupData } = useGroupsContext()
     const { user } = useUserContext()
 
     useEffect(() => {
@@ -29,7 +29,7 @@ const InviteMemberItem = ({ memberData, groupData, changeInviteStatus }) => {
             body: JSON.stringify({
                 senderid: user.username,
                 receiverid: memberData.username,
-                groupid: groupData.groupid,
+                groupid: groupData.group.groupid,
             }),
         })
             .then(response => response.json().then(data => ({ status: response.status, body: data })))

@@ -59,13 +59,47 @@ async function getAllGroups() {
 
 // Function to get a group by groupId
 async function getGroup(groupid) {
-  const { data, error } = await supabase
+  // Fetch group data
+  const { data: group, error: groupError } = await supabase
     .from('groups')
     .select('*')
-    .eq('groupid', groupid).single();
+    .eq('groupid', groupid)
+    .single();
 
-  return { data, error };
+  // Fetch usergroup data
+  const { data: usergroup, error: usergroupError } = await supabase
+    .from('usergroup')
+    .select(`
+    *,
+    users!inner(*)  -- Perform an inner join with the groups table
+  `)
+    .eq('groupid', groupid);
+
+  // Fetch invite data
+  const { data: invite, error: inviteError } = await supabase
+    .from('invite')
+    .select('*')
+    .eq('groupid', groupid);
+
+  // Fetch post data
+  const { data: post, error: postError } = await supabase
+    .from('post')
+    .select('*')
+    .eq('groupid', groupid);
+
+  // Fetch history data
+  const { data: history, error: historyError } = await supabase
+    .from('history')
+    .select('*')
+    .eq('groupid', groupid);
+
+  // Combine all errors into one if any
+  const error = groupError || usergroupError || inviteError || postError || historyError;
+
+  // Return an object with all the fetched data
+  return { data: { group, usergroup, invite, post, history }, error };
 }
+
 
 // Function to get groups by hostId
 async function getGroupsByHostId(hostid) {
@@ -118,7 +152,6 @@ async function deleteGroup(groupId) {
       .from('usergroup')
       .delete()
       .eq('groupid', groupId);
-      console.log(userGroupError)
 
     if (userGroupError) {
       return { error: userGroupError.message };
@@ -129,7 +162,6 @@ async function deleteGroup(groupId) {
       .from('invite')
       .delete()
       .eq('groupid', groupId);
-      console.log(inviteError)
 
 
     if (inviteError) {
@@ -143,7 +175,6 @@ async function deleteGroup(groupId) {
       .delete()
       .eq('groupid', groupId);
 
-      console.log(groupError)
 
     if (groupError) {
       return { error: groupError.message };
@@ -152,7 +183,6 @@ async function deleteGroup(groupId) {
 
     return { data: 'Successfully deleted group' };
   } catch (error) {
-    console.log(error)
     return { error: error.message };
   }
 }

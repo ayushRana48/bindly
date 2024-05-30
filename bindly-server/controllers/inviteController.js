@@ -80,7 +80,6 @@ async function getInvitesByGroupIdController(req, res) {
 }
 
 async function getAvailableInvites(req, res) {
-  console.log('call');
   const { groupId } = req.params;
 
   try {
@@ -98,14 +97,7 @@ async function getAvailableInvites(req, res) {
         invited: invitedUsernames.has(user.username)
       }));
 
-    console.log(inviteData);
-    console.log('inviteData');
-    console.log(allUsers);
-    console.log('allUsers');
-    console.log(allMembers);
-    console.log('allMembers');
-    console.log(availableInvites);
-    console.log('availableInvites');
+
 
     res.status(200).json(availableInvites);
   } catch (err) {
