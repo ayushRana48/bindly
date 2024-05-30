@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet, Modal, Alert,TouchableWithoutFeedback } from "react-native";
+import { View, Text, Pressable, Image, StyleSheet, Modal, Alert, TouchableWithoutFeedback } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
 
-const MemberListItem = ({ memberData,kickMember }) => {
+const MemberListItem = ({ memberData, kickMember }) => {
     const navigation = useNavigation();
     const [imageUrl, setImageUrl] = useState("");
     const [isModalVisible, setModalVisible] = useState(false);
-    const { groups,groupData,setGroupData } = useGroupsContext();
+    const { groups, groupData, setGroupData } = useGroupsContext();
     const { user } = useUserContext();
 
     const isPastDate = new Date(groupData.group.startdate) < new Date();
@@ -25,6 +25,8 @@ const MemberListItem = ({ memberData,kickMember }) => {
     };
 
     const changeHost = async () => {
+
+        // Uncomment the following code to make the actual API call
         try {
             const response = await fetch('https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/changeHost', {
                 method: 'PUT',
@@ -37,16 +39,16 @@ const MemberListItem = ({ memberData,kickMember }) => {
                     newHost: memberData.username,
                 }),
             });
-            setGroupData(g => ({
-                ...g,
-                group: {
-                  ...g.group,
-                  host: memberData.username
-                }
-              }));
             const data = await response.json();
             if (response.ok) {
                 Alert.alert("Success", "Host changed successfully");
+                setGroupData(g => ({
+                    ...g,
+                    group: {
+                        ...g.group,
+                        hostid: memberData.username
+                    }
+                }));
             } else {
                 Alert.alert("Error", data.error);
             }
@@ -56,7 +58,6 @@ const MemberListItem = ({ memberData,kickMember }) => {
             toggleModal();
         }
     };
-
 
     const kickUser = async () => {
         try {
@@ -85,8 +86,6 @@ const MemberListItem = ({ memberData,kickMember }) => {
         }
     };
 
-    
-
     return (
         <Pressable style={styles.container}>
             <Image
@@ -94,8 +93,8 @@ const MemberListItem = ({ memberData,kickMember }) => {
                 source={imageUrl ? { uri: imageUrl } : placeholder}
             />
             <Text style={styles.name}>{memberData.username}</Text>
-           {memberData.username == groupData.group.hostid && <Text style={{fontWeight:'bold',marginLeft:20}}>H</Text>}
-            {user.username == groupData.group.hostid && user.username!==memberData.username && !isPastDate &&
+            {memberData.username == groupData.group.hostid && <Text style={{ fontWeight: 'bold', marginLeft: 20 }}>H</Text>}
+            {user.username == groupData.group.hostid && user.username !== memberData.username && !isPastDate &&
                 <Pressable style={styles.status} onPress={toggleModal}>
                     <Text>i</Text>
                 </Pressable>

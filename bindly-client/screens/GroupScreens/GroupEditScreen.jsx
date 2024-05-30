@@ -54,11 +54,11 @@ const GroupEditScreen = () => {
         setNumWeeks(diffWeeks.toString());
     };
 
-    const formatDateString = (dateString) => {
-        const date = parseDateString(dateString);
-        return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+    const formatLocalDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
     };
-
+    
     useEffect(() => {
         if (gd.group) {
             setGroupName(gd.group.groupname);
@@ -170,6 +170,9 @@ const GroupEditScreen = () => {
                     imgBase64 = await blobToBase64(blob);
                 }
 
+                const startDateUTC = new Date(startDate).toISOString();
+                const endDateUTC = endDate.toISOString();
+
                 const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupid}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -177,8 +180,8 @@ const GroupEditScreen = () => {
                         groupname: groupName,
                         description: description,
                         buyin: buyIn,
-                        startdate: startDate,
-                        enddate: endDate.toISOString().split('T')[0],
+                        startdate: startDateUTC,
+                        enddate: endDateUTC,
                         hostid: user.username,
                         pfp: imgBase64,
                         tasksperweek: taskPerWeek,
@@ -292,7 +295,7 @@ const GroupEditScreen = () => {
 
             <Text style={styles.label}>Start Date</Text>
             <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-            <Text>{formatDateString(startDate)}</Text>
+            <Text>{formatLocalDate(startDate)}</Text>
             </Pressable>
 
             {show && (

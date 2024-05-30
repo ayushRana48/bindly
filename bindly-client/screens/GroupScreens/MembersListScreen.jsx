@@ -22,7 +22,7 @@ const MembersListScreen = () => {
     setMembers(m => m.filter(h=>h.username!==username))
     setGroupData(g => ({
       ...g,
-      usergroup: g.group.usergroup.filter(h => h.username !== username)
+      usergroup: g.usergroup.filter(h => h.username !== username)
     }));
   }
 

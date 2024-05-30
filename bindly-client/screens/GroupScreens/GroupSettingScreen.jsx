@@ -23,6 +23,11 @@ const GroupSetting = () => {
   const { user } = useUserContext();
   const { setGroups,setGroupData,groupData:gd } = useGroupsContext();
 
+  const formatLocalDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+};
+
 
 
 
@@ -162,9 +167,9 @@ const GroupSetting = () => {
       <Text style={styles.input}>{description}</Text>
 
       <Text style={styles.label}>Start Date</Text>
-      <Text style={styles.input}>{startDate}</Text>
+      <Text style={styles.input}>{formatLocalDate(startDate)}</Text>
       <Text style={styles.label}>End Date</Text>
-      <Text style={styles.input}>{endDate}</Text>
+      <Text style={styles.input}>{formatLocalDate(endDate)}</Text>
 
       <Text style={styles.label}>Buy In</Text>
       <Text style={styles.input}>{buyIn}</Text>

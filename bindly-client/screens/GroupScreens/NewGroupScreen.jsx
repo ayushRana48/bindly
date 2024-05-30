@@ -21,6 +21,11 @@ const NewGroupScreen = () => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    const formatLocalDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+    };
+
 
     const [groupName, setGroupName] = useState("");
     const [description, setDescription] = useState("");
@@ -155,6 +160,8 @@ const NewGroupScreen = () => {
         }
     
         try {
+            const startDateUTC = new Date(startDate).toISOString();
+
             const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/createGroup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -162,7 +169,7 @@ const NewGroupScreen = () => {
                     groupname: groupName,
                     description: description,
                     buyin: buyIn,
-                    startdate: startDate,
+                    startdate: startDateUTC,
                     enddate: endDate,
                     hostId: user.username,
                     image: imgBase64,
@@ -261,7 +268,7 @@ const NewGroupScreen = () => {
 
             <Text style={styles.label}>Start Date</Text>
             <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-                <Text >{startDate.toLocaleDateString()}</Text>
+                <Text >{formatLocalDate(startDate)}</Text>
             </Pressable>
             <Text style={styles.label}>Weeks</Text>
             <TextInput
