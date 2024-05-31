@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator } from "react-native";
+import React, { useEffect, useState,useCallback } from "react";
+import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView,RefreshControl } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 import placeholder from '../../assets/GroupIcon.png';
@@ -14,29 +14,42 @@ const GroupScreen = () => {
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
   const { groupData: gd, setGroupData } = useGroupsContext();
+  const [refreshing, setRefreshing] = useState(false);
+
 
   useEffect(() => {
     // Append a timestamp to force image refresh
     if (gd?.group) {
       setImageUrl(gd?.group?.pfp);
     }
+    else{
+      setImageUrl(groupData.pfp);
+    }
   }, [gd]);
 
-  useEffect(() => {
-    const getGroup = async () => {
-      try {
-        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${groupData.groupid}`, {
-          headers: { 'Content-Type': 'application/json' },
-        });
+  const getGroup = async () => {
+    console.log('call')
+    try {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${groupData.groupid}`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-        const res = await response.json();
-        setGroupData(res);
-      } catch (error) {
-        console.log(error, 'sdsdsd');
-      } finally {
-        setLoading(false);
-      }
-    };
+      const res = await response.json();
+      setGroupData(res);
+    } catch (error) {
+      console.log(error, 'sdsdsd');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    getGroup().then(() => setRefreshing(false));
+  }, []);
+
+
+  useEffect(() => {
     getGroup();
   }, []);
 
@@ -50,22 +63,28 @@ const GroupScreen = () => {
     }
   };
 
+ 
   return (
     <View style={styles.container}>
-      <Pressable style={styles.backArrow} onPress={back}>
-        <Image style={{ height: 40, width: 40 }} source={backArrow} />
-      </Pressable>
-      {!loading && (
-        <Pressable style={styles.setting} onPress={setting}>
-          <Image style={{ height: 40, width: 40 }} source={settings} />
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+        <Pressable style={styles.backArrow} onPress={back}>
+          <Image style={{ height: 40, width: 40 }} source={backArrow} />
         </Pressable>
-      )}
-      <View style={styles.logoContainer}>
-        <Text style={styles.title}>Group</Text>
-        <Text style={styles.title}>{groupData.groupname}</Text>
-        <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 ? { uri: imageUrl } : placeholder} />
-        {loading && <ActivityIndicator size="large" color="#0000ff" />}
-      </View>
+        {!loading && (
+          <Pressable style={styles.setting} onPress={setting}>
+            <Image style={{ height: 40, width: 40 }} source={settings} />
+          </Pressable>
+        )}
+        <View style={styles.logoContainer}>
+          <Text style={styles.title}>Group</Text>
+          <Text style={styles.title}>{groupData.groupname}</Text>
+          <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading  ? { uri: imageUrl } : placeholder} />
+          {loading && <ActivityIndicator size="large" color="#0000ff" />}
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -78,16 +97,16 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     position: 'absolute',
-    top: 50,
-    left: 30,
+    top: 20,
+    left: 10,
     width: 50,
     height: 50,
     zIndex: 10,
   },
   setting: {
     position: 'absolute',
-    top: 50,
-    right: 30,
+    top: 20,
+    right: 10,
     width: 50,
     height: 50,
     zIndex: 10,

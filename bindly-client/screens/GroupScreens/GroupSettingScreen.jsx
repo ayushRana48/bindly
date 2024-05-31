@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, Image, StyleSheet, Alert } from "react-native";
+import React, { useEffect, useState,useCallback } from "react";
+import { View, Text, ScrollView, Pressable, Image, StyleSheet, Alert,RefreshControl } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import { useGroupsContext } from "../GroupsContext";
@@ -17,15 +17,14 @@ const GroupSetting = () => {
     const [buyIn, setBuyIn] = useState(0);
     const [taskPerWeek, setTaskPerWeek] = useState(0);
     const [imageSrc, setImageSrc] = useState(placeholder);
+    const [refreshing, setRefreshing] = useState(false);
+
 
     const navigation = useNavigation();
     const { user } = useUserContext();
     const { setGroups, setGroupData, groupData: gd } = useGroupsContext();
 
-    const formatLocalDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString();
-    };
+
 
     useEffect(() => {
         if (gd?.group) {
@@ -44,6 +43,25 @@ const GroupSetting = () => {
     const back = () => {
         navigation.goBack();
     };
+
+    const getGroup = async () => {
+        console.log('call')
+        try {
+          const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${gd.group.groupid}`, {
+            headers: { 'Content-Type': 'application/json' },
+          });
+    
+          const res = await response.json();
+          setGroupData(res);
+        } catch (error) {
+          console.log(error, 'sdsdsd');
+        } 
+      };
+    
+      const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        getGroup().then(() => setRefreshing(false));
+      }, []);
 
     const isPastDate = new Date(gd?.group.startdate) < new Date();
 
@@ -132,7 +150,10 @@ const GroupSetting = () => {
     }
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={styles.container}
+        refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }>
             <Pressable style={styles.cancel} onPress={back}>
                 <Image style={{ height: 40, width: 40 }} source={backArrow} />
             </Pressable>

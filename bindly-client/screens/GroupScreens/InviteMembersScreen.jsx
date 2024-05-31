@@ -1,22 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, TextInput, StyleSheet, ScrollView, Pressable,Image } from "react-native";
 import { useRoute } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import { useGroupsContext } from "../GroupsContext";
+import { useNavigation } from '@react-navigation/native';
 import placeholder from "../../assets/GroupIcon.png"
+import backArrow from "../../assets/backArrow.png"
+
 import InviteMemberItem from "./components/InviteMemberItem";
 
 const InviteMembersScreen = () => {
   const [users, setUsers] = useState([]);
-  const [usersInGroup,setUsersInGroup]=useState([])
-  const [invites,setInvites]=useState([])
+  const [usersInGroup, setUsersInGroup] = useState([])
+  const [invites, setInvites] = useState([])
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
 
   const route = useRoute();
 
-  const{user} = useUserContext()
-  const {groupData:gd,setGroupData} = useGroupsContext()
+  const navigation = useNavigation()
+
+  const { user } = useUserContext()
+  const { groupData: gd, setGroupData } = useGroupsContext()
 
   const changeInviteStatus = (username) => {
     const updatedUsers = users.map(user => {
@@ -60,23 +65,26 @@ const InviteMembersScreen = () => {
       );
       setFilteredUsers(filtered.slice(0, 10));
     }
-  }, [searchTerm, users,usersInGroup]);
+  }, [searchTerm, users, usersInGroup]);
 
   return (
     <View style={styles.container}>
-        <View style={{marginTop:80}}>
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Search members"
-        value={searchTerm}
-        onChangeText={setSearchTerm}
-      />
+      <Pressable onPress={() => navigation.goBack()} style={styles.backArrow}>
+        <Image source={backArrow} style={{ height: 35, width: 35 }}></Image>
+      </Pressable>
+      <View style={{ marginTop: 80 }}>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search members"
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+        />
       </View>
       {filteredUsers.length === 0 ? (
         <Text style={styles.noMembers}>No members found</Text>
       ) : (
         <ScrollView style={styles.groupList}>
-            {filteredUsers.map((m)=><InviteMemberItem key={m.username} memberData={m} groupData={gd.group} changeInviteStatus={changeInviteStatus}></InviteMemberItem>)}
+          {filteredUsers.map((m) => <InviteMemberItem key={m.username} memberData={m} groupData={gd.group} changeInviteStatus={changeInviteStatus}></InviteMemberItem>)}
         </ScrollView>
       )}
     </View>
@@ -87,7 +95,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-    padding: 20,
+    padding: 32,
   },
   searchBar: {
     height: 40,
@@ -109,9 +117,17 @@ const styles = StyleSheet.create({
   memberUsername: {
     fontSize: 18,
   },
-  groupList:{
-    marginTop:20
-}
+  groupList: {
+    marginTop: 20
+  },
+  backArrow: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    width: 40,
+    height: 40,
+    zIndex: 10,
+  },
 });
 
 export default InviteMembersScreen;
