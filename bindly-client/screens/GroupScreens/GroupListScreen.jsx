@@ -52,7 +52,9 @@ const GroupListScreen = () => {
             <Pressable onPress={toNewGroup}>
                 <Image source={require("../../assets/NewGroupIcon.png")} style={styles.newGroup}></Image>
             </Pressable>
-
+            <View>
+            <Text style={{fontSize:30, fontWeight:'bold',textAlign:'center',alignItems:'center', marginTop:60}}>Groups</Text>
+            </View>
             {
                 memoizedGroups.length === 0 ?
                     (<Text style={styles.NoGroups}>No Groups</Text>)
@@ -88,7 +90,7 @@ const styles = StyleSheet.create({
 
     },
     groupList:{
-        marginTop:80
+        marginTop:20
     }
 });
 

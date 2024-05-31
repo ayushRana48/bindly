@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView,Keyboard, Platform } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
@@ -59,15 +59,14 @@ const NewGroupScreen = () => {
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 1,
-            })
+            });
 
             if (!result.canceled) {
                 const compressedUri = await compressImage(result.assets[0].uri);
                 setImageSrc({ uri: compressedUri });
                 setOpenModal(false)
             }
-        }
-        catch (error) {
+        } catch (error) {
             console.log(error)
         }
     };
@@ -91,47 +90,47 @@ const NewGroupScreen = () => {
     }
 
     const submit = async () => {
-    
+
         // Validate Names
         if (!groupName.trim()) {
             setErrorMessage("Enter Group Name");
             return;
         }
-    
+
         // Validate Passwords
         if (!description.trim()) {
             setErrorMessage("Please enter description.");
             return;
         }
-    
+
         if (!startDate) {
             setErrorMessage("Please enter start date.");
             return;
         }
-    
+
         if (!numWeeks) {
             setErrorMessage("Please enter number of weeks.");
             return;
         }
-    
+
         if (!buyIn) {
             setErrorMessage("Please enter buy in");
             return;
         }
-    
+
         if (!taskPerWeek) {
             setErrorMessage("Please enter number of tasks per week");
             return;
         }
-    
+
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + numWeeks * 7);
-    
+
         let img = imageSrc;
         if (imageSrc === placeholder) {
             img = "";
         }
-    
+
         let imgBase64 = "";
 
         if (img.uri) {
@@ -150,7 +149,7 @@ const NewGroupScreen = () => {
         // Convert dates to UTC
         const startDateUTC = new Date(startDate).toISOString();
         const endDateUTC = endDate.toISOString();
-    
+
         try {
             const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/createGroup`, {
                 method: 'POST',
@@ -166,9 +165,9 @@ const NewGroupScreen = () => {
                     tasksperweek: taskPerWeek
                 }),
             });
-    
+
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
-    
+
             if (status === 200) {
                 setGroups(g => [...g, body]);
                 setGroupData({ group: body, usergroup: user, invite: [], post: [], history: [] });
@@ -192,126 +191,148 @@ const NewGroupScreen = () => {
         }
     }
 
-    return (
-        <View style={styles.container}>
-            <Pressable style={styles.cancel} onPress={cancel}>
-                <Text style={{ color: "red" }}>cancel</Text>
-            </Pressable>
-            <View style={styles.logoContainer}>
-                <Text style={styles.title}>Create Group</Text>
-            </View>
+    return  (
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <ScrollView contentContainerStyle={styles.container}>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View>
+                        <Pressable style={styles.cancel} onPress={cancel}>
+                            <Text style={{ color: "red" }}>cancel</Text>
+                        </Pressable>
+                        <View style={styles.logoContainer}>
+                            <Text style={styles.title}>Create Group</Text>
+                        </View>
 
-            <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
-                <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc} />
-                <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 20 }} onPress={() => setOpenModal(true)}>
-                    <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
-                </Pressable>
-            </View>
+                        <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
+                            <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc} />
+                            <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 20 }} onPress={() => setOpenModal(true)}>
+                                <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
+                            </Pressable>
+                        </View>
 
-            <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
-                <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
-                    <View style={styles.modalOverlay}>
-                        <TouchableWithoutFeedback>
-                            <View style={styles.modalContent}>
-                                <Text style={styles.modalTitle}>Group Photo</Text>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
-                                    <Pressable style={styles.modalButton} onPress={takeImage}>
-                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={cameraIcon} />
-                                        <Text>Camera</Text>
-                                    </Pressable>
-                                    <Pressable style={styles.modalButton} onPress={pickImage}>
-                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={galleryIcon} />
-                                        <Text>Gallery</Text>
-                                    </Pressable>
-                                    <Pressable style={styles.modalButton} onPress={removeImage}>
-                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={trashIcon} />
-                                        <Text>Remove</Text>
+                        <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
+                            <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
+                                <View style={styles.modalOverlay}>
+                                    <TouchableWithoutFeedback>
+                                        <View style={styles.modalContent}>
+                                            <Text style={styles.modalTitle}>Group Photo</Text>
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
+                                                <Pressable style={styles.modalButton} onPress={takeImage}>
+                                                    <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={cameraIcon} />
+                                                    <Text>Camera</Text>
+                                                </Pressable>
+                                                <Pressable style={styles.modalButton} onPress={pickImage}>
+                                                    <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={galleryIcon} />
+                                                    <Text>Gallery</Text>
+                                                </Pressable>
+                                                <Pressable style={styles.modalButton} onPress={removeImage}>
+                                                    <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={trashIcon} />
+                                                    <Text>Remove</Text>
+                                                </Pressable>
+                                            </View>
+                                        </View>
+                                    </TouchableWithoutFeedback>
+                                </View>
+                            </TouchableWithoutFeedback>
+                        </Modal>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Group Name</Text>
+                            <TextInput
+                                style={styles.input}
+                                autoCapitalize='none'
+                                value={groupName}
+                                onChangeText={setGroupName}
+                                placeholder="group name"
+                            />
+                        </View>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Description</Text>
+                            <TextInput
+                                style={styles.input}
+                                autoCapitalize='none'
+                                value={description}
+                                onChangeText={setDescription}
+                                placeholder="description"
+                            />
+                        </View>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Start Date</Text>
+                            <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
+                                <Text>{formatLocalDate(startDate)}</Text>
+                            </Pressable>
+                        </View>
+
+                        {show && (
+                            <View>
+                                <DateTimePicker mode="date" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
+                                <View style={styles.centeredRow}>
+                                    <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
+                                        <Text style={styles.buttonText}>Done</Text>
                                     </Pressable>
                                 </View>
                             </View>
-                        </TouchableWithoutFeedback>
+                        )}
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Weeks</Text>
+                            <TextInput
+                                style={styles.input}
+                                autoCapitalize='none'
+                                value={numWeeks}
+                                onChangeText={text => setNumWeeks(text.replace(/[^0-9]/g, ''))}
+                                placeholder="5"
+                                keyboardType="numeric"
+                            />
+                        </View>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Buy In</Text>
+                            <TextInput
+                                style={styles.input}
+                                autoCapitalize='none'
+                                value={buyIn}
+                                onChangeText={text => setBuyIn(text.replace(/[^0-9]/g, ''))}
+                                placeholder="202"
+                                keyboardType="numeric"
+                            />
+                        </View>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Tasks Per Week</Text>
+                            <TextInput
+                                style={styles.input}
+                                autoCapitalize='none'
+                                value={taskPerWeek}
+                                onChangeText={text => setTaskPerWeek(text.replace(/[^0-9]/g, ''))}
+                                placeholder="5"
+                                keyboardType="numeric"
+                            />
+                        </View>
+
+                        {!show && (
+                            <View style={styles.centeredRow}>
+                                <Pressable style={styles.signUpButton} onPress={submit}>
+                                    <Text style={styles.buttonText}>Create</Text>
+                                </Pressable>
+                            </View>
+                        )}
+
+                        {errorMessage.length > 0 && (
+                            <View style={styles.centeredRow}>
+                                <Text style={styles.errorText}>{errorMessage}</Text>
+                            </View>
+                            //d
+                        )}
                     </View>
                 </TouchableWithoutFeedback>
-            </Modal>
-
-            <Text style={styles.label}>Group Name</Text>
-            <TextInput
-                style={styles.input}
-                autoCapitalize='none'
-                value={groupName}
-                onChangeText={setGroupName}
-                placeholder="group name"
-            />
-
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-                style={styles.input}
-                autoCapitalize='none'
-                value={description}
-                onChangeText={setDescription}
-                placeholder="description"
-            />
-
-            <Text style={styles.label}>Start Date</Text>
-            <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-                <Text>{formatLocalDate(startDate)}</Text>
-            </Pressable>
-            
-            {show && (
-                <View>
-                    <DateTimePicker mode="date" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
-                    <View style={styles.centeredRow}>
-                        <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
-                            <Text style={styles.buttonText}>Done</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            )}
-
-            <Text style={styles.label}>Weeks</Text>
-            <TextInput
-                style={styles.input}
-                autoCapitalize='none'
-                value={numWeeks}
-                onChangeText={text => setNumWeeks(text.replace(/[^0-9]/g, ''))}
-                placeholder="5"
-                keyboardType="numeric"
-            />
-
-            <Text style={styles.label}>Buy In</Text>
-            <TextInput
-                style={styles.input}
-                autoCapitalize='none'
-                value={buyIn}
-                onChangeText={text => setBuyIn(text.replace(/[^0-9]/g, ''))}
-                placeholder="202"
-                keyboardType="numeric"
-            />
-
-            <Text style={styles.label}>Tasks Per Week</Text>
-            <TextInput
-                style={styles.input}
-                autoCapitalize='none'
-                value={taskPerWeek}
-                onChangeText={text => setTaskPerWeek(text.replace(/[^0-9]/g, ''))}
-                placeholder="5"
-                keyboardType="numeric"
-            />
-
-            {!show && (
-                <View style={styles.centeredRow}>
-                    <Pressable style={styles.signUpButton} onPress={submit}>
-                        <Text style={styles.buttonText}>Create</Text>
-                    </Pressable>
-                </View>
-            )}
-
-            {errorMessage.length > 0 && (
-                <View style={styles.centeredRow}>
-                    <Text style={styles.errorText}>{errorMessage}</Text>
-                </View>
-            )}
-        </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -319,7 +340,7 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: 'white',
         padding: 24,
-        flex: 1,
+        flexGrow: 1,
     },
     modalOverlay: {
         flex: 1,
@@ -333,7 +354,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 10,
         alignItems: 'center',
-        margin: 'auto',
         justifyContent: 'center',
     },
     modalTitle: {
@@ -352,33 +372,32 @@ const styles = StyleSheet.create({
     },
     cancel: {
         position: 'absolute',
-        top: 50,
-        left: 30,
+        top: 30,
+        left: 10,
+        height:40,
+        width:50,
+        zIndex:10,
+    justifyContent:'center',
+    alignItems:'center'
     },
     logoContainer: {
         marginTop: 36,
         marginBottom: 36,
         alignItems: 'center',
     },
-    logo: {
-        width: 60,
-        height: 60,
-    },
     title: {
         marginTop: 8,
         fontSize: 24,
         fontWeight: 'bold',
     },
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-    },
     label: {
         color: 'gray',
         marginBottom: 4,
     },
+    inputContainer: {
+        marginBottom: 16,
+    },
     input: {
-        marginBottom: 12,
         height: 32,
         backgroundColor: '#f0f0f0',
         borderRadius: 4,
@@ -389,7 +408,6 @@ const styles = StyleSheet.create({
         padding: 8,
         backgroundColor: '#f0f0f0',
         borderRadius: 4,
-        marginBottom: 12,
     },
     centeredRow: {
         alignItems: 'center',

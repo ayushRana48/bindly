@@ -56,7 +56,7 @@ const SignInScreen = () => {
     return (
         <KeyboardAvoidingView
             style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         >
             <ScrollView contentContainerStyle={styles.container}>
                 <View style={styles.logoContainer}>
@@ -66,6 +66,7 @@ const SignInScreen = () => {
                     />
                 </View>
 
+                <View>
                 <Text style={styles.label}>Email</Text>
                 <TextInput
                     style={styles.input}
@@ -75,7 +76,9 @@ const SignInScreen = () => {
                     placeholder="email"
                     keyboardType="email-address"
                 />
+                </View>
 
+                <View>
                 <Text style={styles.label}>Password</Text>
                 <TextInput
                     style={styles.input}
@@ -85,6 +88,8 @@ const SignInScreen = () => {
                     placeholder="password"
                     secureTextEntry={true}
                 />
+                                </View>
+
 
                 <View style={styles.signInButtonContainer}>
                     <Pressable style={styles.signInButton} onPress={submit}>
