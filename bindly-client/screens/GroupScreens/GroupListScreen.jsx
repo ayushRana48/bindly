@@ -1,5 +1,5 @@
-import React, { useEffect, useState,useMemo } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, ScrollView } from "react-native";
+import React, { useEffect, useState, useMemo,useCallback } from "react";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../GroupsContext";
 import { useUserContext } from "../../UserContext";
@@ -10,19 +10,21 @@ const GroupListScreen = () => {
     const navigation = useNavigation();
 
     const { groups, setGroups } = useGroupsContext()
-    const {user} = useUserContext()
+    const { user } = useUserContext()
+    const [refreshing, setRefreshing] = useState(false);
 
 
 
-    const toNewGroup=()=>{
+
+    const toNewGroup = () => {
         navigation.navigate('NewGroup')
-     
+
     }
 
 
-    const getAllGroups= async()=>{
+    const getAllGroups = async () => {
 
-        try{
+        try {
             const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -30,41 +32,54 @@ const GroupListScreen = () => {
 
             const res = await response.json();
 
-            const list = res.map(r=>r.groups);
-            setGroups(g=>[...list])
-           
+            const list = res.map(r => r.groups);
+            setGroups(g => [...list])
+
 
         }
-        catch(error){
+        catch (error) {
             console.log(error)
         }
     }
 
-    useEffect(()=>{
+    useEffect(() => {
         getAllGroups()
-    },[])
+    }, [])
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        getAllGroups().then(() => setRefreshing(false));
+    }, []);
+
 
 
     const memoizedGroups = useMemo(() => groups, [groups]);
 
     return (
         <View style={styles.container}>
-            <Pressable onPress={toNewGroup}>
-                <Image source={require("../../assets/NewGroupIcon.png")} style={styles.newGroup}></Image>
-            </Pressable>
-            <View>
-            <Text style={{fontSize:30, fontWeight:'bold',textAlign:'center',alignItems:'center', marginTop:60}}>Groups</Text>
-            </View>
-            {
-                memoizedGroups.length === 0 ?
-                    (<Text style={styles.NoGroups}>No Groups</Text>)
-                    :
-                    (<ScrollView style={styles.groupList}>
-                        {
-                            memoizedGroups.map((g, index) => <GroupListItem key={index} groupData={g}></GroupListItem>)
-                        }
-                    </ScrollView>)
-            }
+            <ScrollView
+                contentContainerStyle={styles.scrollView}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+            >
+                <Pressable  style={styles.newGroup}onPress={toNewGroup}>
+                    <Image source={require("../../assets/NewGroupIcon.png")}></Image>
+                </Pressable>
+                <View>
+                    <Text style={{ fontSize: 30, fontWeight: 'bold', textAlign: 'center', alignItems: 'center', marginTop: 60 }}>Groups</Text>
+                </View>
+                {
+                    memoizedGroups.length === 0 ?
+                        (<Text style={styles.NoGroups}>No Groups</Text>)
+                        :
+                        (<ScrollView style={styles.groupList}>
+                            {
+                                memoizedGroups.map((g, index) => <GroupListItem key={index} groupData={g}></GroupListItem>)
+                            }
+                        </ScrollView>)
+                }
+            </ScrollView>
         </View>
     );
 };
@@ -80,17 +95,20 @@ const styles = StyleSheet.create({
         position: 'absolute',
         justifyContent: 'flex-start',
         right: 0,
-        top: 30
+        top: 30,
+        zIndex:10,
+        width:35,
+        height:35,
     },
 
-    NoGroups:{
-        fontSize:20,
-        fontFamily:'bold',
-        margin:'auto'
+    NoGroups: {
+        fontSize: 20,
+        fontFamily: 'bold',
+        margin: 'auto'
 
     },
-    groupList:{
-        marginTop:20
+    groupList: {
+        marginTop: 20
     }
 });
 

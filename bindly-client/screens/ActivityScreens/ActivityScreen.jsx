@@ -1,22 +1,46 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet } from "react-native";
-import { useNavigation } from '@react-navigation/native';
-import { useRoute } from '@react-navigation/native';
-import placeholder from '../../assets/GroupIcon.png';
-import backArrow from '../../assets/backArrow.png';
-import settings from '../../assets/settings.png';
+import React, { useEffect, useState, useCallback } from "react";
+import { UserProvider, useUserContext } from "../../UserContext";
+import { View, ScrollView, RefreshControl, StyleSheet,Text } from "react-native";
 import InviteList from "./components/InviteList";
 
 const ActivityScreen = () => {
-  const navigation = useNavigation();
+  const [invites, setInvites] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const {user} = useUserContext()
 
+  const getAllInvites = async () => {
+    try {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getInviteByReciever/${user.username}`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const res = await response.json();
+      setInvites(res);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    getAllInvites().then(() => setRefreshing(false));
+  }, []);
 
- 
+  useEffect(() => {
+    getAllInvites();
+  }, []);
 
   return (
     <View style={styles.container}>
-        <InviteList></InviteList>
+      <ScrollView
+        contentContainerStyle={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <Text style={{fontSize:30, fontWeight:'bold',textAlign:'center',alignItems:'center', marginTop:60}}>Activity</Text>
+
+        <InviteList invites={invites} setInvites={setInvites} />
+      </ScrollView>
     </View>
   );
 };
@@ -25,36 +49,11 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
     flex: 1,
+    padding: 32,
+
   },
-  backArrow: {
-    position: 'absolute',
-    top: 50,
-    left: 30,
-    width: 50,
-    height: 50,
-    zIndex: 10,
-  },
-  setting: {
-    position: 'absolute',
-    top: 50,
-    right: 30,
-    width: 50,
-    height: 50,
-    zIndex: 10,
-  },
-  logoContainer: {
-    marginTop: 36,
-    marginBottom: 36,
-    alignItems: 'center',
-  },
-  title: {
-    marginTop: 8,
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  centeredRow: {
-    alignItems: 'center',
-    marginTop: 16,
+  scrollView: {
+    flexGrow: 1,
   },
 });
 
