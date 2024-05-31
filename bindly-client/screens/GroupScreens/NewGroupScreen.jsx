@@ -21,11 +21,9 @@ const NewGroupScreen = () => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const formatLocalDate = (dateString) => {
-        const date = new Date(dateString);
+    const formatLocalDate = (date) => {
         return date.toLocaleDateString();
     };
-
 
     const [groupName, setGroupName] = useState("");
     const [description, setDescription] = useState("");
@@ -39,7 +37,6 @@ const NewGroupScreen = () => {
     const [openModal, setOpenModal] = useState(false)
 
     const pickImage = async () => {
-        // No permissions request is necessary for launching the image library
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
             allowsEditing: true,
@@ -47,17 +44,14 @@ const NewGroupScreen = () => {
             quality: 1,
         });
 
-
         if (!result.canceled) {
             const compressedUri = await compressImage(result.assets[0].uri);
             setImageSrc({ uri: compressedUri });
             setOpenModal(false)
-
         }
     };
 
     const takeImage = async () => {
-        // No permissions request is necessary for launching the image library
         try {
             await ImagePicker.requestCameraPermissionsAsync();
             let result = await ImagePicker.launchCameraAsync({
@@ -83,20 +77,14 @@ const NewGroupScreen = () => {
         setOpenModal(false)
     }
 
-
-
     const navigation = useNavigation();
 
     const { user } = useUserContext();
-    const { setGroups,setGroupData } = useGroupsContext();
-
-
+    const { setGroups, setGroupData } = useGroupsContext();
 
     const cancel = () => {
         navigation.navigate("GroupsList")
     }
-
-
 
     const toggleDatepicker = () => {
         setShow(!show)
@@ -158,10 +146,12 @@ const NewGroupScreen = () => {
                 return;
             }
         }
+
+        // Convert dates to UTC
+        const startDateUTC = new Date(startDate).toISOString();
+        const endDateUTC = endDate.toISOString();
     
         try {
-            const startDateUTC = new Date(startDate).toISOString();
-
             const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/createGroup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -170,7 +160,7 @@ const NewGroupScreen = () => {
                     description: description,
                     buyin: buyIn,
                     startdate: startDateUTC,
-                    enddate: endDate,
+                    enddate: endDateUTC,
                     hostId: user.username,
                     image: imgBase64,
                     tasksperweek: taskPerWeek
@@ -181,8 +171,8 @@ const NewGroupScreen = () => {
     
             if (status === 200) {
                 setGroups(g => [...g, body]);
-                setGroupData({group:body,usergroup:user,invite:[],post:[],history:[]})
-                navigation.navigate("Group", {groupData:body});
+                setGroupData({ group: body, usergroup: user, invite: [], post: [], history: [] });
+                navigation.navigate("Group", { groupData: body });
             } else {
                 console.error(body.error || "An error occurred. Please try again.");
                 setErrorMessage(body.error || "An error occurred. Please try again.");
@@ -193,14 +183,12 @@ const NewGroupScreen = () => {
         }
     };
 
-
-    const onChange = ({ type }, selctedDate) => {
+    const onChange = ({ type }, selectedDate) => {
         if (type == 'set') {
-            const currentDate = selctedDate
-            setStartDate(currentDate)
-        }
-        else {
-            toggleDatepicker()
+            const currentDate = selectedDate;
+            setStartDate(currentDate);
+        } else {
+            toggleDatepicker();
         }
     }
 
@@ -214,13 +202,11 @@ const NewGroupScreen = () => {
             </View>
 
             <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
-                <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc}>
-                </Image>
+                <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc} />
                 <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 20 }} onPress={() => setOpenModal(true)}>
                     <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
                 </Pressable>
             </View>
-
 
             <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
                 <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
@@ -268,8 +254,20 @@ const NewGroupScreen = () => {
 
             <Text style={styles.label}>Start Date</Text>
             <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-                <Text >{formatLocalDate(startDate)}</Text>
+                <Text>{formatLocalDate(startDate)}</Text>
             </Pressable>
+            
+            {show && (
+                <View>
+                    <DateTimePicker mode="date" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
+                    <View style={styles.centeredRow}>
+                        <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
+                            <Text style={styles.buttonText}>Done</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            )}
+
             <Text style={styles.label}>Weeks</Text>
             <TextInput
                 style={styles.input}
@@ -279,18 +277,6 @@ const NewGroupScreen = () => {
                 placeholder="5"
                 keyboardType="numeric"
             />
-
-            {show && (
-                <View>
-                    <DateTimePicker mode="date" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
-
-                    <View style={styles.centeredRow}>
-                        <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
-                            <Text style={styles.buttonText}>Done</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            )}
 
             <Text style={styles.label}>Buy In</Text>
             <TextInput
@@ -311,8 +297,6 @@ const NewGroupScreen = () => {
                 placeholder="5"
                 keyboardType="numeric"
             />
-
-
 
             {!show && (
                 <View style={styles.centeredRow}>
@@ -336,8 +320,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         padding: 24,
         flex: 1,
-        // justifyContent: 'center',
-
     },
     modalOverlay: {
         flex: 1,
@@ -366,16 +348,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 10,
         width: 80,
-        height: 80
-    },
-    modalButtonText: {
-        fontSize: 16,
-        color: '#333',
+        height: 80,
     },
     cancel: {
         position: 'absolute',
         top: 50,
-        left: 30
+        left: 30,
     },
     logoContainer: {
         marginTop: 36,
@@ -395,15 +373,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-evenly',
     },
-    DateInputContainer: {
-        width: '75%',
-    },
-    WeekInputContainer: {
-        width: '25%',
-    },
-    inputPaddingLeft: {
-        paddingLeft: 4,
-    },
     label: {
         color: 'gray',
         marginBottom: 4,
@@ -421,7 +390,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#f0f0f0',
         borderRadius: 4,
         marginBottom: 12,
-
     },
     centeredRow: {
         alignItems: 'center',
@@ -456,7 +424,7 @@ const styles = StyleSheet.create({
     },
     linkText: {
         color: 'dodgerblue',
-        textAlign: 'center'
+        textAlign: 'center',
     },
     bold: {
         fontWeight: 'bold',

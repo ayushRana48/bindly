@@ -23,7 +23,7 @@ const GroupEditScreen = () => {
 
     const [groupName, setGroupName] = useState("");
     const [description, setDescription] = useState("");
-    const [startDate, setStartDate] = useState(tomorrow.toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(tomorrow);
     const [numWeeks, setNumWeeks] = useState(0);
     const [buyIn, setBuyIn] = useState(0);
     const [taskPerWeek, setTaskPerWeek] = useState(0);
@@ -35,8 +35,7 @@ const GroupEditScreen = () => {
     const [timeStamp, setTimeStamp] = useState('');
 
     const parseDateString = (dateString) => {
-        const [year, month, day] = dateString.split('-');
-        return new Date(year, month - 1, day);
+        return new Date(dateString);
     };
 
     const setNumWeeksF = (startDate, endDate) => {
@@ -54,16 +53,15 @@ const GroupEditScreen = () => {
         setNumWeeks(diffWeeks.toString());
     };
 
-    const formatLocalDate = (dateString) => {
-        const date = new Date(dateString);
+    const formatLocalDate = (date) => {
         return date.toLocaleDateString();
     };
-    
+
     useEffect(() => {
         if (gd.group) {
             setGroupName(gd.group.groupname);
             setDescription(gd.group.description);
-            setStartDate(gd.group.startdate);
+            setStartDate(parseDateString(gd.group.startdate));
             setNumWeeksF(gd.group.startdate, gd.group.enddate);
 
             if (gd.group.pfp) {
@@ -153,7 +151,7 @@ const GroupEditScreen = () => {
             return;
         }
 
-        const endDate = parseDateString(startDate);
+        const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + numWeeks * 7);
 
         let img = imageSrc;
@@ -170,7 +168,8 @@ const GroupEditScreen = () => {
                     imgBase64 = await blobToBase64(blob);
                 }
 
-                const startDateUTC = new Date(startDate).toISOString();
+                // Convert dates to UTC
+                const startDateUTC = startDate.toISOString();
                 const endDateUTC = endDate.toISOString();
 
                 const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupid}`, {
@@ -205,7 +204,7 @@ const GroupEditScreen = () => {
                             groupname: groupName,
                             description: description,
                             buyin: buyIn,
-                            startdate: startDate,
+                            startdate: startDate.toISOString().split('T')[0],
                             enddate: endDate.toISOString().split('T')[0],
                             hostid: user.username,
                             pfp: body.pfp,
@@ -227,9 +226,8 @@ const GroupEditScreen = () => {
 
     const onChange = ({ type }, selectedDate) => {
         if (type == 'set') {
-            const currentDate = selectedDate;
-            setStartDate(currentDate.toISOString().split('T')[0]);
-        } else {
+            const currentDate = new Date(selectedDate);
+            setStartDate(currentDate);
         }
     };
 
@@ -295,12 +293,12 @@ const GroupEditScreen = () => {
 
             <Text style={styles.label}>Start Date</Text>
             <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-            <Text>{formatLocalDate(startDate)}</Text>
+                <Text>{formatLocalDate(startDate)}</Text>
             </Pressable>
 
             {show && (
                 <View>
-                    <DateTimePicker mode="date" display="spinner" value={parseDateString(startDate)} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
+                    <DateTimePicker mode="date" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
                     <View style={styles.centeredRow}>
                         <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
                             <Text style={styles.buttonText}>Done</Text>
@@ -390,10 +388,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         width: 80,
         height: 80,
-    },
-    modalButtonText: {
-        fontSize: 16,
-        color: '#333',
     },
     cancel: {
         position: 'absolute',

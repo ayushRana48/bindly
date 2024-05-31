@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
-
 
 const SignInScreen = () => {
     const [username, setUsername] = useState("");
@@ -10,16 +9,11 @@ const SignInScreen = () => {
     const [loading, setLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState("")
 
-    const {email,setEmail}= useUserContext();
-
-
+    const { email, setEmail } = useUserContext();
 
     const navigation = useNavigation();
 
- 
-
     const submit = async () => {
-
         try {
             const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signIn`, {
                 method: 'POST',
@@ -30,10 +24,8 @@ const SignInScreen = () => {
                 }),
             });
 
-      
             const data = await response.json();
 
-      
             if (response.status === 200) {
                 // Navigate to confirm email page or handle the success scenario
                 setEmail(username)
@@ -57,60 +49,63 @@ const SignInScreen = () => {
         }
     };
 
-
-
     const toSignUp = () => {
         navigation.navigate('SignUp');
     }
 
-
     return (
-        <View style={styles.container}>
-            <View style={styles.logoContainer}>
-                <Image
-                    source={require("../../assets/logo.png")}
-                    style={styles.logo}
-                />
-            </View>
-
-
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-                style={styles.input}
-                autoCapitalize='none'
-                value={username}
-                onChangeText={setUsername}
-                placeholder="email"
-            />
-
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-                style={styles.input}
-                autoCapitalize='none'
-                value={password}
-                onChangeText={setPassword}
-                placeholder="password"
-            />
-
-            <View style={styles.signInButtonContainer}>
-                <Pressable style={styles.signInButton} onPress={submit}>
-                    <Text style={styles.signInButtonText}>Sign In</Text>
-                </Pressable>
-            </View>
-
-            {errorMessage.length > 0 &&
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>{errorMessage}</Text>
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <ScrollView contentContainerStyle={styles.container}>
+                <View style={styles.logoContainer}>
+                    <Image
+                        source={require("../../assets/logo.png")}
+                        style={styles.logo}
+                    />
                 </View>
-            }
 
-            <View style={styles.footer}>
-                <Pressable style={styles.footerPressable} onPress={toSignUp}>
-                    <Text style={styles.footerText}>Don't have an account?</Text>
-                    <Text style={[styles.footerText, styles.bold]}> Sign Up Here</Text>
-                </Pressable>
-            </View>
-        </View>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                    style={styles.input}
+                    autoCapitalize='none'
+                    value={username}
+                    onChangeText={setUsername}
+                    placeholder="email"
+                    keyboardType="email-address"
+                />
+
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                    style={styles.input}
+                    autoCapitalize='none'
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="password"
+                    secureTextEntry={true}
+                />
+
+                <View style={styles.signInButtonContainer}>
+                    <Pressable style={styles.signInButton} onPress={submit}>
+                        <Text style={styles.signInButtonText}>Sign In</Text>
+                    </Pressable>
+                </View>
+
+                {errorMessage.length > 0 &&
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>{errorMessage}</Text>
+                    </View>
+                }
+
+                <View style={styles.footer}>
+                    <Pressable style={styles.footerPressable} onPress={toSignUp}>
+                        <Text style={styles.footerText}>Don't have an account?</Text>
+                        <Text style={[styles.footerText, styles.bold]}> Sign Up Here</Text>
+                    </Pressable>
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -118,7 +113,7 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: 'white',
         padding: 32,
-        flex: 1,
+        flexGrow: 1,
         justifyContent: 'center',
     },
     logoContainer: {
@@ -183,6 +178,4 @@ const styles = StyleSheet.create({
     }
 });
 
-
-export default SignInScreen
-
+export default SignInScreen;
