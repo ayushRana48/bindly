@@ -4,6 +4,7 @@ const { createInvite, getAllInvites, getInvite, getInvitesByGroupId, getInvitesB
 const { createUserGroup, getUserGroupsByGroupId } = require('../transactions/usergroupTransactions');
 const { v4: uuidv4 } = require('uuid');
 const { getAllUsers } = require('../transactions/usersTransactions');
+const { getGroup } = require('../transactions/groupTransactions');
 
 // Controller for creating a new user
 async function createInviteController(req, res) {
@@ -31,6 +32,15 @@ async function acceptInviteController(req, res) {
 
 
     if (error) throw error;
+
+    const {data:groupData,error:groupError}=await getGroup(groupid)
+
+    if(groupError){
+      console.log(groupError)
+      return res.status(400).json({ error: 'Group not found' });
+    }
+
+
 
     const { data: userGroupData, error: createUserGroupError } = await createUserGroup(usergroupId, receiverid, groupid);
 
@@ -83,21 +93,25 @@ async function getAvailableInvites(req, res) {
   const { groupId } = req.params;
 
   try {
-    const { data: inviteData } = await getInvitesByGroupId(groupId);
-    const { data: allUsers } = await getAllUsers();
-    const { data: allMembers } = await getUserGroupsByGroupId(groupId);
+    // Execute API calls in parallel
+    const [inviteDataResponse, allUsersResponse, allMembersResponse] = await Promise.all([
+      getInvitesByGroupId(groupId),
+      getAllUsers(),
+      getUserGroupsByGroupId(groupId)
+    ]);
+
+    const inviteData = inviteDataResponse.data;
+    const allUsers = allUsersResponse.data;
+    const allMembers = allMembersResponse.data;
 
     const allMemberUsernames = new Set(allMembers.members.map(member => member.username));
     const invitedUsernames = new Set(inviteData.map(invite => invite.receiverid));
 
-    const availableInvites = allUsers
-      .filter(user => !allMemberUsernames.has(user.username))
-      .map(user => ({
-        ...user,
-        invited: invitedUsernames.has(user.username)
-      }));
-
-
+    const availableInvites = allUsers.map(user => ({
+      ...user,
+      invited: invitedUsernames.has(user.username),
+      isMember: allMemberUsernames.has(user.username)
+    })).filter(user => !user.isMember);
 
     res.status(200).json(availableInvites);
   } catch (err) {

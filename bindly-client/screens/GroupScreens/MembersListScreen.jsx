@@ -6,6 +6,7 @@ import { useUserContext } from "../../UserContext";
 import MemberListItem from "./components/MemberListItem";
 import backArrow from '../../assets/backArrow.png';
 import invite from '../../assets/invite.png';
+import { BASE_URL } from "@env";
 
 
 const MembersListScreen = () => {
@@ -36,7 +37,7 @@ const MembersListScreen = () => {
 
   const getAllMembers = async () => {
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByGroup/${g2.group.groupid}`, {
+      const response = await fetch(`${BASE_URL}/bindly/usergroup/getUsergroupByGroup/${g2.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const res = await response.json();
@@ -55,7 +56,7 @@ const MembersListScreen = () => {
   const getGroup = async () => {
     console.log('call')
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${g2.group.groupid}`, {
+      const response = await fetch(`${BASE_URL}/bindly/group/${g2.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -102,7 +103,7 @@ const MembersListScreen = () => {
           <Text style={styles.NoGroups}>No Members</Text>
         ) : (
           <ScrollView style={styles.groupList}>
-            {members.map((m) => <MemberListItem memberData={m} kickMember={kickMember}></MemberListItem>)}
+            {members.map((m) => <MemberListItem key={m.username} memberData={m} kickMember={kickMember}></MemberListItem>)}
           </ScrollView>
         )}</ScrollView>
     </View>

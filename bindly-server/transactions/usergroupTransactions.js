@@ -1,16 +1,47 @@
 const { supabase } = require('../initSupabase');
 
 // Function to create a new group
-async function createUserGroup(usergroupid,username, groupid, strikes, moneypaid, moneyowed) {
+async function createUserGroup(usergroupid, username, groupid) {
+  const { data: groupData, error: groupError } = await supabase
+    .from('groups')
+    .select('buyin')
+    .eq('groupid', groupid)
+    .single();
+
+  if (groupError) {
+    return { error: groupError.message };
+  }
+
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('balance')
+    .eq('username', username)
+    .single();
+
+  if (userError) {
+    return { error: userError.message };
+  }
+
+  const newBalance = userData.balance - groupData.buyin;
+
+  const { data: balanceUpdate, error: balanceUpdateError } = await supabase
+    .from('users')
+    .update({ balance: newBalance })
+    .eq('username', username);
+
+  if (balanceUpdateError) {
+    return { error: balanceUpdateError.message };
+  }
+
   const { data, error } = await supabase
     .from('usergroup')
-    .insert([
-      { usergroupid,username, groupid }
-    ]).select().single();
-
+    .insert([{ usergroupid, username, groupid }])
+    .select()
+    .single();
 
   return { data, error };
 }
+
 
 // Function to get all groups
 // Function to get all groups
@@ -114,6 +145,37 @@ async function updateUserGroup(usergroupid, updateParams) {
 
 async function deleteUserGroup(username, groupId) {
   try {
+    const { data: groupData, error: groupError } = await supabase
+      .from('groups')
+      .select('buyin')
+      .eq('groupid', groupId)
+      .single();
+
+    if (groupError) {
+      return { error: groupError.message };
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('balance')
+      .eq('username', username)
+      .single();
+
+    if (userError) {
+      return { error: userError.message };
+    }
+
+    const newBalance = userData.balance + groupData.buyin;
+
+    const { data: balanceUpdate, error: balanceUpdateError } = await supabase
+      .from('users')
+      .update({ balance: newBalance })
+      .eq('username', username);
+
+    if (balanceUpdateError) {
+      return { error: balanceUpdateError.message };
+    }
+
     const { data, error } = await supabase
       .from('usergroup')
       .delete()
@@ -129,4 +191,25 @@ async function deleteUserGroup(username, groupId) {
     return { error: error.message };
   }
 }
-module.exports = { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername,updateUserGroup, deleteUserGroup };
+
+async function getUserGroupByUsernameGroup(username,groupId){
+  const { data, error } = await supabase
+  .from('usergroup')
+  .select()
+  .eq('username', username)
+  .eq('groupid', groupId)
+  .single();
+
+  console.log(data,error)
+
+  if (error) {
+    console.log('here')
+    return { error };
+  }
+  else{
+    return{data}
+  }
+}
+
+
+module.exports = { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername,updateUserGroup, deleteUserGroup,getUserGroupByUsernameGroup };

@@ -11,6 +11,7 @@ import cameraIcon from "../../assets/cameraIcon.png"
 import galleryIcon from "../../assets/galleryIcon.png"
 import trashIcon from "../../assets/trashIcon.png"
 import * as ImagePicker from 'expo-image-picker';
+import { BASE_URL } from "@env";
 
 const SignUpScreen = () => {
     const [email, setEmail] = useState("");
@@ -121,7 +122,7 @@ const SignUpScreen = () => {
             imgBase64 = await blobToBase64(blob);
         }
 
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signUp`, {
+        fetch(`${BASE_URL}/bindly/auth/signUp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

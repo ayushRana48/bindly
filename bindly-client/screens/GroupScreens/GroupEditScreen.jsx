@@ -12,6 +12,7 @@ import trashIcon from "../../assets/trashIcon.png";
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
+import { BASE_URL } from "@env";
 
 const GroupEditScreen = () => {
     const today = new Date();
@@ -172,7 +173,7 @@ const GroupEditScreen = () => {
                 const startDateUTC = startDate.toISOString();
                 const endDateUTC = endDate.toISOString();
 
-                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupid}`, {
+                const response = await fetch(`${BASE_URL}/bindly/group/updateGroup/${groupid}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

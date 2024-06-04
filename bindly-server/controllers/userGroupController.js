@@ -1,6 +1,6 @@
 
 
-const { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername,updateUserGroup, deleteUserGroup }= require('../transactions/usergroupTransactions');
+const { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername,updateUserGroup, deleteUserGroup,getUserGroupByUsernameGroup }= require('../transactions/usergroupTransactions');
 const { v4: uuidv4 } = require('uuid');
 const { getGroup }= require('../transactions/groupTransactions');
 // Controller for creating a new user
@@ -124,6 +124,31 @@ async function leaveGroupController(req, res) {
 }
 
 
+async function inGroupController(req,res){
+  const {username,groupId}= req.body
+  console.log(username,groupId,'j')
+
+    const {data,error}=await getUserGroupByUsernameGroup(username,groupId)
+
+    console.log(data,'d')
+    console.log(error,'e')
+    if(error){
+      console.log(error)
+      if(error.message=='JSON object requested, multiple (or no) rows returned'){
+        res.status(200).json({inGroup:false})
+      }
+      else{
+        res.status(400).json({error:error.message})
+      }
+    }
+    else{
+      res.status(200).json({inGroup:true})
+
+    }
+ 
+}
+
+
 
 async function kickUserController(req, res) {
   const { username, groupId,kickedUser } = req.body;
@@ -160,5 +185,5 @@ async function kickUserController(req, res) {
 
 
 
-module.exports={createUserGroupController,getAllUserGroupsController,updateUserGroupController,getUserGroupController,getUserGroupsByGroupIdController,getUserGroupsByUsernameontroller,leaveGroupController,kickUserController};
+module.exports={createUserGroupController,getAllUserGroupsController,updateUserGroupController,getUserGroupController,getUserGroupsByGroupIdController,getUserGroupsByUsernameontroller,leaveGroupController,kickUserController,inGroupController};
 

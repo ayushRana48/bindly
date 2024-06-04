@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
+import { BASE_URL } from "@env";
 
 const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
     const navigation = useNavigation();
@@ -23,7 +24,7 @@ const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
 
 
     const sendInvite = async () => {
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/createInvite`, {
+        fetch(`${BASE_URL}/bindly/invite/createInvite`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -43,6 +44,9 @@ const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
                 }
             })
             .catch(error => {
+                if(error==='Group not found'){
+                    Alert.alert("Invite Invalid","Group has been deleted");
+                }
                 console.log(error)
                 // In case the fetch fails
                 Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");

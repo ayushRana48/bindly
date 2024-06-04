@@ -34,6 +34,7 @@ router.get('/usergroup/getUsergroupByGroup/:groupId',usergroupController.getUser
 router.put('/usergroup/updateUsergroup/:usergroupId',usergroupController.updateUserGroupController)
 router.delete('/usergroup/leaveGroup',usergroupController.leaveGroupController)
 router.delete('/usergroup/kickUser',usergroupController.kickUserController)
+router.put('/usergroup/inGroup',usergroupController.inGroupController)
 
 router.post('/invite/createInvite',inviteController.createInviteController)
 router.get('/invite/getInviteByReciever/:reciverId',inviteController.getInvitesByRecieverController)

@@ -1,95 +1,84 @@
-// [{ "groupid": "d88c9f60-8890-4c60-a765-8245b7550b37", "groups": { "buyin": 3, "description": "12", "enddate": "2024-06-09", "groupid": "d88c9f60-8890-4c60-a765-8245b7550b37", "groupname": "bye2", "hostid": "airborm", "lastpfpupdate": "2024-05-19T03:15:51.697+00:00", "pfp": "https://lxnzgnvhkrgxpfsokwos.supabase.co/storage/v1/object/public/groupProfiles/d88c9f60-8890-4c60-a765-8245b7550b37-2024-05-19T03:15:51.697Z.jpg", "startdate": "2024-05-26", "tasksperweek": 3, "timeleft": null, "week": null }, "inviteid": "938f8f61-fcb7-4844-b649-5eacac4e4993", "receiverid": "airborm", "senderid": "airborm" }]
-
-
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet,Alert } from "react-native";
+import { View, Text, Pressable, Image, StyleSheet, Alert, Modal } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
+import { BASE_URL } from "@env";
 
-const InviteItem = ({ inviteData,removeInvite }) => {
+const InviteItem = ({ inviteData, removeInvite }) => {
     const navigation = useNavigation();
     const [imageUrl, setImageUrl] = useState("");
     const [sender, setSender] = useState("");
-    const [groupName,setGroupName]= useState("")
-    const [inviteId,setInviteId]= useState("")
-    const [groupid,setGroupid]= useState("")
+    const [groupName, setGroupName] = useState("");
+    const [inviteId, setInviteId] = useState("");
+    const [groupid, setGroupid] = useState("");
+    const [modalVisible, setModalVisible] = useState(false);
 
-    const { groups,setGroups } = useGroupsContext()
-    const { user } = useUserContext()
+    const { groups, setGroups, groupData } = useGroupsContext();
+    const { user } = useUserContext();
 
-
-    useEffect(()=>{
-        if(inviteData?.groups?.pfp){
-            setImageUrl(inviteData?.groups?.pfp)
+    useEffect(() => {
+        if (inviteData?.groups?.pfp) {
+            setImageUrl(inviteData?.groups?.pfp);
         }
-        setSender(inviteData.senderid)
-        setGroupName(inviteData?.groups?.groupname)
-        setInviteId(inviteData.inviteid)
-        setGroupid(inviteData?.groups?.groupid)
+        setSender(inviteData.senderid);
+        setGroupName(inviteData?.groups?.groupname);
+        setInviteId(inviteData.inviteid);
+        setGroupid(inviteData?.groups?.groupid);
+    }, [inviteData]);
 
-    },[])
-
-
-    const acceptInvite = async ()=>{
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/acceptInvite`, {
+    const acceptInvite = async () => {
+        setModalVisible(false);
+        fetch(`${BASE_URL}/bindly/invite/acceptInvite`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                inviteId:inviteId ,
+                inviteId: inviteId,
                 receiverid: user.username,
                 groupid: groupid,
             }),
         })
             .then(response => response.json().then(data => ({ status: response.status, body: data })))
             .then(({ status, body }) => {
-
                 if (status === 200) {
-            
-                    setGroups(g=>[...g,inviteData.groups])
-                    removeInvite(inviteId)
-
+                    setGroups(g => [...g, inviteData.groups]);
+                    removeInvite(inviteId);
                 } else {
-                console.log('error',body)
+                    console.log('error', body);
+                    if (body.error === "JSON object requested, multiple (or no) rows returned") {
+                        Alert.alert('Invalid Invite', "Group is deleted");
+                        removeInvite(inviteId);
+                    }
                 }
             })
             .catch(error => {
-                console.log(error)
-                // In case the fetch fails
+                console.log(error);
                 Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
             });
+    };
 
-    }
-
-
-    const rejectInvite = async ()=>{
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/deleteInvite/${inviteId}`, {
+    const rejectInvite = async () => {
+        fetch(`${BASE_URL}/bindly/invite/deleteInvite/${inviteId}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
         })
             .then(response => response.json().then(data => ({ status: response.status, body: data })))
             .then(({ status, body }) => {
-
                 if (status === 200) {
-                    removeInvite(inviteId)
+                    removeInvite(inviteId);
                 } else {
-                  
+                    console.log('error', body);
                 }
             })
             .catch(error => {
-                console.log(error)
-                // In case the fetch fails
+                console.log(error);
                 Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
             });
-
-    }
-
-
-    
+    };
 
     return (
-        <Pressable style={styles.container} >
+        <Pressable style={styles.container}>
             <Image
                 style={{ width: 50, height: 50, borderRadius: 8 }}
                 source={imageUrl ? { uri: imageUrl } : placeholder}
@@ -100,15 +89,54 @@ const InviteItem = ({ inviteData,removeInvite }) => {
             </View>
 
             <View style={styles.options}>
-                <Pressable style={styles.accept} onPress={acceptInvite}>
-                    <Text style={{color:'white',fontWeight:400, fontSize:18}}>+</Text> 
+                <Pressable style={styles.accept} onPress={() => setModalVisible(true)}>
+                    <Text style={{ color: 'white', fontWeight: 400, fontSize: 18 }}>+</Text>
                 </Pressable>
 
                 <Pressable style={styles.decline} onPress={rejectInvite}>
-                    <Text style={{color:'white',fontWeight:400, fontSize:18}}>x</Text> 
+                    <Text style={{ color: 'white', fontWeight: 400, fontSize: 18 }}>x</Text>
                 </Pressable>
             </View>
-            
+
+            <Modal
+                transparent={true}
+                visible={modalVisible}
+                animationType="slide"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Confirm</Text>
+                        <View style={styles.modalText}>
+                            <View style={styles.modalItem}>
+                                <Text style={styles.boldText}>Group Name: </Text>
+                                <Text>{groupName}</Text>
+                            </View>
+                            <View style={styles.modalItem}>
+                            <Text style={styles.boldText}>Buy In: </Text>
+                            <Text>{inviteData?.groups?.buyin}</Text>
+
+                            </View>
+                            <View style={styles.modalItem}>
+                                <Text style={styles.boldText}>Description: </Text>
+                                <Text>{inviteData?.groups?.description}</Text>
+
+                            </View>
+
+                            <Text>You can get your buy-in back if you leave the group before {new Date(inviteData?.groups?.startdate).toLocaleDateString()}.</Text>
+                            
+                        </View>
+                        <View style={styles.modalButtons}>
+                            <Pressable style={styles.confirmButton} onPress={acceptInvite}>
+                                <Text style={styles.buttonText}>Confirm</Text>
+                            </Pressable>
+                            <Pressable style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+                                <Text style={styles.buttonText}>Cancel</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </Pressable>
     );
 };
@@ -127,43 +155,95 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontSize: 18,
     },
-    sender:{
+    sender: {
         marginLeft: 10,
-        fontSize:12,
-        color:'gray'
-    },
-    id: {
+        fontSize: 12,
         color: 'gray',
-        marginLeft: 5,
-        fontSize: 18,
     },
     accept: {
         fontSize: 14,
-        height:30,
-        width:30,
-        padding:2,
-        justifyContent:'center',
-        alignItems:'center',
-        backgroundColor:'#08d43f',
-        borderRadius:8,
-        marginRight:10
+        height: 30,
+        width: 30,
+        padding: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#08d43f',
+        borderRadius: 8,
+        marginRight: 10,
     },
-    decline:{
+    decline: {
         fontSize: 14,
-        height:30,
-        width:30,
-        padding:2,
-        justifyContent:'center',
-        alignItems:'center',
-        backgroundColor:'#ff7e75',
-        borderRadius:8,
-        marginRight:10
+        height: 30,
+        width: 30,
+        padding: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#ff7e75',
+        borderRadius: 8,
+        marginRight: 10,
     },
-    options:{
+    options: {
         marginLeft: 'auto',
-        justifyContent:'center',
-        alignItems:'center',
-        flexDirection:'row'
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'row',
+    },
+    modalBackground: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContainer: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    modalText: {
+        fontSize: 20,
+        textAlign: 'center',
+        marginBottom: 20,
+        marginTop:20
+    },
+    boldText: {
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign:'center',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    confirmButton: {
+        backgroundColor: '#08d43f',
+        padding: 15,
+        borderRadius: 5,
+        width: '45%',
+        alignItems: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#ff7e75',
+        padding: 15,
+        borderRadius: 5,
+        width: '45%',
+        alignItems: 'center',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+    },
+    modalItem:{
+        marginBottom:0,
+        flexDirection:'row',
+        fontSize: 28,
+
     }
 });
 

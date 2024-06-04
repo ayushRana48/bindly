@@ -7,6 +7,7 @@ import ConfirmEmailScreen from './screens/AuthScreens/ConfirmEmailScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import LoggedInNav from './screens/LoggedInNav';
 import { useUserContext } from './UserContext';
+import { BASE_URL } from "@env";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,7 +19,7 @@ export default function Nav() {
     useEffect(() => {
         const getUser = async () => {
             try {
-                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/getUser`, {
+                const response = await fetch(`${BASE_URL}/bindly/auth/getUser`, {
                     headers: { 'Content-Type': 'application/json' },
                 });
                 const data = await response.json();

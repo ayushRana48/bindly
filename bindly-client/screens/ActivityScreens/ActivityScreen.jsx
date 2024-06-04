@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { UserProvider, useUserContext } from "../../UserContext";
 import { View, ScrollView, RefreshControl, StyleSheet,Text } from "react-native";
 import InviteList from "./components/InviteList";
+import { BASE_URL } from "@env";
 
 const ActivityScreen = () => {
   const [invites, setInvites] = useState([]);
@@ -10,7 +11,7 @@ const ActivityScreen = () => {
 
   const getAllInvites = async () => {
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getInviteByReciever/${user.username}`, {
+      const response = await fetch(`${BASE_URL}/bindly/invite/getInviteByReciever/${user.username}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const res = await response.json();

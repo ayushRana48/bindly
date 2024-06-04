@@ -1,11 +1,13 @@
-import React, { useEffect, useState,useCallback } from "react";
-import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView,RefreshControl } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Alert } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 import placeholder from '../../assets/GroupIcon.png';
 import backArrow from '../../assets/backArrow.png';
 import settings from '../../assets/settings.png';
 import { useGroupsContext } from "../GroupsContext";
+import { useUserContext } from "../../UserContext";
+import { BASE_URL } from "@env";
 
 const GroupScreen = () => {
   const route = useRoute();
@@ -13,8 +15,9 @@ const GroupScreen = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
-  const { groupData: gd, setGroupData } = useGroupsContext();
+  const { groupData: gd, setGroupData, setGroups } = useGroupsContext();
   const [refreshing, setRefreshing] = useState(false);
+  const { user } = useUserContext()
 
 
   useEffect(() => {
@@ -22,26 +25,88 @@ const GroupScreen = () => {
     if (gd?.group) {
       setImageUrl(gd?.group?.pfp);
     }
-    else{
-      setImageUrl(groupData.pfp);
+    else {
+      // setImageUrl(groupData.pfp);
     }
   }, [gd]);
 
   const getGroup = async () => {
     console.log('call')
+    try{
+      const isInGroup = await inGroup()
+      if(!isInGroup){
+        Alert.alert("Invalid Group", "Group has been deleted or not in group")
+        console.log(groupData.groupid)
+        navigation.navigate('GroupsList');
+        setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
+
+      }
+    }catch(err){
+
+    }
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${groupData.groupid}`, {
+      const response = await fetch(`${BASE_URL}/bindly/group/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
+
+      if (!response.ok) {
+        // Convert non-2xx HTTP responses into errors.
+        const errorResponse = await response.json();
+        throw new Error(errorResponse.error || 'Failed to fetch group data');
+      }
 
       const res = await response.json();
       setGroupData(res);
     } catch (error) {
-      console.log(error, 'sdsdsd');
+      console.log(error)
+      if (error.message === 'JSON object requested, multiple (or no) rows returned') {
+        Alert.alert("Invalid Group", "Group has been deleted")
+        console.log(groupData.groupid)
+        navigation.navigate('GroupsList');
+
+        setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
+
+      }
     } finally {
       setLoading(false);
     }
   };
+
+
+  const inGroup = async () => {
+    console.log('calljksfnS:Jdfnkjsd')
+    try {
+      const response = await fetch(`${BASE_URL}/bindly/usergroup/inGroup`, {
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PUT',
+        body: JSON.stringify({
+          "username": user.username,
+          "groupId": groupData.groupid
+        }),
+      });
+
+      if (!response.ok) {
+        // Convert non-2xx HTTP responses into errors.
+        const errorResponse = await response.json();
+        throw new Error(errorResponse.error || 'Failed to fetch group data');
+      }
+      console.log(response,'looo22222k herrreee')
+
+
+      const res = await response.json();
+      console.log(res,'loook herrreee')
+      if (res.inGroup) {
+        return true
+      }
+      else {
+        return false
+      }
+    } catch (error) {
+      console.log(error)
+    } 
+  };
+
+
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -63,7 +128,7 @@ const GroupScreen = () => {
     }
   };
 
- 
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -81,7 +146,7 @@ const GroupScreen = () => {
         <View style={styles.logoContainer}>
           <Text style={styles.title}>Group</Text>
           <Text style={styles.title}>{groupData.groupname}</Text>
-          <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading  ? { uri: imageUrl } : placeholder} />
+          <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading ? { uri: imageUrl } : placeholder} />
           {loading && <ActivityIndicator size="large" color="#0000ff" />}
         </View>
       </ScrollView>

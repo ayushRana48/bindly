@@ -10,6 +10,7 @@ import trashIcon from "../assets/trashIcon.png"
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../utils/compressImage";
 import blobToBase64 from "../utils/blobToBase64";
+import { BASE_URL } from "@env";
 
 const ProfileScreen = () => {
 
@@ -79,7 +80,7 @@ const ProfileScreen = () => {
         }
 
 
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users/updateUser/${user.username}`, {
+        fetch(`${BASE_URL}/bindly/users/updateUser/${user.username}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -103,7 +104,7 @@ const ProfileScreen = () => {
 
     const getUser = async () => {
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/getUser`, {
+            const response = await fetch(`${BASE_URL}/bindly/auth/getUser`, {
                 headers: { 'Content-Type': 'application/json' },
             });
             const data = await response.json();
@@ -120,7 +121,7 @@ const ProfileScreen = () => {
 
     const logOut = async () => {
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signOut`, {
+            const response = await fetch(`${BASE_URL}/bindly/auth/signOut`, {
                 headers: { 'Content-Type': 'application/json' },
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },

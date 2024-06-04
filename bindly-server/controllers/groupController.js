@@ -35,6 +35,8 @@ async function getAllGroupsController(req, res) {
   }
 }
 
+
+
 async function getGroupController(req, res) {
   const { groupId } = req.params;
 
@@ -82,6 +84,9 @@ async function deleteGroupController(req, res) {
 
   try {
     const { data: groupData, error: groupError } = await getGroup(groupId);
+
+    console.log(username,groupId)
+    console.log(groupError)
 
     if (groupError) {
       return res.status(400).json({ error: 'Error fetching group data' });

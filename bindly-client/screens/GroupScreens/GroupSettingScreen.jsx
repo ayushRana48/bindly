@@ -6,6 +6,7 @@ import { useGroupsContext } from "../GroupsContext";
 import { useRoute } from '@react-navigation/native';
 import placeholder from "../../assets/GroupIcon.png";
 import backArrow from '../../assets/backArrow.png';
+import { BASE_URL } from "@env";
 
 const GroupSetting = () => {
     const route = useRoute();
@@ -47,7 +48,7 @@ const GroupSetting = () => {
     const getGroup = async () => {
         console.log('call')
         try {
-          const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${gd.group.groupid}`, {
+          const response = await fetch(`${BASE_URL}/bindly/group/${gd.group.groupid}`, {
             headers: { 'Content-Type': 'application/json' },
           });
     
@@ -93,7 +94,7 @@ const GroupSetting = () => {
         }
 
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/leaveGroup`, {
+            const response = await fetch(`${BASE_URL}/bindly/usergroup/leaveGroup`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -125,7 +126,7 @@ const GroupSetting = () => {
         }
 
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/deleteGroup`, {
+            const response = await fetch(`${BASE_URL}/bindly/group/deleteGroup`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -12,6 +12,7 @@ import trashIcon from "../../assets/trashIcon.png"
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
+import { BASE_URL } from "@env";
 
 const NewGroupScreen = () => {
 
@@ -151,7 +152,7 @@ const NewGroupScreen = () => {
         const endDateUTC = endDate.toISOString();
 
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/createGroup`, {
+            const response = await fetch(`${BASE_URL}/bindly/group/createGroup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

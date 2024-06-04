@@ -148,38 +148,77 @@ async function updateGroup(groupId, updateParams) {
 // Function to delete a group
 async function deleteGroup(groupId) {
   try {
-    const { data: userGroupData, error: userGroupError } = await supabase
+    const { data: groupData, error: groupError } = await supabase
+      .from('groups')
+      .select('buyin')
+      .eq('groupid', groupId)
+      .single();
+
+    if (groupError) {
+      return { error: groupError.message };
+    }
+
+    const { data: userGroups, error: userGroupError } = await supabase
       .from('usergroup')
-      .delete()
+      .select('username')
       .eq('groupid', groupId);
 
     if (userGroupError) {
       return { error: userGroupError.message };
     }
 
+    for (const userGroup of userGroups) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('balance')
+        .eq('username', userGroup.username)
+        .single();
 
-    const { data: inviteDate, error: inviteError } = await supabase
-      .from('invite')
+      if (userError) {
+        return { error: userError.message };
+      }
+
+      const newBalance = userData.balance + groupData.buyin;
+
+      const { data: balanceUpdate, error: balanceUpdateError } = await supabase
+        .from('users')
+        .update({ balance: newBalance })
+        .eq('username', userGroup.username);
+
+      if (balanceUpdateError) {
+        return { error: balanceUpdateError.message };
+      }
+    }
+
+    const { data: userGroupDelete, error: userGroupDeleteError } = await supabase
+      .from('usergroup')
       .delete()
       .eq('groupid', groupId);
 
+    if (userGroupDeleteError) {
+      return { error: userGroupDeleteError.message };
+    }
+
+    const { data: inviteData, error: inviteError } = await supabase
+      .from('invite')
+      .delete()
+      .eq('groupid', groupId);
 
     if (inviteError) {
       return { error: inviteError.message };
     }
 
-
-    
-    const { data: groupData, error: groupError } = await supabase
+    const { data: groupDelete, error: groupDeleteError } = await supabase
       .from('groups')
       .delete()
       .eq('groupid', groupId);
 
-
-    if (groupError) {
-      return { error: groupError.message };
+    if (groupDeleteError) {
+      if(groupDelete.message=='Not Found'){
+        return { error:'Not Found' };
+      }
+      return { error: groupDeleteError.message };
     }
-
 
     return { data: 'Successfully deleted group' };
   } catch (error) {

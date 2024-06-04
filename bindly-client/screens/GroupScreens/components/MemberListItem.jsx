@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
+import { BASE_URL } from "@env";
 
 const MemberListItem = ({ memberData, kickMember }) => {
     const navigation = useNavigation();
@@ -28,7 +29,7 @@ const MemberListItem = ({ memberData, kickMember }) => {
 
         // Uncomment the following code to make the actual API call
         try {
-            const response = await fetch('https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/changeHost', {
+            const response = await fetch(`${BASE_URL}/bindly/group/changeHost`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -61,7 +62,7 @@ const MemberListItem = ({ memberData, kickMember }) => {
 
     const kickUser = async () => {
         try {
-            const response = await fetch('https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/kickUser', {
+            const response = await fetch(`${BASE_URL}/bindly/usergroup/kickUser`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

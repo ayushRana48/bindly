@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
+import { BASE_URL } from "@env";
 
 const SignInScreen = () => {
     const [username, setUsername] = useState("");
@@ -13,9 +14,15 @@ const SignInScreen = () => {
 
     const navigation = useNavigation();
 
+
+    useEffect(()=>{
+        console.log(`${BASE_URL}/bindly/auth/signIn`,'base url')
+    },[])
+
+    
     const submit = async () => {
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signIn`, {
+            const response = await fetch(`${BASE_URL}/bindly/auth/signIn`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

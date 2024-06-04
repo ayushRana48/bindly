@@ -6,6 +6,7 @@ import { useGroupsContext } from "../GroupsContext";
 import { useNavigation } from '@react-navigation/native';
 import placeholder from "../../assets/GroupIcon.png"
 import backArrow from "../../assets/backArrow.png"
+import { BASE_URL } from "@env";
 
 import InviteMemberItem from "./components/InviteMemberItem";
 
@@ -42,7 +43,7 @@ const InviteMembersScreen = () => {
 
     const fetchAllAvailableUsers = async () => {
       try {
-        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
+        const response = await fetch(`${BASE_URL}/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
           headers: { 'Content-Type': 'application/json' },
         });
         const res = await response.json();

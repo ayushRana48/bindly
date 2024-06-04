@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../GroupsContext";
 import { useUserContext } from "../../UserContext";
 import GroupListItem from "./components/GroupListItem";
+import { BASE_URL } from "@env";
 
 const GroupListScreen = () => {
 
@@ -23,9 +24,10 @@ const GroupListScreen = () => {
 
 
     const getAllGroups = async () => {
+        console.log('callllll')
 
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
+            const response = await fetch(`${BASE_URL}/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
@@ -53,7 +55,7 @@ const GroupListScreen = () => {
 
 
 
-    const memoizedGroups = useMemo(() => groups, [groups]);
+    // const memoizedGroups = useMemo(() => groups, [groups]);
 
     return (
         <View style={styles.container}>
@@ -70,12 +72,12 @@ const GroupListScreen = () => {
                     <Text style={{ fontSize: 30, fontWeight: 'bold', textAlign: 'center', alignItems: 'center', marginTop: 60 }}>Groups</Text>
                 </View>
                 {
-                    memoizedGroups.length === 0 ?
+                    groups.length === 0 ?
                         (<Text style={styles.NoGroups}>No Groups</Text>)
                         :
                         (<ScrollView style={styles.groupList}>
                             {
-                                memoizedGroups.map((g, index) => <GroupListItem key={index} groupData={g}></GroupListItem>)
+                                groups.map((g, index) => <GroupListItem key={index} groupData={g}></GroupListItem>)
                             }
                         </ScrollView>)
                 }
