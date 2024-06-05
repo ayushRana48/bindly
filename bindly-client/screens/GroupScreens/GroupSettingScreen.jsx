@@ -1,5 +1,5 @@
-import React, { useEffect, useState,useCallback } from "react";
-import { View, Text, ScrollView, Pressable, Image, StyleSheet, Alert,RefreshControl } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { View, Text, ScrollView, Pressable, Image, StyleSheet, Alert, RefreshControl, ActivityIndicator } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import { useGroupsContext } from "../GroupsContext";
@@ -19,20 +19,19 @@ const GroupSetting = () => {
     const [taskPerWeek, setTaskPerWeek] = useState(0);
     const [imageSrc, setImageSrc] = useState(placeholder);
     const [refreshing, setRefreshing] = useState(false);
-
+    const [leaving, setLeaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const navigation = useNavigation();
     const { user } = useUserContext();
     const { setGroups, setGroupData, groupData: gd } = useGroupsContext();
 
-
-
     useEffect(() => {
         if (gd?.group) {
             setGroupName(gd?.group.groupname);
             setDescription(gd?.group.description);
-            setStartDate(new Date(gd?.group.startdate).toLocaleDateString());
-            setEndDate(new Date(gd?.group.enddate).toLocaleDateString());
+            setStartDate(gd?.group.startdate);
+            setEndDate(gd?.group.enddate);
             if (gd?.group.pfp) {
                 setImageSrc({ uri: gd?.group.pfp });
             }
@@ -45,24 +44,28 @@ const GroupSetting = () => {
         navigation.goBack();
     };
 
+    const formatLocalDateTime = (date) => {
+        const date2 = new Date(date);
+        return date2.toLocaleTimeString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+
     const getGroup = async () => {
-        console.log('call')
         try {
-          const response = await fetch(`${BASE_URL}/bindly/group/${gd.group.groupid}`, {
-            headers: { 'Content-Type': 'application/json' },
-          });
-    
-          const res = await response.json();
-          setGroupData(res);
+            const response = await fetch(`${BASE_URL}/bindly/group/${gd.group.groupid}`, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const res = await response.json();
+            setGroupData(res);
         } catch (error) {
-          console.log(error, 'sdsdsd');
-        } 
-      };
-    
-      const onRefresh = useCallback(() => {
+            console.log(error);
+        }
+    };
+
+    const onRefresh = useCallback(() => {
         setRefreshing(true);
         getGroup().then(() => setRefreshing(false));
-      }, []);
+    }, []);
 
     const isPastDate = new Date(gd?.group.startdate) < new Date();
 
@@ -83,13 +86,18 @@ const GroupSetting = () => {
     };
 
     const leaveGroup = async () => {
+        if (leaving) return;
+        setLeaving(true);
+
         if (isPastDate) {
-            Alert.alert('Can not leave, group already started')
+            Alert.alert('Can not leave, group already started');
+            setLeaving(false);
             return;
         }
 
         if (user.username === gd?.group.hostid) {
-            Alert.alert('Can not leave, you are the host')
+            Alert.alert('Can not leave, you are the host');
+            setLeaving(false);
             return;
         }
 
@@ -109,19 +117,24 @@ const GroupSetting = () => {
                 setGroups(g => g.filter(h => h.groupid !== gd.group.groupid));
                 navigation.navigate("GroupsList");
                 setGroupData(null);
-
             } else {
                 console.error(body.error || "An error occurred. Please try again.");
             }
         } catch (error) {
             console.log("Fetch error: ", error);
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
+            setLeaving(false);
         }
-    }
+    };
 
     const deleteGroup = async () => {
+        if (deleting) return;
+        setDeleting(true);
+
         if (isPastDate) {
-            Alert.alert('Can not delete, group already started')
+            Alert.alert('Can not delete, group already started');
+            setDeleting(false);
             return;
         }
 
@@ -147,14 +160,18 @@ const GroupSetting = () => {
         } catch (error) {
             console.log("Fetch error: ", error);
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
+            setDeleting(false);
         }
-    }
+    };
 
     return (
-        <ScrollView style={styles.container}
-        refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }>
+        <ScrollView
+            style={styles.container}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+        >
             <Pressable style={styles.cancel} onPress={back}>
                 <Image style={{ height: 40, width: 40 }} source={backArrow} />
             </Pressable>
@@ -178,10 +195,10 @@ const GroupSetting = () => {
             <Text style={styles.label}>Description</Text>
             <Text style={styles.input}>{description}</Text>
 
-            <Text style={styles.label}>Start Date</Text>
-            <Text style={styles.input}>{startDate}</Text>
-            <Text style={styles.label}>End Date</Text>
-            <Text style={styles.input}>{endDate}</Text>
+            <Text style={styles.label}>Start Time</Text>
+            <Text style={styles.input}>{formatLocalDateTime(startDate)}</Text>
+            <Text style={styles.label}>End Time</Text>
+            <Text style={styles.input}>{formatLocalDateTime(endDate)}</Text>
 
             <Text style={styles.label}>Buy In</Text>
             <Text style={styles.input}>{buyIn}</Text>
@@ -199,8 +216,9 @@ const GroupSetting = () => {
                 <Pressable
                     style={[styles.leaveGroup, { backgroundColor: isPastDate ? 'gray' : '#ed972d' }]}
                     onPress={leaveGroup}
+                    disabled={leaving}
                 >
-                    <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>Leave Group</Text>
+                    {leaving ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>Leave Group</Text>}
                 </Pressable>
             </View>
 
@@ -209,8 +227,9 @@ const GroupSetting = () => {
                     <Pressable
                         style={[styles.deleteGroup, { backgroundColor: isPastDate ? 'gray' : '#f04343' }]}
                         onPress={deleteGroup}
+                        disabled={deleting}
                     >
-                        <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>Delete Group</Text>
+                        {deleting ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>Delete Group</Text>}
                     </Pressable>
                 </View>
             )}

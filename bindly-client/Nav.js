@@ -27,7 +27,6 @@ export default function Nav() {
                 if (response.status === 200) {
                     if(data.user){
                         setEmail(data.user.email)
-                        console.log('Sign in successful, navigating to Profile screen.');
                     }
                 } else if (data.error) {
                     console.log('Error received:', data.error);

@@ -1,29 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView,Keyboard, Platform } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView, Keyboard, Platform, ActivityIndicator } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import { useGroupsContext } from "../GroupsContext";
-import placeholder from "../../assets/GroupIcon.png"
-import camera from "../../assets/Camera.png"
-import cameraIcon from "../../assets/cameraIcon.png"
-import galleryIcon from "../../assets/galleryIcon.png"
-import trashIcon from "../../assets/trashIcon.png"
+import placeholder from "../../assets/GroupIcon.png";
+import camera from "../../assets/Camera.png";
+import cameraIcon from "../../assets/cameraIcon.png";
+import galleryIcon from "../../assets/galleryIcon.png";
+import trashIcon from "../../assets/trashIcon.png";
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
 import { BASE_URL } from "@env";
 
 const NewGroupScreen = () => {
-
     const today = new Date();
 
-    // Create a new Date object for tomorrow
+    // Create a new Date object for tomorrow and add 30 minutes
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setMinutes(tomorrow.getMinutes() + 30);
 
-    const formatLocalDate = (date) => {
-        return date.toLocaleDateString();
+    const formatLocalDateTime = (date) => {
+        return date.toLocaleTimeString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
     const [groupName, setGroupName] = useState("");
@@ -32,10 +32,11 @@ const NewGroupScreen = () => {
     const [numWeeks, setNumWeeks] = useState(0);
     const [buyIn, setBuyIn] = useState(0);
     const [taskPerWeek, setTaskPerWeek] = useState(0);
-    const [show, setShow] = useState(false)
-    const [errorMessage, setErrorMessage] = useState("")
-    const [imageSrc, setImageSrc] = useState(placeholder)
-    const [openModal, setOpenModal] = useState(false)
+    const [show, setShow] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [imageSrc, setImageSrc] = useState(placeholder);
+    const [openModal, setOpenModal] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -48,7 +49,7 @@ const NewGroupScreen = () => {
         if (!result.canceled) {
             const compressedUri = await compressImage(result.assets[0].uri);
             setImageSrc({ uri: compressedUri });
-            setOpenModal(false)
+            setOpenModal(false);
         }
     };
 
@@ -65,17 +66,17 @@ const NewGroupScreen = () => {
             if (!result.canceled) {
                 const compressedUri = await compressImage(result.assets[0].uri);
                 setImageSrc({ uri: compressedUri });
-                setOpenModal(false)
+                setOpenModal(false);
             }
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
     };
 
     const removeImage = () => {
-        setImageSrc(placeholder)
-        setOpenModal(false)
-    }
+        setImageSrc(placeholder);
+        setOpenModal(false);
+    };
 
     const navigation = useNavigation();
 
@@ -83,44 +84,51 @@ const NewGroupScreen = () => {
     const { setGroups, setGroupData } = useGroupsContext();
 
     const cancel = () => {
-        navigation.navigate("GroupsList")
-    }
+        navigation.navigate("GroupsList");
+    };
 
     const toggleDatepicker = () => {
-        setShow(!show)
-    }
+        setShow(!show);
+    };
 
     const submit = async () => {
-
-        // Validate Names
+        if (loading) return; // Prevent double click
+        setLoading(true);
+        
+        // Validate inputs
         if (!groupName.trim()) {
             setErrorMessage("Enter Group Name");
+            setLoading(false);
             return;
         }
 
-        // Validate Passwords
         if (!description.trim()) {
             setErrorMessage("Please enter description.");
+            setLoading(false);
             return;
         }
 
         if (!startDate) {
             setErrorMessage("Please enter start date.");
+            setLoading(false);
             return;
         }
 
         if (!numWeeks) {
             setErrorMessage("Please enter number of weeks.");
+            setLoading(false);
             return;
         }
 
         if (!buyIn) {
             setErrorMessage("Please enter buy in");
+            setLoading(false);
             return;
         }
 
         if (!taskPerWeek) {
             setErrorMessage("Please enter number of tasks per week");
+            setLoading(false);
             return;
         }
 
@@ -143,13 +151,19 @@ const NewGroupScreen = () => {
             } catch (error) {
                 console.log("Error compressing or converting image: ", error);
                 setErrorMessage("Error processing image. Please try again.");
+                setLoading(false);
                 return;
             }
         }
 
         // Convert dates to UTC
-        const startDateUTC = new Date(startDate).toISOString();
-        const endDateUTC = endDate.toISOString();
+        const startTime = new Date(startDate)
+        const endTime = new Date(endDate)
+        startTime.setSeconds(0, 0)
+        endTime.setSeconds(0, 0)
+
+        const startDateUTC = startTime.toISOString();
+        const endDateUTC = endTime.toISOString();
 
         try {
             const response = await fetch(`${BASE_URL}/bindly/group/createGroup`, {
@@ -174,33 +188,31 @@ const NewGroupScreen = () => {
                 setGroupData({ group: body, usergroup: user, invite: [], post: [], history: [] });
                 navigation.navigate("Group", { groupData: body });
             } else {
-                console.log(body)
-                if(body.error=="Insufficient Funds"){
+                if (body.error === "Insufficient Funds") {
                     setErrorMessage("Insufficient Funds, lower buy in");
-
-                }
-                else{
+                } else {
                     setErrorMessage(body.error || "An error occurred. Please try again.");
-
                 }
-
             }
         } catch (error) {
             console.log("Fetch error: ", error);
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
+            setLoading(false);
         }
     };
 
     const onChange = ({ type }, selectedDate) => {
-        if (type == 'set') {
-            const currentDate = selectedDate;
+        if (type === 'set') {
+            const currentDate = selectedDate || startDate;
             setStartDate(currentDate);
+            setShow(false);
         } else {
             toggleDatepicker();
         }
-    }
+    };
 
-    return  (
+    return (
         <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -273,13 +285,20 @@ const NewGroupScreen = () => {
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Start Date</Text>
                             <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-                                <Text>{formatLocalDate(startDate)}</Text>
+                                <Text>{formatLocalDateTime(startDate)}</Text>
                             </Pressable>
                         </View>
 
                         {show && (
                             <View>
-                                <DateTimePicker mode="date" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
+                                <DateTimePicker
+                                    mode="datetime"
+                                    display="spinner"
+                                    value={startDate}
+                                    onChange={onChange}
+                                    style={{ height: 120 }}
+                                    minimumDate={tomorrow}
+                                />
                                 <View style={styles.centeredRow}>
                                     <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
                                         <Text style={styles.buttonText}>Done</Text>
@@ -326,8 +345,8 @@ const NewGroupScreen = () => {
 
                         {!show && (
                             <View style={styles.centeredRow}>
-                                <Pressable style={styles.signUpButton} onPress={submit}>
-                                    <Text style={styles.buttonText}>Create</Text>
+                                <Pressable style={styles.signUpButton} onPress={submit} disabled={loading}>
+                                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Create</Text>}
                                 </Pressable>
                             </View>
                         )}
@@ -336,7 +355,6 @@ const NewGroupScreen = () => {
                             <View style={styles.centeredRow}>
                                 <Text style={styles.errorText}>{errorMessage}</Text>
                             </View>
-                            //d
                         )}
                     </View>
                 </TouchableWithoutFeedback>
@@ -383,11 +401,11 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 30,
         left: 10,
-        height:40,
-        width:50,
-        zIndex:10,
-    justifyContent:'center',
-    alignItems:'center'
+        height: 40,
+        width: 50,
+        zIndex: 10,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     logoContainer: {
         marginTop: 36,

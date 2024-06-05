@@ -31,12 +31,10 @@ const GroupScreen = () => {
   }, [gd]);
 
   const getGroup = async () => {
-    console.log('call')
     try{
       const isInGroup = await inGroup()
       if(!isInGroup){
         Alert.alert("Invalid Group", "Group has been deleted or not in group")
-        console.log(groupData.groupid)
         navigation.navigate('GroupsList');
         setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
 
@@ -61,7 +59,6 @@ const GroupScreen = () => {
       console.log(error)
       if (error.message === 'JSON object requested, multiple (or no) rows returned') {
         Alert.alert("Invalid Group", "Group has been deleted")
-        console.log(groupData.groupid)
         navigation.navigate('GroupsList');
 
         setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
@@ -74,7 +71,6 @@ const GroupScreen = () => {
 
 
   const inGroup = async () => {
-    console.log('calljksfnS:Jdfnkjsd')
     try {
       const response = await fetch(`${BASE_URL}/bindly/usergroup/inGroup`, {
         headers: { 'Content-Type': 'application/json' },
@@ -90,11 +86,9 @@ const GroupScreen = () => {
         const errorResponse = await response.json();
         throw new Error(errorResponse.error || 'Failed to fetch group data');
       }
-      console.log(response,'looo22222k herrreee')
 
 
       const res = await response.json();
-      console.log(res,'loook herrreee')
       if (res.inGroup) {
         return true
       }

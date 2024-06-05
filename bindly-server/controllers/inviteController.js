@@ -32,7 +32,6 @@ async function acceptInviteController(req, res) {
     const {data:groupData,error:groupError}=await getGroup(groupid)
 
     if(groupError){
-      console.log(groupError)
       return res.status(400).json({ error: 'Group not found' });
     }
 
@@ -41,7 +40,6 @@ async function acceptInviteController(req, res) {
     const { data: userGroupData, error: createUserGroupError } = await createUserGroup(usergroupId, receiverid, groupid);
 
     if(createUserGroupError=='Insufficient Funds'){
-      console.log('herrree')
       return res.status(400).json({ error: 'Insufficient Funds' });
     }
 

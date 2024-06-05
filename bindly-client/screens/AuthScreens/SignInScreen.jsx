@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import { BASE_URL } from "@env";
@@ -7,20 +7,15 @@ import { BASE_URL } from "@env";
 const SignInScreen = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false)
-    const [errorMessage, setErrorMessage] = useState("")
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     const { email, setEmail } = useUserContext();
-
     const navigation = useNavigation();
 
-
-    useEffect(()=>{
-        console.log(`${BASE_URL}/bindly/auth/signIn`,'base url')
-    },[])
-
-    
     const submit = async () => {
+        if (loading) return; // Prevent double click
+        setLoading(true);
         try {
             const response = await fetch(`${BASE_URL}/bindly/auth/signIn`, {
                 method: 'POST',
@@ -34,12 +29,9 @@ const SignInScreen = () => {
             const data = await response.json();
 
             if (response.status === 200) {
-                // Navigate to confirm email page or handle the success scenario
-                setEmail(username)
+                setEmail(username);
             } else {
-                // Handling different error messages from the server
                 if (data.error) {
-                    console.log('Error received:', data.error);
                     if (data.error.includes('Invalid login credentials')) {
                         setErrorMessage("Invalid login credentials");
                     } else {
@@ -51,8 +43,9 @@ const SignInScreen = () => {
             }
         } catch (error) {
             console.error('Sign in error:', error.message);
-            // In case the fetch fails
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -74,33 +67,32 @@ const SignInScreen = () => {
                 </View>
 
                 <View>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                    style={styles.input}
-                    autoCapitalize='none'
-                    value={username}
-                    onChangeText={setUsername}
-                    placeholder="email"
-                    keyboardType="email-address"
-                />
+                    <Text style={styles.label}>Email</Text>
+                    <TextInput
+                        style={styles.input}
+                        autoCapitalize='none'
+                        value={username}
+                        onChangeText={setUsername}
+                        placeholder="email"
+                        keyboardType="email-address"
+                    />
                 </View>
 
                 <View>
-                <Text style={styles.label}>Password</Text>
-                <TextInput
-                    style={styles.input}
-                    autoCapitalize='none'
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="password"
-                    secureTextEntry={true}
-                />
-                                </View>
-
+                    <Text style={styles.label}>Password</Text>
+                    <TextInput
+                        style={styles.input}
+                        autoCapitalize='none'
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholder="password"
+                        secureTextEntry={true}
+                    />
+                </View>
 
                 <View style={styles.signInButtonContainer}>
-                    <Pressable style={styles.signInButton} onPress={submit}>
-                        <Text style={styles.signInButtonText}>Sign In</Text>
+                    <Pressable style={styles.signInButton} onPress={submit} disabled={loading}>
+                        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.signInButtonText}>Sign In</Text>}
                     </Pressable>
                 </View>
 

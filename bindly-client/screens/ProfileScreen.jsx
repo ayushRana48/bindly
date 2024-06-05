@@ -110,7 +110,6 @@ const ProfileScreen = () => {
             const data = await response.json();
 
             if (response.status === 200) {
-                console.log(data)
             } else if (data.error) {
                 console.log('Error received:', data.error);
             }

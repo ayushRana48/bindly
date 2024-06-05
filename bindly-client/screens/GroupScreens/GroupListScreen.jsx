@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo,useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { View, Text, TextInput, Pressable, Image, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../GroupsContext";
@@ -7,79 +7,60 @@ import GroupListItem from "./components/GroupListItem";
 import { BASE_URL } from "@env";
 
 const GroupListScreen = () => {
-
     const navigation = useNavigation();
-
-    const { groups, setGroups } = useGroupsContext()
-    const { user } = useUserContext()
+    const { groups, setGroups } = useGroupsContext();
+    const { user } = useUserContext();
     const [refreshing, setRefreshing] = useState(false);
 
-
-
-
     const toNewGroup = () => {
-        navigation.navigate('NewGroup')
-
-    }
-
+        navigation.navigate('NewGroup');
+    };
 
     const getAllGroups = async () => {
-        console.log('callllll')
-
         try {
             const response = await fetch(`${BASE_URL}/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
-
             const res = await response.json();
-
             const list = res.map(r => r.groups);
-            setGroups(g => [...list])
-
-
+            setGroups(g => [...list]);
+        } catch (error) {
+            console.log(error);
         }
-        catch (error) {
-            console.log(error)
-        }
-    }
+    };
 
     useEffect(() => {
-        getAllGroups()
-    }, [])
+        getAllGroups();
+    }, []);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         getAllGroups().then(() => setRefreshing(false));
     }, []);
 
-
-
-    // const memoizedGroups = useMemo(() => groups, [groups]);
-
     return (
         <View style={styles.container}>
+            <View style={styles.header}>
+                <Pressable style={styles.newGroup} onPress={toNewGroup}>
+                    <Image source={require("../../assets/NewGroupIcon.png")} style={styles.newGroupIcon} />
+                </Pressable>
+                <Text style={styles.headerText}>Groups</Text>
+            </View>
             <ScrollView
                 contentContainerStyle={styles.scrollView}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
             >
-                <Pressable  style={styles.newGroup}onPress={toNewGroup}>
-                    <Image source={require("../../assets/NewGroupIcon.png")}></Image>
-                </Pressable>
-                <View>
-                    <Text style={{ fontSize: 30, fontWeight: 'bold', textAlign: 'center', alignItems: 'center', marginTop: 60 }}>Groups</Text>
-                </View>
                 {
                     groups.length === 0 ?
-                        (<Text style={styles.NoGroups}>No Groups</Text>)
-                        :
-                        (<ScrollView style={styles.groupList}>
-                            {
-                                groups.map((g, index) => <GroupListItem key={index} groupData={g}></GroupListItem>)
-                            }
-                        </ScrollView>)
+                        (<Text style={styles.noGroups}>No Groups</Text>) :
+                        (
+                            <View style={styles.groupList}>
+                                {groups.map((g, index) => <GroupListItem key={index} groupData={g} />)}
+                            </View>
+                        )
                 }
             </ScrollView>
         </View>
@@ -89,31 +70,46 @@ const GroupListScreen = () => {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: 'white',
-        padding: 32,
         flex: 1,
-        // justifyContent: 'center',
+    },
+    header: {
+        // position: 'absolute',
+        paddingTop: 60,
+        width: '100%',
+        zIndex: 10,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 15,
     },
     newGroup: {
         position: 'absolute',
-        justifyContent: 'flex-start',
-        right: 0,
-        top: 30,
-        zIndex:10,
-        width:35,
-        height:35,
+        width:45,
+        height:45,
+        right: 20,
+        top:40,
+        justifyContent:'center',
+        alignItems:'center'
     },
-
-    NoGroups: {
+    newGroupIcon: {
+        // width:38,
+        // height:26
+    },
+    headerText: {
+        fontSize: 30,
+        fontWeight: 'bold',
+    },
+    scrollView: {
+        paddingHorizontal: 32,
+    },
+    noGroups: {
         fontSize: 20,
-        fontFamily: 'bold',
-        margin: 'auto'
-
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     groupList: {
-        marginTop: 20
-    }
+        marginTop: 20,
+    },
 });
 
-
-export default GroupListScreen
-
+export default GroupListScreen;

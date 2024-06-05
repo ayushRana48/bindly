@@ -20,16 +20,16 @@ app.use(bodyParser.text({ limit: '10mb' }));
 
 // Routes
 app.get('/hello', (req, res) => {
-  res.send('Hello2 World!');
+  res.send('Hello4 World!');
 });
 
 app.use('/bindly', require('./routes/bindly'));
 
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Listening app listening at ${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`Listening app listening at ${port}`);
+// });
 
 
-// module.exports.handler=serverless(app)
+module.exports.handler=serverless(app)

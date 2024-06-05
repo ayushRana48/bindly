@@ -126,12 +126,9 @@ async function leaveGroupController(req, res) {
 
 async function inGroupController(req,res){
   const {username,groupId}= req.body
-  console.log(username,groupId,'j')
 
     const {data,error}=await getUserGroupByUsernameGroup(username,groupId)
 
-    console.log(data,'d')
-    console.log(error,'e')
     if(error){
       console.log(error)
       if(error.message=='JSON object requested, multiple (or no) rows returned'){

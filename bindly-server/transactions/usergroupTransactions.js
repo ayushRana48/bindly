@@ -207,10 +207,8 @@ async function getUserGroupByUsernameGroup(username,groupId){
   .eq('groupid', groupId)
   .single();
 
-  console.log(data,error)
 
   if (error) {
-    console.log('here')
     return { error };
   }
   else{

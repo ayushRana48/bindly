@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView, Keyboard, Platform } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView, Keyboard, Platform, ActivityIndicator } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
@@ -34,6 +34,7 @@ const GroupEditScreen = () => {
     const [openModal, setOpenModal] = useState(false);
     const [groupid, setGroupid] = useState('');
     const [timeStamp, setTimeStamp] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const parseDateString = (dateString) => {
         return new Date(dateString);
@@ -54,8 +55,9 @@ const GroupEditScreen = () => {
         setNumWeeks(diffWeeks.toString());
     };
 
-    const formatLocalDate = (date) => {
-        return date.toLocaleDateString();
+    const formatLocalDateTime = (date) => {
+        const date2 = new Date(date);
+        return date2.toLocaleTimeString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
     useEffect(() => {
@@ -127,28 +129,37 @@ const GroupEditScreen = () => {
     };
 
     const submit = async () => {
+        if (loading) return; // Prevent double click
+        setLoading(true);
+
         if (!groupName.trim()) {
             console.error("Enter Group Name");
+            setLoading(false);
             return;
         }
         if (!description.trim()) {
             console.error("Please enter description.");
+            setLoading(false);
             return;
         }
         if (!startDate) {
             console.error("Please enter start date.");
+            setLoading(false);
             return;
         }
         if (!numWeeks) {
             console.error("Please enter number of weeks.");
+            setLoading(false);
             return;
         }
         if (!buyIn) {
             console.error("Please enter buy in");
+            setLoading(false);
             return;
         }
         if (!taskPerWeek) {
             console.error("Please enter number of tasks per week");
+            setLoading(false);
             return;
         }
 
@@ -170,8 +181,13 @@ const GroupEditScreen = () => {
                 }
 
                 // Convert dates to UTC
-                const startDateUTC = startDate.toISOString();
-                const endDateUTC = endDate.toISOString();
+                const startTime = new Date(startDate);
+                const endTime = new Date(endDate);
+                startTime.setSeconds(0, 0);
+                endTime.setSeconds(0, 0);
+
+                const startDateUTC = startTime.toISOString();
+                const endDateUTC = endTime.toISOString();
 
                 const response = await fetch(`${BASE_URL}/bindly/group/updateGroup/${groupid}`, {
                     method: 'PUT',
@@ -200,18 +216,7 @@ const GroupEditScreen = () => {
 
                     setGroupData(g => ({
                         ...g,
-                        group: {
-                            ...g.group,
-                            groupname: groupName,
-                            description: description,
-                            buyin: buyIn,
-                            startdate: startDate.toISOString().split('T')[0],
-                            enddate: endDate.toISOString().split('T')[0],
-                            hostid: user.username,
-                            pfp: body.pfp,
-                            tasksperweek: taskPerWeek,
-                            lastpfpupdate: timeStamp,
-                        },
+                        group: body,
                     }));
                     navigation.navigate("Group", { groupData: body });
                 } else {
@@ -219,14 +224,17 @@ const GroupEditScreen = () => {
                 }
             } catch (error) {
                 console.log(error);
+            } finally {
+                setLoading(false);
             }
         } else {
             console.error("No group ID provided.");
+            setLoading(false);
         }
     };
 
     const onChange = ({ type }, selectedDate) => {
-        if (type == 'set') {
+        if (type === 'set') {
             const currentDate = new Date(selectedDate);
             setStartDate(currentDate);
         }
@@ -305,13 +313,13 @@ const GroupEditScreen = () => {
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Start Date</Text>
                             <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-                                <Text>{formatLocalDate(startDate)}</Text>
+                                <Text>{formatLocalDateTime(startDate)}</Text>
                             </Pressable>
                         </View>
 
                         {show && (
                             <View>
-                                <DateTimePicker mode="date" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
+                                <DateTimePicker mode="datetime" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
                                 <View style={styles.centeredRow}>
                                     <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
                                         <Text style={styles.buttonText}>Done</Text>
@@ -358,8 +366,8 @@ const GroupEditScreen = () => {
 
                         {!show && (
                             <View style={styles.centeredRow}>
-                                <Pressable style={styles.signUpButton} onPress={submit}>
-                                    <Text style={styles.buttonText}>Confirm</Text>
+                                <Pressable style={styles.signUpButton} onPress={submit} disabled={loading}>
+                                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Confirm</Text>}
                                 </Pressable>
                             </View>
                         )}
@@ -414,11 +422,11 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 30,
         left: 10,
-        height:40,
-        width:50,
-        zIndex:10,
-        justifyContent:'center',
-        alignItems:'center'
+        height: 40,
+        width: 50,
+        zIndex: 10,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     logoContainer: {
         marginTop: 36,

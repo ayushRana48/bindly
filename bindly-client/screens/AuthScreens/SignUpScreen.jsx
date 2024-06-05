@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Modal, Alert, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Modal, Alert, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
-import placeholder from "../../assets/GroupIcon.png"
-import camera from "../../assets/Camera.png"
-import cameraIcon from "../../assets/cameraIcon.png"
-import galleryIcon from "../../assets/galleryIcon.png"
-import trashIcon from "../../assets/trashIcon.png"
+import placeholder from "../../assets/GroupIcon.png";
+import camera from "../../assets/Camera.png";
+import cameraIcon from "../../assets/cameraIcon.png";
+import galleryIcon from "../../assets/galleryIcon.png";
+import trashIcon from "../../assets/trashIcon.png";
 import * as ImagePicker from 'expo-image-picker';
 import { BASE_URL } from "@env";
 
@@ -21,19 +21,18 @@ const SignUpScreen = () => {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
-    const [openModal, setOpenModal] = useState(false)
-    const [imageSrc, setImageSrc] = useState(placeholder)
+    const [openModal, setOpenModal] = useState(false);
+    const [imageSrc, setImageSrc] = useState(placeholder);
+    const [loading, setLoading] = useState(false);
 
     const navigation = useNavigation();
-
     const { email: email2, setEmail: setEmail2 } = useUserContext();
-
-    const [show, setShow] = useState(false)
-    const [date, setDate] = useState(new Date())
+    const [show, setShow] = useState(false);
+    const [date, setDate] = useState(new Date());
 
     const toggleDatepicker = () => {
-        setShow(!show)
-    }
+        setShow(!show);
+    };
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -46,7 +45,7 @@ const SignUpScreen = () => {
         if (!result.canceled) {
             const compressedUri = await compressImage(result.assets[0].uri);
             setImageSrc({ uri: compressedUri });
-            setOpenModal(false)
+            setOpenModal(false);
         }
     };
 
@@ -63,37 +62,43 @@ const SignUpScreen = () => {
             if (!result.canceled) {
                 const compressedUri = await compressImage(result.assets[0].uri);
                 setImageSrc({ uri: compressedUri });
-                setOpenModal(false)
+                setOpenModal(false);
             }
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
     };
 
     const removeImage = () => {
-        setImageSrc(placeholder)
-        setOpenModal(false)
-    }
+        setImageSrc(placeholder);
+        setOpenModal(false);
+    };
 
     const submit = async () => {
+        if (loading) return; // Prevent double click
+        setLoading(true);
         if (!firstName.trim() || !lastName.trim()) {
             setErrorMessage("Please enter both your first and last name.");
+            setLoading(false);
             return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             setErrorMessage("Please enter a valid email address.");
+            setLoading(false);
             return;
         }
 
         if (!password.trim()) {
             setErrorMessage("Please enter password.");
+            setLoading(false);
             return;
         }
 
         if (password !== confirmPassword) {
             setErrorMessage("The passwords do not match.");
+            setLoading(false);
             return;
         }
 
@@ -107,6 +112,7 @@ const SignUpScreen = () => {
 
         if (age < 18) {
             setErrorMessage("You must be at least 18 years old to sign up.");
+            setLoading(false);
             return;
         }
 
@@ -122,43 +128,46 @@ const SignUpScreen = () => {
             imgBase64 = await blobToBase64(blob);
         }
 
-        fetch(`${BASE_URL}/bindly/auth/signUp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: username,
-                email: email.toLowerCase(),
-                firstName: firstName,
-                lastName: lastName,
-                password: password,
-                pfp: imgBase64,
-            }),
-        })
-            .then(response => response.json().then(data => ({ status: response.status, body: data })))
-            .then(({ status, body }) => {
-                if (status === 200) {
-                    setEmail2(email);
-                } else {
-                    if (body.error) {
-                        if (body.error.includes('duplicate key value violates unique constraint "users_pkey"')) {
-                            setErrorMessage("Username already taken.");
-                        } else if (body.error.includes("User already registered")) {
-                            setErrorMessage("Email already taken.");
-                        }
-                        else if (body.error.includes("at least 6 characters")) {
-                            setErrorMessage("Password should be at least 6 characters");
-                        }
+        try {
+            const response = await fetch(`${BASE_URL}/bindly/auth/signUp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: username,
+                    email: email.toLowerCase(),
+                    firstName: firstName,
+                    lastName: lastName,
+                    password: password,
+                    pfp: imgBase64,
+                }),
+            });
+
+            const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
+
+            if (status === 200) {
+                setEmail2(email);
+                navigation.navigate('SignIn');
+            } else {
+                if (body.error) {
+                    if (body.error.includes('duplicate key value violates unique constraint "users_pkey"')) {
+                        setErrorMessage("Username already taken.");
+                    } else if (body.error.includes("User already registered")) {
+                        setErrorMessage("Email already taken.");
+                    } else if (body.error.includes("at least 6 characters")) {
+                        setErrorMessage("Password should be at least 6 characters");
                     }
                 }
-            })
-            .catch(error => {
-                Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
-            });
+            }
+        } catch (error) {
+            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const toSignIn = () => {
         navigation.navigate('SignIn');
-    }
+    };
 
     const onChange = ({ type }, selectedDate) => {
         if (type == 'set') {
@@ -167,7 +176,7 @@ const SignUpScreen = () => {
         } else {
             toggleDatepicker();
         }
-    }
+    };
 
     return (
         <KeyboardAvoidingView
@@ -180,8 +189,7 @@ const SignUpScreen = () => {
                 </View>
 
                 <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative', marginBottom: 20 }}>
-                    <Image style={{ width: 180, height: 180, borderRadius: 8 }} source={imageSrc}>
-                    </Image>
+                    <Image style={{ width: 180, height: 180, borderRadius: 8 }} source={imageSrc} />
                     <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 40 }} onPress={() => setOpenModal(true)}>
                         <Image style={{ width: 50, height: 50, borderRadius: 10 }} source={camera} />
                     </Pressable>
@@ -303,8 +311,8 @@ const SignUpScreen = () => {
 
                 {!show && (
                     <View style={styles.centeredRow}>
-                        <Pressable style={styles.signUpButton} onPress={submit}>
-                            <Text style={styles.buttonText}>Sign Up</Text>
+                        <Pressable style={styles.signUpButton} onPress={submit} disabled={loading}>
+                            {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Sign Up</Text>}
                         </Pressable>
                     </View>
                 )}
@@ -406,7 +414,7 @@ const styles = StyleSheet.create({
     },
     linkText: {
         color: 'dodgerblue',
-        textAlign: 'center'
+        textAlign: 'center',
     },
     bold: {
         fontWeight: 'bold',

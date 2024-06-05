@@ -54,7 +54,6 @@ const MembersListScreen = () => {
   };
 
   const getGroup = async () => {
-    console.log('call')
     try {
       const response = await fetch(`${BASE_URL}/bindly/group/${g2.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +62,7 @@ const MembersListScreen = () => {
       const res = await response.json();
       setGroupData(res);
     } catch (error) {
-      console.log(error, 'sdsdsd');
+      console.log(error);
     } 
   };
 
