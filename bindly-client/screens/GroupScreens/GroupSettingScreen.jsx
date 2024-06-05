@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, Image, StyleSheet, Alert, RefreshControl, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Pressable, Image, StyleSheet, Alert, RefreshControl, ActivityIndicator, Modal } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import { useGroupsContext } from "../GroupsContext";
@@ -21,6 +21,8 @@ const GroupSetting = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [leaving, setLeaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [showLeaveModal, setShowLeaveModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const navigation = useNavigation();
     const { user } = useUserContext();
@@ -81,6 +83,35 @@ const GroupSetting = () => {
         }
     };
 
+    const openDeleteModal=()=>{
+        if (isPastDate) {
+            Alert.alert('Can not delete, group already started');
+            setDeleting(false);
+            return;
+        }
+
+        setShowDeleteModal(true)
+
+    }
+
+    const openLeaveModal=()=>{
+       
+        if (isPastDate) {
+            Alert.alert('Can not leave, group already started');
+            setLeaving(false);
+            return;
+        }
+
+        if (user.username === gd?.group.hostid) {
+            Alert.alert('Can not leave, you are the host');
+            setLeaving(false);
+            return;
+        }
+
+        setShowLeaveModal(true)
+
+    }
+
     const toMembers = () => {
         navigation.navigate("MembersList");
     };
@@ -125,6 +156,7 @@ const GroupSetting = () => {
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
         } finally {
             setLeaving(false);
+            setShowLeaveModal(false);
         }
     };
 
@@ -162,6 +194,7 @@ const GroupSetting = () => {
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
         } finally {
             setDeleting(false);
+            setShowDeleteModal(false);
         }
     };
 
@@ -215,7 +248,7 @@ const GroupSetting = () => {
             <View style={{ alignItems: 'center' }}>
                 <Pressable
                     style={[styles.leaveGroup, { backgroundColor: isPastDate ? 'gray' : '#ed972d' }]}
-                    onPress={leaveGroup}
+                    onPress={openLeaveModal}
                     disabled={leaving}
                 >
                     {leaving ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>Leave Group</Text>}
@@ -226,13 +259,67 @@ const GroupSetting = () => {
                 <View style={{ alignItems: 'center' }}>
                     <Pressable
                         style={[styles.deleteGroup, { backgroundColor: isPastDate ? 'gray' : '#f04343' }]}
-                        onPress={deleteGroup}
+                        onPress={openDeleteModal}
                         disabled={deleting}
                     >
                         {deleting ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>Delete Group</Text>}
                     </Pressable>
                 </View>
             )}
+
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={showLeaveModal}
+                onRequestClose={() => setShowLeaveModal(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalView}>
+                        <Text style={styles.modalText}>Are you sure you want to leave?</Text>
+                        <View style={styles.modalButtons}>
+                            <Pressable
+                                style={[styles.button, styles.buttonLeave]}
+                                onPress={leaveGroup}
+                            >
+                                {leaving ? <ActivityIndicator color="white" /> : <Text style={styles.textStyle}>Leave</Text>}
+                            </Pressable>
+                            <Pressable
+                                style={[styles.button, styles.buttonCancel]}
+                                onPress={() => setShowLeaveModal(false)}
+                            >
+                                <Text style={styles.textStyle}>Cancel</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={showDeleteModal}
+                onRequestClose={() => setShowDeleteModal(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalView}>
+                        <Text style={styles.modalText}>Are you sure you want to delete?</Text>
+                        <View style={styles.modalButtons}>
+                            <Pressable
+                                style={[styles.button, styles.buttonDelete]}
+                                onPress={deleteGroup}
+                            >
+                                {deleting ? <ActivityIndicator color="white" /> :<Text style={styles.textStyle}>Delete</Text>}
+                            </Pressable>
+                            <Pressable
+                                style={[styles.button, styles.buttonCancel]}
+                                onPress={() => setShowDeleteModal(false)}
+                            >
+                                <Text style={styles.textStyle}>Cancel</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 };
@@ -315,6 +402,60 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 8,
         marginTop: 20,
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 35,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    modalText: {
+        marginBottom: 15,
+        textAlign: 'center',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+    },
+    button: {
+        borderRadius: 10,
+        padding: 10,
+        elevation: 2,
+        marginHorizontal: 10,
+        width: 100,
+        alignItems: 'center',
+    },
+    buttonLeave: {
+        backgroundColor: '#ed972d',
+    },
+    buttonDelete: {
+        backgroundColor: '#f04343',
+    },
+    buttonCancel: {
+        backgroundColor: '#2196F3',
+    },
+    textStyle: {
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
 });
 

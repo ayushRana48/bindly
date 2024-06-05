@@ -9,6 +9,8 @@ export const UserProvider = ({ children }) => {
 
   useEffect(() => {
 
+    console.log(email)
+
     const getUserByEmail = async () => {
       try {
         const response = await fetch(`${BASE_URL}/bindly/users/email/${email}`, {
