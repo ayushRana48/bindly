@@ -1,5 +1,7 @@
 const { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup } = require('../transactions/groupTransactions.js');
 const { createUserGroup} = require('../transactions/usergroupTransactions.js');
+const { getUser} = require('../transactions/usersTransactions.js');
+
 const { v4: uuidv4 } = require('uuid');
 
 async function createGroupController(req, res) {
@@ -8,6 +10,12 @@ async function createGroupController(req, res) {
   const { groupname, description, buyin, week, startdate, timeleft, hostId,enddate,image,tasksperweek } = req.body;
 
   try {
+
+    const {data:userData,error:userError}= await getUser(hostId)
+    if(userData.balance<buyin){
+      return res.status(400).json({ error: 'Insufficient Funds' });
+    }
+
     const { data, error } = await createGroup(groupid,groupname, hostId, description, buyin, week, startdate, timeleft,enddate,image,tasksperweek);
 
 
@@ -16,7 +24,13 @@ async function createGroupController(req, res) {
     const usergroupid = uuidv4();
 
 
-    const {data2,error2} = await createUserGroup(usergroupid,hostId,groupid)
+    const {data:data2,error:error2} = await createUserGroup(usergroupid,hostId,groupid)
+    console.log(error2)
+    if(error2=='Insufficient Funds'){
+      console.log('herrree')
+      return res.status(400).json({ error: 'Insufficient Funds' });
+    }
+
     if (error2) throw error;
     res.status(200).json(data);
   } catch (error) {

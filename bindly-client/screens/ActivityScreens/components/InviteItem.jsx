@@ -50,6 +50,9 @@ const InviteItem = ({ inviteData, removeInvite }) => {
                         Alert.alert('Invalid Invite', "Group is deleted");
                         removeInvite(inviteId);
                     }
+                    if(body.error=="Insufficient Funds"){
+                        Alert.alert("Insufficient Funds", "buy in is higher than current balance")
+                    }
                 }
             })
             .catch(error => {

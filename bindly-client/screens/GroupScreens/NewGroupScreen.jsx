@@ -174,8 +174,16 @@ const NewGroupScreen = () => {
                 setGroupData({ group: body, usergroup: user, invite: [], post: [], history: [] });
                 navigation.navigate("Group", { groupData: body });
             } else {
-                console.error(body.error || "An error occurred. Please try again.");
-                setErrorMessage(body.error || "An error occurred. Please try again.");
+                console.log(body)
+                if(body.error=="Insufficient Funds"){
+                    setErrorMessage("Insufficient Funds, lower buy in");
+
+                }
+                else{
+                    setErrorMessage(body.error || "An error occurred. Please try again.");
+
+                }
+
             }
         } catch (error) {
             console.log("Fetch error: ", error);

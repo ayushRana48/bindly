@@ -44,9 +44,6 @@ const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
                 }
             })
             .catch(error => {
-                if(error==='Group not found'){
-                    Alert.alert("Invite Invalid","Group has been deleted");
-                }
                 console.log(error)
                 // In case the fetch fails
                 Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");

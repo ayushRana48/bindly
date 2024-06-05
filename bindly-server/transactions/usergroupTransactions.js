@@ -12,17 +12,24 @@ async function createUserGroup(usergroupid, username, groupid) {
     return { error: groupError.message };
   }
 
+
   const { data: userData, error: userError } = await supabase
     .from('users')
     .select('balance')
     .eq('username', username)
     .single();
 
+
   if (userError) {
     return { error: userError.message };
   }
 
+
   const newBalance = userData.balance - groupData.buyin;
+
+  if(newBalance<0){
+    return {error: 'Insufficient Funds'}
+  }
 
   const { data: balanceUpdate, error: balanceUpdateError } = await supabase
     .from('users')

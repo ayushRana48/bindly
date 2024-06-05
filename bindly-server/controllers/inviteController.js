@@ -27,11 +27,7 @@ async function acceptInviteController(req, res) {
   const usergroupId = uuidv4()
 
   try {
-    const { data, error } = await deleteInvite(inviteId);
 
-
-
-    if (error) throw error;
 
     const {data:groupData,error:groupError}=await getGroup(groupid)
 
@@ -44,9 +40,18 @@ async function acceptInviteController(req, res) {
 
     const { data: userGroupData, error: createUserGroupError } = await createUserGroup(usergroupId, receiverid, groupid);
 
-
+    if(createUserGroupError=='Insufficient Funds'){
+      console.log('herrree')
+      return res.status(400).json({ error: 'Insufficient Funds' });
+    }
 
     if (createUserGroupError) throw createUserGroupError;
+
+    const { data, error } = await deleteInvite(inviteId);
+
+
+
+    if (error) throw error;
 
     res.status(200).json(userGroupData);
 
