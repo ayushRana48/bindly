@@ -7,6 +7,8 @@ import backArrow from '../../assets/backArrow.png';
 import settings from '../../assets/settings.png';
 import { useGroupsContext } from "../GroupsContext";
 import { useUserContext } from "../../UserContext";
+import members from '../../assets/members.png'
+import info from '../../assets/info.png'
 import { BASE_URL } from "@env";
 
 const GroupScreen = () => {
@@ -31,15 +33,15 @@ const GroupScreen = () => {
   }, [gd]);
 
   const getGroup = async () => {
-    try{
+    try {
       const isInGroup = await inGroup()
-      if(!isInGroup){
+      if (!isInGroup) {
         Alert.alert("Invalid Group", "Group has been deleted or not in group")
         navigation.navigate('GroupsList');
         setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
 
       }
-    }catch(err){
+    } catch (err) {
 
     }
     try {
@@ -97,7 +99,7 @@ const GroupScreen = () => {
       }
     } catch (error) {
       console.log(error)
-    } 
+    }
   };
 
 
@@ -122,6 +124,14 @@ const GroupScreen = () => {
     }
   };
 
+  const toMembers = () => {
+    navigation.navigate("MembersList");
+  };
+
+  const toPost = () => {
+    navigation.navigate("CreatePost");
+  };
+
 
   return (
     <View style={styles.container}>
@@ -138,11 +148,31 @@ const GroupScreen = () => {
           </Pressable>
         )}
         <View style={styles.logoContainer}>
-          <Text style={styles.title}>Group</Text>
           <Text style={styles.title}>{groupData.groupname}</Text>
-          <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading ? { uri: imageUrl } : placeholder} />
-          {loading && <ActivityIndicator size="large" color="#0000ff" />}
+
+          <View style={{ flexDirection: 'row', }}>
+            <View>
+              <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading ? { uri: imageUrl } : placeholder} />
+            </View>
+            {!loading && <View style={{ flexDirection: 'row', width: 160, justifyContent: 'space-between', marginTop: 20, marginLeft: 40 }}>
+              <View style={{ textAlign: 'center', 'alignItems': 'center' }}>
+                <Pressable style={styles.headerButton} onPress={toMembers}><Image style={styles.headerButtonIcon} source={members}></Image></Pressable>
+                <Text>Members</Text>
+              </View>
+              <View style={{ textAlign: 'center', 'alignItems': 'center' }}>
+                <Pressable style={styles.headerButton}><Image style={styles.headerButtonIcon} source={info}></Image></Pressable>
+                <Text>Info</Text>
+              </View>
+            </View>}
+          </View>
+
+          {!loading && <Pressable style={styles.createPost} onPress={toPost}>
+            <Text style={{ color: 'white' }}>Create Post</Text>
+          </Pressable>}
+
+
         </View>
+        {loading && <ActivityIndicator size="large" color="#0000ff" />}
       </ScrollView>
     </View>
   );
@@ -153,6 +183,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 24,
     flex: 1,
+
   },
   backArrow: {
     position: 'absolute',
@@ -171,19 +202,49 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   logoContainer: {
-    marginTop: 36,
+    marginTop: 60,
     marginBottom: 36,
-    alignItems: 'center',
+    marginLeft: 20,
+    borderBottomColor: '#e3e3e3',
+    borderBottomWidth: 1,
+    paddingBottom: 10,
+    height:235
   },
   title: {
-    marginTop: 8,
     fontSize: 24,
     fontWeight: 'bold',
+    alignSelf: 'center',
+    marginBottom: 20
   },
   centeredRow: {
     alignItems: 'center',
     marginTop: 16,
   },
+  headerButton: {
+    width: 60,
+    height: 60,
+    padding: 10,
+    backgroundColor: '#e3e3e3',
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5
+  },
+  headerButtonIcon: {
+    width: 30,
+    height: 30,
+  },
+  createPost: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FF8D1D',
+    width: 180,
+    height: 40,
+    padding: 10,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginTop: 20
+  }
 });
 
 export default GroupScreen;

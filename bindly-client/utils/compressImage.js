@@ -10,3 +10,5 @@ export default compressImage = async (uri) => {
     // return uri
     return compressed.uri;
 };
+
+

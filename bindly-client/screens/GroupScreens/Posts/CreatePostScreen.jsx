@@ -1,0 +1,467 @@
+import React, { useEffect, useState } from "react";
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, Image, KeyboardAvoidingView, Keyboard, Platform, TouchableWithoutFeedback, Modal, ActivityIndicator } from "react-native";
+import { Video } from 'expo-av';
+import { useNavigation } from '@react-navigation/native';
+import { useUserContext } from "../../../UserContext";
+import { useGroupsContext } from "../../GroupsContext";
+import * as ImagePicker from 'expo-image-picker';
+import * as VideoThumbnails from 'expo-video-thumbnails'; // Import for video compression
+import compressPostImage from "../../../utils/compressPostImage";
+import blobToBase64 from "../../../utils/blobToBase64";
+import { BASE_URL } from "@env";
+
+const CreatePostScreen = () => {
+    const { setGroups, setGroupData, groupData } = useGroupsContext();
+    const { user } = useUserContext();
+
+    const [caption, setCaption] = useState("");
+    const [image, setImage] = useState("");
+    const [video, setVideo] = useState("");
+    const [thumbnail, setThumbnail] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalContent, setModalContent] = useState("");
+    const [modalIsImage, setIsModalImage] = useState(true);
+
+    useEffect(() => {
+        console.log('here')
+        console.log(image)
+        console.log(video)
+        console.log('herehere')
+    }, [image, video])
+
+
+    useEffect(() => {
+        console.log(groupData)
+    }, [])
+    const takeImage = async () => {
+        try {
+            await ImagePicker.requestCameraPermissionsAsync();
+            let result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [9,],
+                quality: 1,
+            });
+
+            if (!result.canceled) {
+                setImage(result.assets[0].uri);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+    const calculateBase64Size = (base64String) => {
+        let padding = 0;
+        if (base64String.endsWith('==')) {
+            padding = 2;
+        } else if (base64String.endsWith('=')) {
+            padding = 1;
+        }
+        return (base64String.length * 3 / 4) - padding;
+    };
+
+
+    const takeVideo = async () => {
+        try {
+            await ImagePicker.requestCameraPermissionsAsync();
+            let result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 1,
+                videoMaxDuration: 10 // Set max video length to 10 seconds
+            });
+
+            if (!result.canceled) {
+                const compressedUri = await compressVideo(result.assets[0].uri);
+                setVideo(result.assets[0].uri);
+                setThumbnail(compressedUri);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const pickImage = async () => {
+        try {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [9, 16],
+                quality: 1,
+            });
+
+            if (!result.canceled) {
+                setImage(result.assets[0].uri);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const pickVideo = async () => {
+        try {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                allowsEditing: true,
+                aspect: [9, 16],
+                quality: 1,
+                videoMaxDuration: 10 // Set max video length to 10 seconds
+            });
+
+            if (!result.canceled) {
+                const compressedUri = await compressVideo(result.assets[0].uri);
+                setVideo(result.assets[0].uri);
+                setThumbnail(compressedUri);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+
+    const compressVideo = async (uri) => {
+        try {
+            const { uri: compressedUri } = await VideoThumbnails.getThumbnailAsync(
+                uri,
+                {
+                    time: 2000,
+                }
+            );
+            return compressedUri;
+        } catch (e) {
+            console.warn(e);
+        }
+    };
+
+    const removeImage = () => {
+        setImage("");
+    };
+
+    const removeVideo = () => {
+        setVideo("");
+        setThumbnail("");
+    };
+
+    const navigation = useNavigation();
+
+    const cancel = () => {
+        navigation.goBack();
+    };
+
+    const submit = async () => {
+        console.log('call')
+        const d1 = new Date()
+        if (loading) return; // Prevent double click
+        setLoading(true);
+        console.log('here')
+
+        if (!caption.trim()) {
+            console.error("Please enter caption.");
+            setLoading(false);
+            return;
+        }
+        if (!image && !video) {
+            console.error("Please add picture or video");
+            setLoading(false);
+            return;
+        }
+
+
+        let imgBase64 = "";
+        let vidBase64 = ""
+
+        if (image) {
+            try {
+                const compressedUri = await compressPostImage(image);
+                const response = await fetch(compressedUri);
+                const blob = await response.blob();
+                imgBase64 = await blobToBase64(blob);
+            } catch (error) {
+                console.log("Error compressing or converting image: ", error);
+                setErrorMessage("Error processing image. Please try again.");
+                setLoading(false);
+                return;
+            }
+        }
+        console.log('image', imgBase64, 'image')
+
+
+        if (video) {
+            try {
+                // const compressedUri = await compressPostImage(img.uri);
+                // const response = await fetch(compressedUri);
+                const response = await fetch(video);
+                const blob = await response.blob();
+                vidBase64 = await blobToBase64(blob);
+            } catch (error) {
+                console.log("Error compressing or converting video: ", error);
+                setErrorMessage("Error processing image. Please try again.");
+                setLoading(false);
+                return;
+            }
+        }
+
+
+        console.log('done')
+
+        const payloadSize = calculateBase64Size(imgBase64) + calculateBase64Size(vidBase64);
+        console.log(`Payload size: ${payloadSize} bytes`);
+
+        try {    
+            const startTime = Date.now(); // Record the start time
+            
+            console.log(`${'localhost:3000'}/bindly/post/createPost`)
+            const response = await fetch(`${'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod'}/bindly/post/createPost`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: user.username,
+                    groupId: groupData.group.groupid,
+                    photolink: imgBase64,
+                    videolink: vidBase64,
+                    caption: caption,
+                }),
+            });
+
+            console.log('next')
+            console.log(response)
+
+            const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
+            console.log(status)
+            console.log('vody Next')
+            console.log(body)
+            if (status === 200) {
+                setGroupData(g => {
+                    return {
+                        ...g,
+                        post: [...g.post, body]
+                    };
+                });
+                console.log('postsBelow');
+                console.log([...groupData.post, body]);
+            }
+             const endTime = Date.now(); // Record the end time
+    const duration = endTime - startTime;
+    console.log(duration)
+    console.log(endTime-d1)
+        } catch (error) {
+            console.log("Fetch error: ", error);
+            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
+            setLoading(false);
+        }
+
+
+
+    };
+
+    const openModal = (content, isImage) => {
+        setIsModalImage(isImage);
+        setModalContent(content);
+        setModalVisible(true);
+    };
+
+    const closeModal = () => {
+        setModalVisible(false);
+        setModalContent("");
+    };
+
+    return (
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <ScrollView contentContainerStyle={styles.container}>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View>
+                        <Pressable style={styles.cancel} onPress={cancel}>
+                            <Text style={{ color: "red" }}>cancel</Text>
+                        </Pressable>
+                        <Text style={styles.title}>{groupData.group.groupname}</Text>
+
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 }}>
+                            <View>
+                                <Text>Select Picture</Text>
+                                <Pressable style={styles.selectMedia} onPress={pickImage}>
+                                    {image ? (
+                                        <Pressable onPress={() => openModal(image, true)}>
+                                            <Image source={{ uri: image }} style={{ width: 140, height: 140, borderRadius: 10 }} />
+                                        </Pressable>
+                                    ) : (
+                                        <Text>Camera</Text>
+                                    )}
+                                </Pressable>
+                                {image ? (
+                                    <Pressable style={styles.remove} onPress={removeImage}>
+                                        <Text style={styles.removeText}>X</Text>
+                                    </Pressable>
+                                ) : null}
+                            </View>
+                            <View>
+                                <Text>Select Video</Text>
+                                <Pressable style={styles.selectMedia} onPress={pickVideo}>
+                                    {thumbnail ? (
+                                        <Pressable onPress={() => openModal(video, false)}>
+                                            <Image source={{ uri: thumbnail }} style={{ width: 140, height: 140, borderRadius: 10 }} />
+                                        </Pressable>
+                                    ) : (
+                                        <Text>Video</Text>
+                                    )}
+                                </Pressable>
+                                {video ? (
+                                    <Pressable style={styles.remove} onPress={removeVideo}>
+                                        <Text style={styles.removeText}>X</Text>
+                                    </Pressable>
+                                ) : null}
+                            </View>
+                        </View>
+                        <View>
+                            <Text>caption</Text>
+                            <TextInput
+                                style={styles.captionInput}
+                                multiline={true}
+                                numberOfLines={5}
+                                maxLength={1000}
+                                value={caption}
+                                onChangeText={setCaption}
+                                placeholder="write caption ..."
+                            />
+                            <Text style={{ marginLeft: 'auto', marginRight: 10 }}>{caption.length}/1000</Text>
+                        </View>
+                        <View style={{ alignItems: 'center' }}>
+                            <Pressable style={styles.share} onPress={submit}>
+                               {loading ? <ActivityIndicator color={'white'}></ActivityIndicator>: <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>Share</Text>}
+                            </Pressable>
+                        </View>
+
+                        <Modal
+                            visible={modalVisible}
+                            transparent={true}
+                            animationType="slide"
+                        >
+                            <View style={styles.modalContainer}>
+                                <View style={styles.modalContent}>
+                                    <Pressable style={styles.modalClose} onPress={closeModal}>
+                                        <Text style={{ color: "red", fontSize: 18 }}>X</Text>
+                                    </Pressable>
+                                    {modalContent && modalIsImage && (
+                                        <Image source={{ uri: modalContent }} style={styles.modalImage} />
+                                    )}
+                                    {modalContent && !modalIsImage && (
+                                        <Video
+                                            source={{ uri: modalContent }}
+                                            style={styles.modalImage}
+                                            useNativeControls
+                                            resizeMode="contain"
+                                            shouldPlay
+                                            isLooping
+                                        />
+                                    )}
+                                </View>
+                            </View>
+                        </Modal>
+
+                    </View>
+                </TouchableWithoutFeedback>
+            </ScrollView>
+        </KeyboardAvoidingView>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: 'white',
+        padding: 32,
+        flexGrow: 1,
+    },
+    cancel: {
+        position: 'absolute',
+        top: 30,
+        left: 10,
+        height: 40,
+        width: 50,
+        zIndex: 10,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    selectMedia: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 140,
+        height: 140,
+        borderRadius: 10,
+        backgroundColor: '#e3e3e3',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        alignSelf: 'center',
+        marginBottom: 20,
+        marginTop: 60
+    },
+    share: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'dodgerblue',
+        width: 180,
+        height: 50,
+        padding: 10,
+        borderRadius: 8,
+        marginTop: 40,
+    },
+    remove: {
+        width: 35,
+        height: 35,
+        borderColor: 'black',
+        borderRadius: 20,
+        borderWidth: 1,
+        justifyContent: 'center',  // Center content vertically
+        alignItems: 'center',      // Center content horizontally,
+        position: 'absolute',
+        right: -13,
+        top: 3,
+        backgroundColor: 'white',
+        zIndex: 10
+    },
+    removeText: {
+        fontSize: 16
+    },
+    captionInput: {
+        padding: 10,
+        height: 200,
+        borderColor: 'black',
+        borderWidth: 0.5,
+        borderRadius: 5,
+        backgroundColor: '#f0f0f0'
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    modalContent: {
+        width: '90%',
+        height: '80%',
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    modalClose: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        zIndex: 1
+    },
+    modalImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 10,
+        resizeMode: 'contain'
+    }
+});
+
+export default CreatePostScreen;

@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ProfileScreen from './ProfileScreen';
 import GroupScreen from './GroupScreens/GroupListScreen';
 import { GroupsProvider } from './GroupsContext';
-import NewGroupScreen from './GroupScreens/NewGroupScreen';
+import NewGroupScreen from './GroupScreens/Settings/NewGroupScreen';
 import GroupsNav from './GroupScreens/GroupsNav';
 import ActivityNav from './ActivityScreens/ActivityNav';
 const Tab = createBottomTabNavigator();

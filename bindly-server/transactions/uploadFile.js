@@ -1,18 +1,33 @@
 const { supabase } = require('../initSupabase');
 
+// MIME type to file extension mapping
+const mimeToExtension = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'video/mp4': 'mp4',
+    'video/quicktime': 'mov' // Ensure .mov files are correctly handled
+};
+
 const uploadFile = async (fileData, bucketName, fileName, timestamp, newTimeStamp) => {
     let fileUrl = "";
-    let fileExt = "jpg"; // Default to jpg, you may want to handle different file types based on the Base64 string
+    let fileExt = "jpg"; // Default to jpg, but we will detect the type
+    let contentType = "image/jpeg"; // Default content type
 
     try {
         if (fileData) {
-            // Extract the file extension from the Base64 data
-            const match = fileData.match(/^data:image\/(\w+);base64,/);
+            // Extract the MIME type from the Base64 data
+            const match = fileData.match(/^data:([^;]+);base64,/);
             if (match) {
-                fileExt = match[1];
-                fileData = fileData.replace(/^data:image\/\w+;base64,/, "");
+                const mimeType = match[1];
+                fileExt = mimeToExtension[mimeType] || mimeType.split('/')[1]; // Use mapping or default to the second part of the MIME type
+                contentType = mimeType;
+
+                // Remove the Base64 prefix from the data
+                fileData = fileData.replace(/^data:[^;]+;base64,/, "");
             }
 
+            // Convert Base64 string to buffer
             const buffer = Buffer.from(fileData, 'base64');
 
             if (timestamp) {
@@ -28,18 +43,19 @@ const uploadFile = async (fileData, bucketName, fileName, timestamp, newTimeStam
                 }
             }
 
-            const { data: imageData, error: imageError } = await supabase.storage
+            // Upload new file
+            const { data: fd, error: fileError } = await supabase.storage
                 .from(bucketName)
                 .upload(`${fileName}-${newTimeStamp}.${fileExt}`, buffer, {
-                    contentType: `image/${fileExt}`,
+                    contentType: contentType,
                     upsert: true,
                 });
 
-            if (imageError) {
-                console.error('Error uploading file:', imageError);
-                return { fileUrl: null, error: imageError };
+            if (fileError) {
+                console.error('Error uploading file:', fileError);
+                return { fileUrl: null, error: fileError };
             } else {
-                fileUrl = `https://lxnzgnvhkrgxpfsokwos.supabase.co/storage/v1/object/public/${bucketName}/${fileName}-${newTimeStamp}.${fileExt}`;
+                fileUrl = `https://lxnzgnvhkrgxpfsokwos.supabase.co/storage/v1/object/public/${bucketName}/${fileName}-${newTimeStamp}.${fileExt}`;            
             }
         } else {
             if (timestamp) {
@@ -61,6 +77,6 @@ const uploadFile = async (fileData, bucketName, fileName, timestamp, newTimeStam
     }
 
     return { fileUrl, error: null };
-}
+};
 
-module.exports = {uploadFile};
+module.exports = { uploadFile };

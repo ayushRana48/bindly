@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#08d43f',
         borderRadius: 8,
     },
+    
 });
 
 export default InviteMemberItem;

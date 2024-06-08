@@ -1,12 +1,41 @@
 const { supabase } = require('../initSupabase');
+const { uploadFile } = require('./uploadFile')
+ 
 
 // Function to create a new group
-async function createPost(username, groupid, photolink1, photolink2, caption,valid,startdate,timepost) {
+async function createPost(username, groupid, photolink, videolink, caption,startdate) {
+  const timepost = new Date(Date.now()).toISOString();
+  let picUrl=""
+  let vidUrl=""
+
+  if(photolink){
+    const fileName = username+groupid+'p'
+    const {fileUrl, error } = await uploadFile(photolink, 'posts', fileName, null, timepost);
+    if(!error){
+      picUrl=fileUrl
+    }
+    else{
+      return {error}
+
+    }
+  }
+
+  if(videolink){
+    const fileName = username+groupid+'v'
+    const {fileUrl, error } = await uploadFile(videolink, 'posts', fileName, null, timepost);
+    if(!error){
+      vidUrl=fileUrl
+    }
+    else{
+      return {error}
+    }
+  }
+
   const { data, error } = await supabase
     .from('post')
     .insert([
-      { username, groupid, photolink1, photolink2, caption,valid,startdate,timepost }
-    ]);
+      { username, groupid, photolink:picUrl, videolink:vidUrl, caption,startdate,timepost }
+    ]).select().single();
 
   return { data, error };
 }
@@ -50,6 +79,7 @@ async function getPostsByGroupId(groupid) {
 }
 
 async function updatePost(postid, updateParams) {
+  
   const { data, error } = await supabase
     .from('post')
     .update(updateParams)
