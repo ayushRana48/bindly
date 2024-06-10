@@ -7,9 +7,10 @@ import backArrow from '../../assets/backArrow.png';
 import settings from '../../assets/settings.png';
 import { useGroupsContext } from "../GroupsContext";
 import { useUserContext } from "../../UserContext";
-import members from '../../assets/members.png'
-import info from '../../assets/info.png'
+import members from '../../assets/members.png';
+import info from '../../assets/info.png';
 import { BASE_URL } from "@env";
+import PostItem from '../GroupScreens/components/PostItem';
 
 const GroupScreen = () => {
   const route = useRoute();
@@ -19,58 +20,64 @@ const GroupScreen = () => {
   const navigation = useNavigation();
   const { groupData: gd, setGroupData, setGroups } = useGroupsContext();
   const [refreshing, setRefreshing] = useState(false);
-  const { user } = useUserContext()
-
+  const { user } = useUserContext();
+  const [posts, setPosts] = useState([]);
+  const [visiblePosts, setVisiblePosts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [groupUsers,setGroupUsers]=useState([])
+  const postsPerPage = 5; // Number of posts to load at a time
 
   useEffect(() => {
-    // Append a timestamp to force image refresh
     if (gd?.group) {
       setImageUrl(gd?.group?.pfp);
-    }
-    else {
-      // setImageUrl(groupData.pfp);
+      setPosts(gd?.post || []);
+      setVisiblePosts((gd?.post || []).slice(0, postsPerPage));
+      setGroupUsers(gd?.usergroup)
     }
   }, [gd]);
 
+
+
   const getGroup = async () => {
     try {
-      const isInGroup = await inGroup()
+      const isInGroup = await inGroup();
       if (!isInGroup) {
-        Alert.alert("Invalid Group", "Group has been deleted or not in group")
+        Alert.alert("Invalid Group", "Group has been deleted or not in group");
         navigation.navigate('GroupsList');
         setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
-
+        return;
       }
     } catch (err) {
-
+      console.error(err);
     }
+
     try {
       const response = await fetch(`${BASE_URL}/bindly/group/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
-        // Convert non-2xx HTTP responses into errors.
         const errorResponse = await response.json();
         throw new Error(errorResponse.error || 'Failed to fetch group data');
       }
 
       const res = await response.json();
       setGroupData(res);
+      setPosts(res.post || []);
+      setGroupUsers(res?.usergroup)
+
+      setVisiblePosts((res.post || []).slice(0, postsPerPage));
     } catch (error) {
-      console.log(error)
+      console.error(error);
       if (error.message === 'JSON object requested, multiple (or no) rows returned') {
-        Alert.alert("Invalid Group", "Group has been deleted")
+        Alert.alert("Invalid Group", "Group has been deleted");
         navigation.navigate('GroupsList');
-
         setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
-
       }
     } finally {
       setLoading(false);
     }
   };
-
 
   const inGroup = async () => {
     try {
@@ -84,31 +91,22 @@ const GroupScreen = () => {
       });
 
       if (!response.ok) {
-        // Convert non-2xx HTTP responses into errors.
         const errorResponse = await response.json();
         throw new Error(errorResponse.error || 'Failed to fetch group data');
       }
 
-
       const res = await response.json();
-      if (res.inGroup) {
-        return true
-      }
-      else {
-        return false
-      }
+      return res.inGroup;
     } catch (error) {
-      console.log(error)
+      console.error(error);
     }
+    return false;
   };
-
-
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     getGroup().then(() => setRefreshing(false));
   }, []);
-
 
   useEffect(() => {
     getGroup();
@@ -132,13 +130,27 @@ const GroupScreen = () => {
     navigation.navigate("CreatePost");
   };
 
+  const loadMorePosts = () => {
+    const nextPage = page + 1;
+    const newVisiblePosts = posts.slice(0, nextPage * postsPerPage);
+    setVisiblePosts(newVisiblePosts);
+    setPage(nextPage);
+  };
 
   return (
     <View style={styles.container}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
+        }
+        onMomentumScrollEnd={(e) => {
+          const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+          if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 20) {
+            loadMorePosts();
+          }
+        }}
+        style={{padding:24}}
+      >
         <Pressable style={styles.backArrow} onPress={back}>
           <Image style={{ height: 40, width: 40 }} source={backArrow} />
         </Pressable>
@@ -150,29 +162,49 @@ const GroupScreen = () => {
         <View style={styles.logoContainer}>
           <Text style={styles.title}>{groupData.groupname}</Text>
 
-          <View style={{ flexDirection: 'row', }}>
+          <View style={{ flexDirection: 'row' }}>
             <View>
               <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading ? { uri: imageUrl } : placeholder} />
             </View>
-            {!loading && <View style={{ flexDirection: 'row', width: 160, justifyContent: 'space-between', marginTop: 20, marginLeft: 40 }}>
-              <View style={{ textAlign: 'center', 'alignItems': 'center' }}>
-                <Pressable style={styles.headerButton} onPress={toMembers}><Image style={styles.headerButtonIcon} source={members}></Image></Pressable>
-                <Text>Members</Text>
+            {!loading && (
+              <View style={{ flexDirection: 'row', width: 160, justifyContent: 'space-between', marginTop: 20, marginLeft: 40 }}>
+                <View style={{ textAlign: 'center', alignItems: 'center' }}>
+                  <Pressable style={styles.headerButton} onPress={toMembers}>
+                    <Image style={styles.headerButtonIcon} source={members} />
+                  </Pressable>
+                  <Text>Members</Text>
+                </View>
+                <View style={{ textAlign: 'center', alignItems: 'center' }}>
+                  <Pressable style={styles.headerButton}>
+                    <Image style={styles.headerButtonIcon} source={info} />
+                  </Pressable>
+                  <Text>Info</Text>
+                </View>
               </View>
-              <View style={{ textAlign: 'center', 'alignItems': 'center' }}>
-                <Pressable style={styles.headerButton}><Image style={styles.headerButtonIcon} source={info}></Image></Pressable>
-                <Text>Info</Text>
-              </View>
-            </View>}
+            )}
           </View>
 
-          {!loading && <Pressable style={styles.createPost} onPress={toPost}>
-            <Text style={{ color: 'white' }}>Create Post</Text>
-          </Pressable>}
-
-
+          {!loading && (
+            <Pressable style={styles.createPost} onPress={toPost}>
+              <Text style={{ color: 'white' }}>Create Post</Text>
+            </Pressable>
+          )}
         </View>
+
         {loading && <ActivityIndicator size="large" color="#0000ff" />}
+
+        {!loading && visiblePosts.map((post, index) => (
+          <PostItem
+            key={index}
+            imageLink={post.photolink}
+            videoLink={post.videolink}
+            username={post.username}
+            caption={post.caption}
+            users={groupUsers}
+            time ={post.timepost}
+          />
+        ))}
+
       </ScrollView>
     </View>
   );
@@ -181,9 +213,7 @@ const GroupScreen = () => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
-    padding: 24,
     flex: 1,
-
   },
   backArrow: {
     position: 'absolute',
@@ -208,13 +238,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e3e3e3',
     borderBottomWidth: 1,
     paddingBottom: 10,
-    height:235
+    height: 235,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     alignSelf: 'center',
-    marginBottom: 20
+    marginBottom: 20,
   },
   centeredRow: {
     alignItems: 'center',
@@ -228,7 +258,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 5
+    marginBottom: 5,
   },
   headerButtonIcon: {
     width: 30,
@@ -243,8 +273,8 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     alignSelf: 'center',
-    marginTop: 20
-  }
+    marginTop: 20,
+  },
 });
 
 export default GroupScreen;

@@ -9,7 +9,6 @@ export const UserProvider = ({ children }) => {
 
   useEffect(() => {
 
-    console.log(email)
 
     const getUserByEmail = async () => {
       try {

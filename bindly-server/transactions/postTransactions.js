@@ -1,44 +1,182 @@
 const { supabase } = require('../initSupabase');
 const { uploadFile } = require('./uploadFile')
- 
+const { v4: uuidv4 } = require('uuid');
+// const ffmpeg = require('fluent-ffmpeg');
+const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { execFile } = require('child_process');
+
+
+
 
 // Function to create a new group
-async function createPost(username, groupid, photolink, videolink, caption,startdate) {
-  const timepost = new Date(Date.now()).toISOString();
-  let picUrl=""
-  let vidUrl=""
+async function createPost(username, groupid, photolink, videolink, caption, timepost, startdate) {
 
-  if(photolink){
-    const fileName = username+groupid+'p'
-    const {fileUrl, error } = await uploadFile(photolink, 'posts', fileName, null, timepost);
-    if(!error){
-      picUrl=fileUrl
-    }
-    else{
-      return {error}
+  const postid = uuidv4()
 
-    }
-  }
-
-  if(videolink){
-    const fileName = username+groupid+'v'
-    const {fileUrl, error } = await uploadFile(videolink, 'posts', fileName, null, timepost);
-    if(!error){
-      vidUrl=fileUrl
-    }
-    else{
-      return {error}
-    }
-  }
 
   const { data, error } = await supabase
     .from('post')
     .insert([
-      { username, groupid, photolink:picUrl, videolink:vidUrl, caption,startdate,timepost }
+      { postid, username, groupid, photolink, videolink, caption, startdate, timepost }
     ]).select().single();
 
   return { data, error };
 }
+
+
+async function getPresignedUrl(fileName, date, isImage) {
+
+  try {
+    // Generate the file path
+
+    let filePath = `${fileName}-${date}`;
+
+    if (isImage) {
+      filePath = `${fileName}-${date}p`;
+    }
+    else {
+      filePath = `${fileName}-${date}v`;
+    }
+
+    // Create a signed URL for uploading
+    const { data, error } = await supabase
+      .storage
+      .from('posts')
+      .createSignedUploadUrl(filePath, 60); // URL expires in 60 seconds
+
+    if (error) {
+      throw error;
+    }
+
+    // Construct the permanent URL
+    const permanentUrl = `https://lxnzgnvhkrgxpfsokwos.supabase.co/storage/v1/object/public/posts/${filePath}`;
+    return ({ presignedUrl: data.signedUrl, permanentUrl })
+  } catch (error) {
+    return { error }
+  }
+};
+
+
+
+async function compressVideo(fileName) {
+  try {
+    console.log('Starting video compression process...');
+
+    // Step 1: Get a signed URL for the video
+    const { data: downloadData, error: downloadError } = await supabase
+      .storage
+      .from('posts')
+      .createSignedUrl(fileName, 60); // URL expires in 60 seconds
+
+    if (downloadError) {
+      console.error('Error creating signed URL:', downloadError);
+      throw downloadError;
+    }
+
+    console.log('Signed URL:', downloadData.signedUrl);
+
+    // Step 2: Fetch the video using the signed URL
+    const response = await fetch(downloadData.signedUrl);
+    if (!response.ok) {
+      console.error('Failed to fetch the video. Status:', response.status);
+      throw new Error('Failed to fetch the video.');
+    }
+
+    // Buffer the video data into memory
+    const arrayBuffer = await response.arrayBuffer();
+    const videoBuffer = Buffer.from(arrayBuffer);
+
+    // Save the video buffer to the /tmp directory
+    const tempInputPath = path.join(os.tmpdir(), `${fileName}.mp4`);
+    fs.writeFileSync(tempInputPath, videoBuffer);
+    console.log('Saved video to', tempInputPath);
+
+    // Create a file path for the compressed output video
+    const outputPath = path.join(os.tmpdir(), 'compressed_' + fileName + '.mp4');
+
+    // Log the paths being used
+    console.log('ffmpeg binary path:', process.env.AWS_EXECUTION_ENV ? path.join(__dirname, '..', 'bin', 'ffmpeg') : 'ffmpeg');
+    console.log('Input video path:', tempInputPath);
+    console.log('Output video path:', outputPath);
+
+    const ffmpegPath = process.env.AWS_EXECUTION_ENV ? path.join(__dirname, '..', 'bin', 'ffmpeg') : 'ffmpeg';
+
+    console.log(ffmpegPath)
+    
+    execFile(ffmpegPath, ['-version'], (error, stdout, stderr) => {
+      if (error) {
+        console.error('Error getting ffmpeg version:', error.message);
+        return;
+      }
+      console.log('ffmpeg version:', stdout);
+    });
+    
+
+    // Step 3: Compress the video using ffmpeg
+    console.log('Starting video compression with ffmpeg...');
+    await new Promise((resolve, reject) => {
+      
+      execFile(ffmpegPath, [
+        '-i', tempInputPath,
+        '-vf', 'scale=-2:1080',
+        '-c:v', 'libx264',
+        '-crf', '28',
+        '-preset', 'fast',
+        '-f', 'mp4',
+        outputPath
+      ], (error, stdout, stderr) => {
+        if (error) {
+          console.error('ffmpeg error:', error.message);
+          console.error('ffmpeg stderr:', stderr);
+          console.log('ffmpeg stdout:', stdout);
+          reject(error);
+        } else {
+          console.log('FFmpeg processing complete.');
+          console.log('ffmpeg stdout:', stdout);
+          console.log('ffmpeg stderr:', stderr);
+          resolve();
+        }
+      });
+    });
+
+    console.log('Compressed video saved to', outputPath);
+
+    // Step 4: Read the compressed video data
+    const compressedBuffer = fs.readFileSync(outputPath);
+
+    // Step 5: Upload the compressed video back to Supabase
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('posts')
+      .upload(fileName, compressedBuffer, {
+        contentType: 'video/mp4',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Error uploading compressed video:', uploadError);
+      throw uploadError;
+    }
+
+    console.log('Upload finished.');
+    console.log(uploadData);
+
+    // Delete the temporary files
+    fs.unlinkSync(tempInputPath);
+    fs.unlinkSync(outputPath);
+    
+    return uploadData;
+  } catch (error) {
+    console.error('Compression process error:', error);
+    throw new Error('Compression process failed');
+  }
+}
+
+
+
 
 // Function to get all groups
 async function getAllPosts() {
@@ -70,16 +208,16 @@ async function getPostsByUsername(username) {
 }
 
 async function getPostsByGroupId(groupid) {
-    const { data, error } = await supabase
-      .from('post')
-      .select('*')
-      .eq('groupid', groupid);
-  
-    return { data, error };
+  const { data, error } = await supabase
+    .from('post')
+    .select('*')
+    .eq('groupid', groupid);
+
+  return { data, error };
 }
 
 async function updatePost(postid, updateParams) {
-  
+
   const { data, error } = await supabase
     .from('post')
     .update(updateParams)
@@ -98,4 +236,4 @@ async function deletePost(postid) {
   return { data, error };
 }
 
-module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername,updatePost, deletePost };
+module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl,compressVideo };

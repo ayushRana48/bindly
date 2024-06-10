@@ -20,7 +20,7 @@ app.use(bodyParser.text({ limit: '50mb' }));
 
 // Routes
 app.get('/hello', (req, res) => {
-  res.send('Hello8 World!');
+  res.send('Hello7 World!');
 });
 
 app.use('/bindly', require('./routes/bindly'));

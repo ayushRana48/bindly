@@ -5,9 +5,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../../UserContext";
 import { useGroupsContext } from "../../GroupsContext";
 import * as ImagePicker from 'expo-image-picker';
-import * as VideoThumbnails from 'expo-video-thumbnails'; // Import for video compression
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import compressPostImage from "../../../utils/compressPostImage";
-import blobToBase64 from "../../../utils/blobToBase64";
 import { BASE_URL } from "@env";
 
 const CreatePostScreen = () => {
@@ -23,23 +22,14 @@ const CreatePostScreen = () => {
     const [modalContent, setModalContent] = useState("");
     const [modalIsImage, setIsModalImage] = useState(true);
 
-    useEffect(() => {
-        console.log('here')
-        console.log(image)
-        console.log(video)
-        console.log('herehere')
-    }, [image, video])
+   
 
-
-    useEffect(() => {
-        console.log(groupData)
-    }, [])
     const takeImage = async () => {
         try {
             await ImagePicker.requestCameraPermissionsAsync();
             let result = await ImagePicker.launchCameraAsync({
                 allowsEditing: true,
-                aspect: [9,],
+                aspect: [9, 16],
                 quality: 1,
             });
 
@@ -50,6 +40,7 @@ const CreatePostScreen = () => {
             console.log(error);
         }
     };
+
     const calculateBase64Size = (base64String) => {
         let padding = 0;
         if (base64String.endsWith('==')) {
@@ -60,14 +51,13 @@ const CreatePostScreen = () => {
         return (base64String.length * 3 / 4) - padding;
     };
 
-
     const takeVideo = async () => {
         try {
             await ImagePicker.requestCameraPermissionsAsync();
             let result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Videos,
                 allowsEditing: true,
-                aspect: [1, 1],
+                aspect: [9, 16],
                 quality: 1,
                 videoMaxDuration: 10 // Set max video length to 10 seconds
             });
@@ -119,7 +109,6 @@ const CreatePostScreen = () => {
         }
     };
 
-
     const compressVideo = async (uri) => {
         try {
             const { uri: compressedUri } = await VideoThumbnails.getThumbnailAsync(
@@ -150,12 +139,10 @@ const CreatePostScreen = () => {
     };
 
     const submit = async () => {
-        console.log('call')
-        const d1 = new Date()
+        const d1 = new Date();
         if (loading) return; // Prevent double click
         setLoading(true);
-        console.log('here')
-
+    
         if (!caption.trim()) {
             console.error("Please enter caption.");
             setLoading(false);
@@ -166,95 +153,154 @@ const CreatePostScreen = () => {
             setLoading(false);
             return;
         }
-
-
-        let imgBase64 = "";
-        let vidBase64 = ""
-
+    
+        const time1 = Date.now();
+        let imgPermanentUrl = "";
+        let vidPermanentUrl = "";
+    
         if (image) {
             try {
-                const compressedUri = await compressPostImage(image);
-                const response = await fetch(compressedUri);
-                const blob = await response.blob();
-                imgBase64 = await blobToBase64(blob);
+                const response = await fetch(`${BASE_URL}/bindly/post/getPresignedUrl`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: `${user.username}-${groupData.group.groupid}`,
+                        date: time1,
+                        isImage: true,
+                    }),
+                });
+    
+                const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
+                
+                let presignedUrl = "";
+                if (status === 200) {
+                    imgPermanentUrl = body.permanentUrl;
+                    presignedUrl = body.presignedUrl;
+                    const compressImage = await compressPostImage(image)
+                    const blobResp = await fetch(compressImage);
+                    const blob = await blobResp.blob();
+    
+                    const fileResponse = await fetch(presignedUrl, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'image/jpeg', // Adjust this based on the file type
+                        },
+                        body: blob,
+                    });
+    
+                    if (!fileResponse.ok) {
+                        throw new Error('Failed to upload image');
+                    }
+                }
             } catch (error) {
-                console.log("Error compressing or converting image: ", error);
-                setErrorMessage("Error processing image. Please try again.");
+                console.log("Fetch error: ", error);
+                Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
                 setLoading(false);
                 return;
             }
         }
-        console.log('image', imgBase64, 'image')
-
-
+    
         if (video) {
             try {
-                // const compressedUri = await compressPostImage(img.uri);
-                // const response = await fetch(compressedUri);
-                const response = await fetch(video);
-                const blob = await response.blob();
-                vidBase64 = await blobToBase64(blob);
+                const response = await fetch(`${BASE_URL}/bindly/post/getPresignedUrl`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: `${user.username}-${groupData.group.groupid}`,
+                        date: time1,
+                        isImage: false,
+                    }),
+                });
+    
+                const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
+                 
+                let presignedUrl = "";
+                if (status === 200) {
+                    vidPermanentUrl = body.permanentUrl;
+                    presignedUrl = body.presignedUrl;
+    
+                    const blobResp = await fetch(video);
+                    const blob = await blobResp.blob();
+    
+                    const fileResponse = await fetch(presignedUrl, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'video/mp4', // Adjust this based on the file type
+                        },
+                        body: blob,
+                    });
+    
+                    if (!fileResponse.ok) {
+                        throw new Error('Failed to upload video');
+                    }
+                }
             } catch (error) {
-                console.log("Error compressing or converting video: ", error);
-                setErrorMessage("Error processing image. Please try again.");
+                console.log("Fetch error: ", error);
+                Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
                 setLoading(false);
                 return;
             }
         }
-
-
-        console.log('done')
-
-        const payloadSize = calculateBase64Size(imgBase64) + calculateBase64Size(vidBase64);
-        console.log(`Payload size: ${payloadSize} bytes`);
-
-        try {    
-            const startTime = Date.now(); // Record the start time
-            
-            console.log(`${'localhost:3000'}/bindly/post/createPost`)
-            const response = await fetch(`${'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod'}/bindly/post/createPost`, {
+    
+    
+        try {
+            const time = new Date(time1); // Record the start time
+    
+     
+    
+            const response = await fetch(`${BASE_URL}/bindly/post/createPost`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: user.username,
                     groupId: groupData.group.groupid,
-                    photolink: imgBase64,
-                    videolink: vidBase64,
+                    photolink: imgPermanentUrl,
+                    videolink: vidPermanentUrl,
                     caption: caption,
+                    time:time
                 }),
             });
-
-            console.log('next')
-            console.log(response)
-
+    
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
-            console.log(status)
-            console.log('vody Next')
-            console.log(body)
+    
             if (status === 200) {
                 setGroupData(g => {
                     return {
                         ...g,
-                        post: [...g.post, body]
+                        post: [body,...g.post]
                     };
                 });
-                console.log('postsBelow');
-                console.log([...groupData.post, body]);
+        
+    
+                // Navigate to the desired page
+                navigation.goBack()
+    
+                // Call compressVideo API after navigation
+                if (video) {
+    
+                    fetch(`${BASE_URL}/bindly/post/compressVideo`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ videolink: `airborm-be05f09f-9b48-444a-85f4-f12461bc5302-1717922731234v`}),
+                    })
+                    .then(response => {
+                        return response.json()})
+                    .then(data => {
+                        console.log('Video compressed:', data);
+                    })
+                    .catch(error => {
+                        console.log('Compression error:', error);
+                    });
+                }
             }
-             const endTime = Date.now(); // Record the end time
-    const duration = endTime - startTime;
-    console.log(duration)
-    console.log(endTime-d1)
         } catch (error) {
             console.log("Fetch error: ", error);
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
         } finally {
             setLoading(false);
         }
-
-
-
     };
+    
 
     const openModal = (content, isImage) => {
         setIsModalImage(isImage);
@@ -283,7 +329,7 @@ const CreatePostScreen = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 }}>
                             <View>
                                 <Text>Select Picture</Text>
-                                <Pressable style={styles.selectMedia} onPress={pickImage}>
+                                <Pressable style={styles.selectMedia} onPress={takeImage}>
                                     {image ? (
                                         <Pressable onPress={() => openModal(image, true)}>
                                             <Image source={{ uri: image }} style={{ width: 140, height: 140, borderRadius: 10 }} />
@@ -300,7 +346,7 @@ const CreatePostScreen = () => {
                             </View>
                             <View>
                                 <Text>Select Video</Text>
-                                <Pressable style={styles.selectMedia} onPress={pickVideo}>
+                                <Pressable style={styles.selectMedia} onPress={takeVideo}>
                                     {thumbnail ? (
                                         <Pressable onPress={() => openModal(video, false)}>
                                             <Image source={{ uri: thumbnail }} style={{ width: 140, height: 140, borderRadius: 10 }} />
@@ -331,7 +377,7 @@ const CreatePostScreen = () => {
                         </View>
                         <View style={{ alignItems: 'center' }}>
                             <Pressable style={styles.share} onPress={submit}>
-                               {loading ? <ActivityIndicator color={'white'}></ActivityIndicator>: <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>Share</Text>}
+                                {loading ? <ActivityIndicator color={'white'} /> : <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>Share</Text>}
                             </Pressable>
                         </View>
 

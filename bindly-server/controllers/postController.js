@@ -1,55 +1,35 @@
 
 
-const { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername,updatePost, deletePost }= require('../transactions/postTransactions');
+const { createPost, compressVideo, getAllPosts, getPost, getPostsByGroupId, getPresignedUrl, getPostsByUsername, updatePost, deletePost } = require('../transactions/postTransactions');
+const path = require('path');
 
-// Controller for creating a new user
+const { supabase } = require('../initSupabase');
 
 
-const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient('https://your-supabase-url.supabase.co', 'your-public-anon-key');
+// Example function to compress a video
 
-const getPresignedUrl = async (req, res) => {
-    const { fileName, date,isImage } = req.body;
+const getPresignedUrlController = async (req, res) => {
+  const { fileName, date, isImage } = req.body;
 
-    try {
-        // Generate the file path
 
-        let filePath = `${fileName}-${date}`;
+  try {
+    const { presignedUrl, permanentUrl, error } = await getPresignedUrl(fileName, date, isImage);
 
-        if(isImage){
-          filePath = `${fileName}-${date}p`;
-        }
-        else{
-          filePath = `${fileName}-${date}v`;
-        }
-
-        // Create a signed URL for uploading
-        const { signedURL, error } = await supabase
-            .storage
-            .from('posts')
-            .createSignedUrl(filePath, 60); // URL expires in 60 seconds
-
-        if (error) {
-            throw error;
-        }
-
-        // Construct the permanent URL
-        const permanentUrl = `https://lxnzgnvhkrgxpfsokwos.supabase.co/storage/v1/object/public/posts/${filePath}`;
-
-        res.status(200).json({ presignedUrl: signedURL, permanentUrl });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
+    if (error) throw error;
+    res.status(200).json({ presignedUrl, permanentUrl });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 };
 
 
 
 async function createPostController(req, res) {
-  const { username,  groupId, photolink, videolink, caption,starddate} = req.body;
+  const { username, groupId, photolink, videolink, caption, time, starddate } = req.body;
 
   try {
-    const { data, error } = await createPost(username,  groupId, photolink, videolink, caption,starddate);
+    const { data, error } = await createPost(username, groupId, photolink, videolink, caption, time, starddate);
 
     if (error) throw error;
     res.status(200).json(data);
@@ -57,6 +37,24 @@ async function createPostController(req, res) {
     res.status(400).json({ error: error.message });
   }
 }
+
+async function compressVideoController(req, res) {
+
+
+  const { videolink } = req.body;
+
+
+  // Assuming videolink is a relative path to the video file
+
+  try {
+    const { data, error } = await compressVideo(videolink);
+    if (error) throw error;
+    res.status(200).json('successfully compressed');
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
+
 
 
 // Call the function to check the connection
@@ -77,30 +75,30 @@ async function getPostController(req, res) {
 }
 
 async function getPostsByGroupIdController(req, res) {
-    const { groupId } = req.params;
-  
-    try {
-      const { data, error } = await getPostsByGroupId(groupId);
-  
-      if (error) throw error;
-      res.status(200).json(data);
-    } catch (error) {
-      res.status(404).json({ error: error.message });
-    }
+  const { groupId } = req.params;
+
+  try {
+    const { data, error } = await getPostsByGroupId(groupId);
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
 }
 
 async function getPostsByUsernameController(req, res) {
-    const { username } = req.params;
-  
-    try {
-      const { data, error } = await getPostsByUsername(username);
-  
-      if (error) throw error;
-      res.status(200).json(data);
-    } catch (error) {
-      res.status(404).json({ error: error.message });
-    }
+  const { username } = req.params;
+
+  try {
+    const { data, error } = await getPostsByUsername(username);
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(404).json({ error: error.message });
   }
+}
 
 
 async function getAllPostsController(req, res) {
@@ -145,5 +143,5 @@ async function deletePostController(req, res) {
 }
 
 
-module.exports={createPostController,deletePostController,getAllPostsController,updatePostController,getPostController,getPostsByGroupIdController,getPostsByUsernameController,getPresignedUrl};
+module.exports = { createPostController, deletePostController, getAllPostsController, updatePostController, getPostController, getPostsByGroupIdController, getPostsByUsernameController, getPresignedUrlController, compressVideoController };
 

@@ -13,24 +13,6 @@ const SignInScreen = () => {
     const { email, setEmail } = useUserContext();
     const navigation = useNavigation();
 
-    useEffect(() => {
-        console.log(BASE_URL);
-
-        const test = async () => {
-            try {
-                console.log(`${BASE_URL}/bindly/groups`);
-                const response = await fetch(`${BASE_URL}/bindly/group`);
-                console.log(response)
-                const data = await response.json();
-                console.log(data);
-            } catch (err) {
-                console.log(err);
-            }
-        };
-
-        test();
-    }, []);
-
     const submit = async () => {
         if (loading) return; // Prevent double click
         setLoading(true);
@@ -44,14 +26,11 @@ const SignInScreen = () => {
                 }),
             });
 
-            console.log(response)
 
             const data = await response.json();
 
-            console.log(data)
 
             if (response.status === 200) {
-                console.log('heeeree')
                 setEmail(username);
             } else {
                 if (data.error) {

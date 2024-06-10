@@ -60,6 +60,8 @@ router.get('/post/getPostByUsername/:username',postController.getPostsByUsername
 router.get('/post/getPostByGroup/:groupId',postController.getPostsByGroupIdController)
 router.delete('/post/deleteUsergroup/:postId',postController.deletePostController)
 router.put('/post/updateUsergroup/:postId',postController.updatePostController)
+router.post('/post/getPresignedUrl',postController.getPresignedUrlController)
+router.post('/post/compressVideo',postController.compressVideoController)
 
 router.post('/auth/signIn',authController.signInController)
 router.post('/auth/signUp',authController.signUpController)

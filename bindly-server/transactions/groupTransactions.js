@@ -58,6 +58,7 @@ async function getAllGroups() {
 }
 
 // Function to get a group by groupId
+// Function to get a group by groupId
 async function getGroup(groupid) {
   // Fetch group data
   const { data: group, error: groupError } = await supabase
@@ -87,6 +88,9 @@ async function getGroup(groupid) {
     .select('*')
     .eq('groupid', groupid);
 
+  // Sort post data by timepost, with later dates first
+  const sortedPost = post ? post.sort((a, b) => new Date(b.timepost) - new Date(a.timepost)) : [];
+
   // Fetch history data
   const { data: history, error: historyError } = await supabase
     .from('history')
@@ -96,10 +100,9 @@ async function getGroup(groupid) {
   // Combine all errors into one if any
   const error = groupError || usergroupError || inviteError || postError || historyError;
 
-  // Return an object with all the fetched data
-  return { data: { group, usergroup, invite, post, history }, error };
+  // Return an object with all the fetched data, including sorted posts
+  return { data: { group, usergroup, invite, post: sortedPost, history }, error };
 }
-
 
 // Function to get groups by hostId
 async function getGroupsByHostId(hostid) {
@@ -214,8 +217,8 @@ async function deleteGroup(groupId) {
       .eq('groupid', groupId);
 
     if (groupDeleteError) {
-      if(groupDelete.message=='Not Found'){
-        return { error:'Not Found' };
+      if (groupDelete.message == 'Not Found') {
+        return { error: 'Not Found' };
       }
       return { error: groupDeleteError.message };
     }
