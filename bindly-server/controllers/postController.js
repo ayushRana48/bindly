@@ -1,6 +1,6 @@
 
 
-const { createPost, compressVideo, getAllPosts, getPost, getPostsByGroupId, getPresignedUrl, getPostsByUsername, updatePost, deletePost } = require('../transactions/postTransactions');
+const { createPost,postStatus, compressVideo, getAllPosts, getPost, getPostsByGroupId, getPresignedUrl, getPostsByUsername, updatePost, deletePost } = require('../transactions/postTransactions');
 const path = require('path');
 
 const { supabase } = require('../initSupabase');
@@ -11,8 +11,6 @@ const { supabase } = require('../initSupabase');
 
 const getPresignedUrlController = async (req, res) => {
   const { fileName, date, isImage } = req.body;
-
-
   try {
     const { presignedUrl, permanentUrl, error } = await getPresignedUrl(fileName, date, isImage);
 
@@ -23,7 +21,17 @@ const getPresignedUrlController = async (req, res) => {
   }
 };
 
-
+const postStatusController = async (req, res) => {
+  const {username,groupId } = req.body;
+  console.log(username,groupId)
+  try {
+    const { data, error } = await postStatus(username, groupId);
+    if (error) throw error;
+    res.status(200).json({data});
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 
 async function createPostController(req, res) {
   const { username, groupId, photolink, videolink, caption, time, starddate } = req.body;
@@ -114,8 +122,12 @@ async function getAllPostsController(req, res) {
 }
 // Controller for updating a user's details
 async function updatePostController(req, res) {
+  console.log('call')
+
   const { postId } = req.params;
   const updateParams = req.body;
+
+  console.log('call',postId)
 
 
   try {
@@ -143,5 +155,5 @@ async function deletePostController(req, res) {
 }
 
 
-module.exports = { createPostController, deletePostController, getAllPostsController, updatePostController, getPostController, getPostsByGroupIdController, getPostsByUsernameController, getPresignedUrlController, compressVideoController };
+module.exports = { createPostController, deletePostController, getAllPostsController, updatePostController, getPostController, getPostsByGroupIdController, getPostsByUsernameController, getPresignedUrlController, compressVideoController,postStatusController };
 

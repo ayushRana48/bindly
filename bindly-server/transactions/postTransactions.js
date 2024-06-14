@@ -105,7 +105,7 @@ async function compressVideo(fileName) {
     const ffmpegPath = process.env.AWS_EXECUTION_ENV ? path.join(__dirname, '..', 'bin', 'ffmpeg') : 'ffmpeg';
 
     console.log(ffmpegPath)
-    
+
     execFile(ffmpegPath, ['-version'], (error, stdout, stderr) => {
       if (error) {
         console.error('Error getting ffmpeg version:', error.message);
@@ -113,12 +113,12 @@ async function compressVideo(fileName) {
       }
       console.log('ffmpeg version:', stdout);
     });
-    
+
 
     // Step 3: Compress the video using ffmpeg
     console.log('Starting video compression with ffmpeg...');
     await new Promise((resolve, reject) => {
-      
+
       execFile(ffmpegPath, [
         '-i', tempInputPath,
         '-vf', 'scale=-2:1080',
@@ -167,7 +167,7 @@ async function compressVideo(fileName) {
     // Delete the temporary files
     fs.unlinkSync(tempInputPath);
     fs.unlinkSync(outputPath);
-    
+
     return uploadData;
   } catch (error) {
     console.error('Compression process error:', error);
@@ -217,13 +217,53 @@ async function getPostsByGroupId(groupid) {
 }
 
 async function updatePost(postid, updateParams) {
+  console.log(updateParams);
+  console.log('paramsABOVE');
 
-  const { data, error } = await supabase
-    .from('post')
-    .update(updateParams)
-    .eq('postid', postid);
+  const { username, groupId, photolink, videolink, caption, time, prevFileName } = updateParams;
 
-  return { data, error };
+  try {
+    // Update post
+    const { data, error } = await supabase
+      .from('post')
+      .update({ postid, username, groupid: groupId, photolink, videolink, caption, timepost: time })
+      .eq('postid', postid)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating post:', error);
+      return { error };
+    }
+
+    console.log('dataBelow');
+    console.log(data);
+
+    // Delete old video file
+    const { error: deleteError } = await supabase.storage
+      .from('posts')
+      .remove([`${prevFileName}v`]);
+
+    if (deleteError && deleteError.message !== 'The resource was not found') {
+      console.error('Error deleting old video file:', deleteError);
+      return { error: deleteError };
+    }
+
+    // Delete old photo file
+    const { error: deleteError2 } = await supabase.storage
+      .from('posts')
+      .remove([`${prevFileName}p`]);
+
+    if (deleteError2 && deleteError2.message !== 'The resource was not found') {
+      console.error('Error deleting old photo file:', deleteError2);
+      return { error: deleteError2 };
+    }
+
+    return { data, error: null };
+  } catch (e) {
+    console.error('Unexpected error:', e);
+    return { error: e };
+  }
 }
 
 // Function to delete a group
@@ -236,4 +276,77 @@ async function deletePost(postid) {
   return { data, error };
 }
 
-module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl,compressVideo };
+async function postStatus(username, groupid) {
+  try {
+    // Fetch startdate from the groups table
+    const { data: groupData, error: groupError } = await supabase
+      .from('groups')
+      .select('startdate')
+      .eq('groupid', groupid)
+      .single();
+
+    if (groupError) {
+      console.error('Error fetching group data:', groupError);
+      return { error: groupError };
+    }
+
+    const startdate = new Date(groupData.startdate);
+
+    console.log('startdate',startdate)
+
+    // Fetch the latest timepost from the post table
+    const { data: postData, error: postError } = await supabase
+      .from('post')
+      .select('timepost')
+      .eq('username', username)
+      .order('timepost', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (postError) {
+      console.error('Error fetching post data:', postError);
+      return { error: postError };
+    }
+
+    const timepost = new Date(postData.timepost);
+    console.log('timepost',timepost)
+
+    // Calculate the current cycle start time based on startdate
+    const currentTime = new Date();
+    console.log('currentTime',currentTime)
+
+    const cycleStartTime = new Date(
+      currentTime.getFullYear(),
+      currentTime.getMonth(),
+      currentTime.getDate(),
+      startdate.getHours(),
+      startdate.getMinutes(),
+      startdate.getSeconds()
+    );
+
+
+    
+    // If the current time is before today's cycle start time, use the previous day's cycle start time
+    if (currentTime < cycleStartTime) {
+      cycleStartTime.setDate(cycleStartTime.getDate() - 1);
+    }
+
+    const cycleEndTime = new Date(cycleStartTime.getTime() + 24 * 60 * 60 * 1000);
+
+    const isInSame24HourCycle = timepost >= cycleStartTime && timepost < cycleEndTime;
+
+    console.log(cycleStartTime)
+    console.log(timepost)
+    console.log(cycleEndTime)
+
+    console.log(isInSame24HourCycle)
+
+    return { data:isInSame24HourCycle };
+  } catch (e) {
+    console.error('Unexpected error:', e);
+    return { error: e };
+  }
+}
+
+
+module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, compressVideo,postStatus };

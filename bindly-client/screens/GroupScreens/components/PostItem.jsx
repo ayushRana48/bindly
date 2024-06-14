@@ -12,7 +12,6 @@ const PostComponent = ({ imageLink, videoLink, username, caption,users,time }) =
     const [pfpLink,setPfpLink]=useState(placeholder)
 
     useEffect(()=>{
-        console.log(users,'snflsdknflksd')
         for(let i=0;i<users?.length; i++){
             const user =users[i]
             if(user.username == username){

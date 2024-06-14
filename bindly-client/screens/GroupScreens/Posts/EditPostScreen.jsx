@@ -9,7 +9,7 @@ import * as VideoThumbnails from 'expo-video-thumbnails';
 import compressPostImage from "../../../utils/compressPostImage";
 import { BASE_URL } from "@env";
 
-const CreatePostScreen = () => {
+const EditPostScreen = () => {
     const { setGroups, setGroupData, groupData } = useGroupsContext();
     const { user } = useUserContext();
 
@@ -21,8 +21,31 @@ const CreatePostScreen = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const [modalContent, setModalContent] = useState("");
     const [modalIsImage, setIsModalImage] = useState(true);
+    const [postId, setPostId] = useState("")
+    const [prevTime, setPrevTime] = useState(false)
 
-   
+
+    useEffect(()=>{
+        const getPost = async () => {
+            let correctPost = {}
+            for (let i = 0; i < groupData?.post.length; i++) {
+                if (user.username == groupData.post[i].username) {
+                    correctPost = groupData.post[i]
+                    setCaption(correctPost.caption)
+                    setImage(correctPost.photolink)
+                    setVideo(correctPost.videolink)
+                    setPrevTime(correctPost.timepost)
+                    setPostId(correctPost.postid)
+                    const compressedUri = await compressVideo(correctPost.videolink);
+                    setThumbnail(compressedUri)
+                    break;
+                }
+            }
+        }
+        getPost()
+    }, [])
+
+
 
     const takeImage = async () => {
         try {
@@ -142,7 +165,7 @@ const CreatePostScreen = () => {
         const d1 = new Date();
         if (loading) return; // Prevent double click
         setLoading(true);
-    
+
         if (!caption.trim()) {
             console.error("Please enter caption.");
             setLoading(false);
@@ -153,11 +176,11 @@ const CreatePostScreen = () => {
             setLoading(false);
             return;
         }
-    
+
         const time1 = Date.now();
         let imgPermanentUrl = "";
         let vidPermanentUrl = "";
-    
+
         if (image) {
             try {
                 const response = await fetch(`${BASE_URL}/bindly/post/getPresignedUrl`, {
@@ -169,9 +192,9 @@ const CreatePostScreen = () => {
                         isImage: true,
                     }),
                 });
-    
+
                 const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
-                
+
                 let presignedUrl = "";
                 if (status === 200) {
                     imgPermanentUrl = body.permanentUrl;
@@ -179,7 +202,7 @@ const CreatePostScreen = () => {
                     const compressImage = await compressPostImage(image)
                     const blobResp = await fetch(compressImage);
                     const blob = await blobResp.blob();
-    
+
                     const fileResponse = await fetch(presignedUrl, {
                         method: 'PUT',
                         headers: {
@@ -187,7 +210,7 @@ const CreatePostScreen = () => {
                         },
                         body: blob,
                     });
-    
+
                     if (!fileResponse.ok) {
                         throw new Error('Failed to upload image');
                     }
@@ -199,7 +222,7 @@ const CreatePostScreen = () => {
                 return;
             }
         }
-    
+
         if (video) {
             try {
                 const response = await fetch(`${BASE_URL}/bindly/post/getPresignedUrl`, {
@@ -211,17 +234,17 @@ const CreatePostScreen = () => {
                         isImage: false,
                     }),
                 });
-    
+
                 const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
-                 
+
                 let presignedUrl = "";
                 if (status === 200) {
                     vidPermanentUrl = body.permanentUrl;
                     presignedUrl = body.presignedUrl;
-    
+
                     const blobResp = await fetch(video);
                     const blob = await blobResp.blob();
-    
+
                     const fileResponse = await fetch(presignedUrl, {
                         method: 'PUT',
                         headers: {
@@ -229,7 +252,7 @@ const CreatePostScreen = () => {
                         },
                         body: blob,
                     });
-    
+
                     if (!fileResponse.ok) {
                         throw new Error('Failed to upload video');
                     }
@@ -241,15 +264,13 @@ const CreatePostScreen = () => {
                 return;
             }
         }
-    
-    
+
+
         try {
             const time = new Date(time1); // Record the start time
-    
-     
-    
-            const response = await fetch(`${BASE_URL}/bindly/post/createPost`, {
-                method: 'POST',
+
+            const response = await fetch(`${'http://localhost:3000'}/bindly/post/updatePost/${postId}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: user.username,
@@ -257,41 +278,43 @@ const CreatePostScreen = () => {
                     photolink: imgPermanentUrl,
                     videolink: vidPermanentUrl,
                     caption: caption,
-                    time:time
+                    time: time,
+                    prevFileName: `${user.username}-${groupData.group.groupid}-${Date.parse(prevTime)}`
                 }),
             });
-    
+
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
-    
+
             if (status === 200) {
                 setGroupData(g => {
                     return {
                         ...g,
-                        post: [body,...g.post]
+                        post: [body, ...g.post]
                     };
                 });
-        
-    
+
+
                 // Navigate to the desired page
                 navigation.goBack()
-    
+
                 // Call compressVideo API after navigation
                 if (video) {
-    
+
                     fetch(`${BASE_URL}/bindly/post/compressVideo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ videolink: `airborm-be05f09f-9b48-444a-85f4-f12461bc5302-1717922731234v`}),
+                        body: JSON.stringify({ videolink: `${user.username}-${groupData.group.groupid}-${time1}v` }),
                     })
-                    .then(response => {
-                        console.log(response)
-                        return response.json()})
-                    .then(data => {
-                        console.log('Video compressed:', data);
-                    })
-                    .catch(error => {
-                        console.log('Compression error:', error);
-                    });
+                        .then(response => {
+                            console.log(response)
+                            return response.json()
+                        })
+                        .then(data => {
+                            console.log('Video compressed:', data);
+                        })
+                        .catch(error => {
+                            console.log('Compression error:', error);
+                        });
                 }
             }
         } catch (error) {
@@ -301,7 +324,7 @@ const CreatePostScreen = () => {
             setLoading(false);
         }
     };
-    
+
 
     const openModal = (content, isImage) => {
         setIsModalImage(isImage);
@@ -330,7 +353,7 @@ const CreatePostScreen = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 }}>
                             <View>
                                 <Text>Select Picture</Text>
-                                <Pressable style={styles.selectMedia} onPress={takeImage}>
+                                <Pressable style={styles.selectMedia} onPress={pickImage}>
                                     {image ? (
                                         <Pressable onPress={() => openModal(image, true)}>
                                             <Image source={{ uri: image }} style={{ width: 140, height: 140, borderRadius: 10 }} />
@@ -347,7 +370,7 @@ const CreatePostScreen = () => {
                             </View>
                             <View>
                                 <Text>Select Video</Text>
-                                <Pressable style={styles.selectMedia} onPress={takeVideo}>
+                                <Pressable style={styles.selectMedia} onPress={pickVideo}>
                                     {thumbnail ? (
                                         <Pressable onPress={() => openModal(video, false)}>
                                             <Image source={{ uri: thumbnail }} style={{ width: 140, height: 140, borderRadius: 10 }} />
@@ -378,7 +401,7 @@ const CreatePostScreen = () => {
                         </View>
                         <View style={{ alignItems: 'center' }}>
                             <Pressable style={styles.share} onPress={submit}>
-                                {loading ? <ActivityIndicator color={'white'} /> : <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>Share</Text>}
+                                {loading ? <ActivityIndicator color={'white'} /> : <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>Edit</Text>}
                             </Pressable>
                         </View>
 
@@ -511,4 +534,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default CreatePostScreen;
+export default EditPostScreen;

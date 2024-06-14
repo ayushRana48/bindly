@@ -24,7 +24,8 @@ const GroupScreen = () => {
   const [posts, setPosts] = useState([]);
   const [visiblePosts, setVisiblePosts] = useState([]);
   const [page, setPage] = useState(1);
-  const [groupUsers,setGroupUsers]=useState([])
+  const [groupUsers, setGroupUsers] = useState([])
+  const [isCreate,setIsCreate]=useState(true)
   const postsPerPage = 5; // Number of posts to load at a time
 
   useEffect(() => {
@@ -67,147 +68,176 @@ const GroupScreen = () => {
       setGroupUsers(res?.usergroup)
 
       setVisiblePosts((res.post || []).slice(0, postsPerPage));
-    } catch (error) {
-      console.error(error);
-      if (error.message === 'JSON object requested, multiple (or no) rows returned') {
-        Alert.alert("Invalid Group", "Group has been deleted");
-        navigation.navigate('GroupsList');
-        setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const inGroup = async () => {
-    try {
-      const response = await fetch(`${BASE_URL}/bindly/usergroup/inGroup`, {
+      const response2 = await fetch(`${'http://localhost:3000'}/bindly/post/postStatus`, {
         headers: { 'Content-Type': 'application/json' },
-        method: 'PUT',
+        method: 'POST',
         body: JSON.stringify({
           "username": user.username,
           "groupId": groupData.groupid
         }),
       });
 
-      if (!response.ok) {
-        const errorResponse = await response.json();
+
+      if (!response2.ok) {
+        const errorResponse = await response2.json();
         throw new Error(errorResponse.error || 'Failed to fetch group data');
       }
 
-      const res = await response.json();
-      return res.inGroup;
+      const res2 = await response2.json();
+
+      if (res2.data) {
+        setGroupData(g =>{ return {...g, 'isCreate': !res2.data}})
+        setIsCreate(!res2.data)
+    }
+
+
     } catch (error) {
-      console.error(error);
+    console.error(error);
+    if (error.message === 'JSON object requested, multiple (or no) rows returned') {
+      Alert.alert("Invalid Group", "Group has been deleted");
+      navigation.navigate('GroupsList');
+      setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
     }
-    return false;
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    getGroup().then(() => setRefreshing(false));
-  }, []);
+const inGroup = async () => {
+  try {
+    const response = await fetch(`${BASE_URL}/bindly/usergroup/inGroup`, {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
+      body: JSON.stringify({
+        "username": user.username,
+        "groupId": groupData.groupid
+      }),
+    });
 
-  useEffect(() => {
-    getGroup();
-  }, []);
-
-  const back = () => {
-    navigation.navigate('GroupsList');
-  };
-
-  const setting = () => {
-    if (!loading) {
-      navigation.navigate("GroupSetting");
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      throw new Error(errorResponse.error || 'Failed to fetch group data');
     }
-  };
 
-  const toMembers = () => {
-    navigation.navigate("MembersList");
-  };
+    const res = await response.json();
+    return res.inGroup;
+  } catch (error) {
+    console.error(error);
+  }
+  return false;
+};
 
-  const toPost = () => {
-    navigation.navigate("CreatePost");
-  };
+const onRefresh = useCallback(() => {
+  setRefreshing(true);
+  getGroup().then(() => setRefreshing(false));
+}, []);
 
-  const loadMorePosts = () => {
-    const nextPage = page + 1;
-    const newVisiblePosts = posts.slice(0, nextPage * postsPerPage);
-    setVisiblePosts(newVisiblePosts);
-    setPage(nextPage);
-  };
+useEffect(() => {
+  getGroup();
+}, []);
 
-  return (
-    <View style={styles.container}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+const back = () => {
+  navigation.navigate('GroupsList');
+};
+
+const setting = () => {
+  if (!loading) {
+    navigation.navigate("GroupSetting");
+  }
+};
+
+const toMembers = () => {
+  navigation.navigate("MembersList");
+};
+
+const toPost = () => {
+  if(!isCreate){
+    navigation.navigate("EditPost");
+  }
+  else{
+    navigation.navigate("CreatPost");
+  }
+};
+
+const loadMorePosts = () => {
+  const nextPage = page + 1;
+  const newVisiblePosts = posts.slice(0, nextPage * postsPerPage);
+  setVisiblePosts(newVisiblePosts);
+  setPage(nextPage);
+};
+
+return (
+  <View style={styles.container}>
+    <ScrollView
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+      onMomentumScrollEnd={(e) => {
+        const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+        if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 20) {
+          loadMorePosts();
         }
-        onMomentumScrollEnd={(e) => {
-          const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
-          if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 20) {
-            loadMorePosts();
-          }
-        }}
-        style={{padding:24}}
-      >
-        <Pressable style={styles.backArrow} onPress={back}>
-          <Image style={{ height: 40, width: 40 }} source={backArrow} />
+      }}
+      style={{ padding: 24 }}
+    >
+      <Pressable style={styles.backArrow} onPress={back}>
+        <Image style={{ height: 40, width: 40 }} source={backArrow} />
+      </Pressable>
+      {!loading && (
+        <Pressable style={styles.setting} onPress={setting}>
+          <Image style={{ height: 40, width: 40 }} source={settings} />
         </Pressable>
-        {!loading && (
-          <Pressable style={styles.setting} onPress={setting}>
-            <Image style={{ height: 40, width: 40 }} source={settings} />
-          </Pressable>
-        )}
-        <View style={styles.logoContainer}>
-          <Text style={styles.title}>{groupData.groupname}</Text>
+      )}
+      <View style={styles.logoContainer}>
+        <Text style={styles.title}>{groupData.groupname}</Text>
 
-          <View style={{ flexDirection: 'row' }}>
-            <View>
-              <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading ? { uri: imageUrl } : placeholder} />
-            </View>
-            {!loading && (
-              <View style={{ flexDirection: 'row', width: 160, justifyContent: 'space-between', marginTop: 20, marginLeft: 40 }}>
-                <View style={{ textAlign: 'center', alignItems: 'center' }}>
-                  <Pressable style={styles.headerButton} onPress={toMembers}>
-                    <Image style={styles.headerButtonIcon} source={members} />
-                  </Pressable>
-                  <Text>Members</Text>
-                </View>
-                <View style={{ textAlign: 'center', alignItems: 'center' }}>
-                  <Pressable style={styles.headerButton}>
-                    <Image style={styles.headerButtonIcon} source={info} />
-                  </Pressable>
-                  <Text>Info</Text>
-                </View>
-              </View>
-            )}
+        <View style={{ flexDirection: 'row' }}>
+          <View>
+            <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading ? { uri: imageUrl } : placeholder} />
           </View>
-
           {!loading && (
-            <Pressable style={styles.createPost} onPress={toPost}>
-              <Text style={{ color: 'white' }}>Create Post</Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', width: 160, justifyContent: 'space-between', marginTop: 20, marginLeft: 40 }}>
+              <View style={{ textAlign: 'center', alignItems: 'center' }}>
+                <Pressable style={styles.headerButton} onPress={toMembers}>
+                  <Image style={styles.headerButtonIcon} source={members} />
+                </Pressable>
+                <Text>Members</Text>
+              </View>
+              <View style={{ textAlign: 'center', alignItems: 'center' }}>
+                <Pressable style={styles.headerButton}>
+                  <Image style={styles.headerButtonIcon} source={info} />
+                </Pressable>
+                <Text>Info</Text>
+              </View>
+            </View>
           )}
         </View>
 
-        {loading && <ActivityIndicator size="large" color="#0000ff" />}
+        {!loading && (
+          <Pressable style={styles.createPost} onPress={toPost}>
+            <Text style={{ color: 'white' }}>{!isCreate ? 'Edit Post':'Create Post'}</Text>
+          </Pressable>
+        )}
+      </View>
 
-        {!loading && visiblePosts.map((post, index) => (
-          <PostItem
-            key={index}
-            imageLink={post.photolink}
-            videoLink={post.videolink}
-            username={post.username}
-            caption={post.caption}
-            users={groupUsers}
-            time ={post.timepost}
-          />
-        ))}
+      {loading && <ActivityIndicator size="large" color="#0000ff" />}
 
-      </ScrollView>
-    </View>
-  );
+      {!loading && visiblePosts.map((post, index) => (
+        <PostItem
+          key={index}
+          imageLink={post.photolink}
+          videoLink={post.videolink}
+          username={post.username}
+          caption={post.caption}
+          users={groupUsers}
+          time={post.timepost}
+        />
+      ))}
+
+    </ScrollView>
+  </View>
+);
 };
 
 const styles = StyleSheet.create({
