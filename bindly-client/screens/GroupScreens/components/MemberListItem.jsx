@@ -15,11 +15,7 @@ const MemberListItem = ({ memberData, kickMember }) => {
 
     const isPastDate = new Date(groupData.group.startdate) < new Date();
 
-    useEffect(() => {
-        if (memberData.users.pfp) {
-            setImageUrl(memberData.users.pfp);
-        }
-    }, [memberData]);
+ 
 
     const toggleModal = () => {
         setModalVisible(!isModalVisible);

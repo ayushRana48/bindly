@@ -57,6 +57,106 @@ async function getAllGroups() {
   return { data, error };
 }
 
+
+async function getLeaderBoard(groupid) {
+  try {
+    // Fetch group details
+    const { data: groupData, error: groupError } = await supabase
+      .from('groups')
+      .select('startdate, tasksperweek')
+      .eq('groupid', groupid)
+      .single();
+
+    if (groupError) {
+      console.error('Error fetching group data:', groupError);
+      return { error: groupError };
+    }
+
+    const { startdate, tasksperweek } = groupData;
+    const startDate = new Date(startdate);
+
+    // Fetch posts for the group
+    const { data: postsData, error: postsError } = await supabase
+      .from('post')
+      .select('username, timepost')
+      .eq('groupid', groupid);
+
+    if (postsError) {
+      console.error('Error fetching posts data:', postsError);
+      return { error: postsError };
+    }
+
+    // Process posts to count tasks per user per week
+    const userPosts = {};
+    postsData.forEach(post => {
+      const { username, timepost } = post;
+      const postDate = new Date(timepost);
+      const weekNum = Math.floor((postDate - startDate) / (7 * 24 * 60 * 60 * 1000));
+
+      if (!userPosts[username]) {
+        userPosts[username] = {};
+      }
+
+      if (!userPosts[username][weekNum]) {
+        userPosts[username][weekNum] = [];
+      }
+
+      userPosts[username][weekNum].push(postDate);
+    });
+
+    // Calculate counted and uncounted posts per week
+    const leaderboard = Object.keys(userPosts).map(username => {
+      const weeks = Object.keys(userPosts[username]).map(weekNum => {
+        const weekPosts = userPosts[username][weekNum];
+        const countedPosts = weekPosts.slice(0, tasksperweek);
+        const unCountedPosts = weekPosts.slice(tasksperweek);
+
+        const weekStart = new Date(startDate);
+        weekStart.setDate(startDate.getDate() + weekNum * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 7);
+
+        return {
+          weekNum: parseInt(weekNum) + 1,
+          weekRange: `${weekStart.toISOString()} - ${weekEnd.toISOString()}`,
+          countedPosts: countedPosts.length,
+          unCountedPosts: unCountedPosts.length,
+        };
+      });
+
+      const totalCountedPosts = weeks.reduce((acc, week) => acc + week.countedPosts, 0);
+      const totalUnCountedPosts = weeks.reduce((acc, week) => acc + week.unCountedPosts, 0);
+
+      return {
+        username,
+        weeks,
+        totalCountedPosts,
+        totalUnCountedPosts,
+      };
+    });
+
+    // Sort leaderboard and assign places
+    leaderboard.sort((a, b) => b.totalCountedPosts - a.totalCountedPosts);
+
+    let currentPlace = 1;
+    for (let i = 0; i < leaderboard.length; i++) {
+      if (i > 0 && leaderboard[i].totalCountedPosts < leaderboard[i - 1].totalCountedPosts) {
+        currentPlace = i + 1;
+      }
+      leaderboard[i].place = currentPlace;
+    }
+
+    console.log(leaderboard)
+
+    return {leaderboard};
+  } catch (e) {
+    console.error('Unexpected error:', e);
+    return { error: e };
+  }
+}
+
+
+
 // Function to get a group by groupId
 // Function to get a group by groupId
 async function getGroup(groupid) {
@@ -96,6 +196,8 @@ async function getGroup(groupid) {
     .from('history')
     .select('*')
     .eq('groupid', groupid);
+
+
 
   // Combine all errors into one if any
   const error = groupError || usergroupError || inviteError || postError || historyError;
@@ -233,4 +335,4 @@ async function deleteGroup(groupId) {
 
 
 
-module.exports = { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup };
+module.exports = { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup,getLeaderBoard };

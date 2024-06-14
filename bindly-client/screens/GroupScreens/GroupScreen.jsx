@@ -69,7 +69,7 @@ const GroupScreen = () => {
 
       setVisiblePosts((res.post || []).slice(0, postsPerPage));
 
-      const response2 = await fetch(`${'http://localhost:3000'}/bindly/post/postStatus`, {
+      const response2 = await fetch(`${BASE_URL}/bindly/post/postStatus`, {
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
         body: JSON.stringify({
@@ -160,6 +160,13 @@ const toPost = () => {
   }
 };
 
+const toInfo = () => {
+
+  navigation.navigate("Info");
+
+};
+
+
 const loadMorePosts = () => {
   const nextPage = page + 1;
   const newVisiblePosts = posts.slice(0, nextPage * postsPerPage);
@@ -205,7 +212,7 @@ return (
                 <Text>Members</Text>
               </View>
               <View style={{ textAlign: 'center', alignItems: 'center' }}>
-                <Pressable style={styles.headerButton}>
+                <Pressable style={styles.headerButton} onPress={toInfo}>
                   <Image style={styles.headerButtonIcon} source={info} />
                 </Pressable>
                 <Text>Info</Text>

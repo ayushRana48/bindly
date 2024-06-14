@@ -269,7 +269,7 @@ const EditPostScreen = () => {
         try {
             const time = new Date(time1); // Record the start time
 
-            const response = await fetch(`${'http://localhost:3000'}/bindly/post/updatePost/${postId}`, {
+            const response = await fetch(`${BASE_URL}/bindly/post/updatePost/${postId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -353,7 +353,7 @@ const EditPostScreen = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 }}>
                             <View>
                                 <Text>Select Picture</Text>
-                                <Pressable style={styles.selectMedia} onPress={pickImage}>
+                                <Pressable style={styles.selectMedia} onPress={takeImage}>
                                     {image ? (
                                         <Pressable onPress={() => openModal(image, true)}>
                                             <Image source={{ uri: image }} style={{ width: 140, height: 140, borderRadius: 10 }} />
@@ -370,7 +370,7 @@ const EditPostScreen = () => {
                             </View>
                             <View>
                                 <Text>Select Video</Text>
-                                <Pressable style={styles.selectMedia} onPress={pickVideo}>
+                                <Pressable style={styles.selectMedia} onPress={takeVideo}>
                                     {thumbnail ? (
                                         <Pressable onPress={() => openModal(video, false)}>
                                             <Image source={{ uri: thumbnail }} style={{ width: 140, height: 140, borderRadius: 10 }} />

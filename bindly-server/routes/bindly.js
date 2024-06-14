@@ -19,6 +19,7 @@ router.get('/users/email/:email',userController.getUserByEmailController)
 
 router.post('/group/createGroup',groupController.createGroupController)
 router.get('/group/:groupId',groupController.getGroupController)
+router.get('/group/getLeaderboard/:groupId',groupController.getLeaderBoardController)
 router.get('/group/getGroupByHost/:hostId',groupController.getGroupsByHostIdController)
 router.get('/group/',groupController.getAllGroupsController)
 router.delete('/group/deleteGroup',groupController.deleteGroupController)

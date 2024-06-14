@@ -1,4 +1,4 @@
-const { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup } = require('../transactions/groupTransactions.js');
+const { createGroup,getLeaderBoard, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup } = require('../transactions/groupTransactions.js');
 const { createUserGroup} = require('../transactions/usergroupTransactions.js');
 const { getUser} = require('../transactions/usersTransactions.js');
 
@@ -42,6 +42,21 @@ async function getAllGroupsController(req, res) {
 
     if (error) throw error;
     res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
+
+
+
+async function getLeaderBoardController(req, res) {
+  const { groupId } = req.params;
+
+  try {
+    const { leaderboard, error } = await getLeaderBoard(groupId);
+
+    if (error) throw error;
+    res.status(200).json(leaderboard);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -164,5 +179,6 @@ module.exports = {
   getGroupsByHostIdController,
   updateGroupController,
   deleteGroupController,
-  changeHostController
+  changeHostController,
+  getLeaderBoardController
 };

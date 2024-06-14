@@ -11,6 +11,7 @@ import MembersListScreen from './Members/MembersListScreen';
 import InviteMembersScreen from './Members/InviteMembersScreen';
 import CreatePostScreen from './Posts/CreatePostScreen'
 import EditPostScreen from './Posts/EditPostScreen';
+import InfoScreen from './Info/InfoScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +31,7 @@ export default function GroupsNav() {
                 <Stack.Screen name = "InviteMembers" component={InviteMembersScreen}/>
                 <Stack.Screen name = "CreatePost" component={CreatePostScreen}/>
                 <Stack.Screen name = "EditPost" component={EditPostScreen}/>
+                <Stack.Screen name = "Info" component={InfoScreen}/>
 
             </Stack.Navigator>
     );
