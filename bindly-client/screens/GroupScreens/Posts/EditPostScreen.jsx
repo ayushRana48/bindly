@@ -279,7 +279,9 @@ const EditPostScreen = () => {
                     videolink: vidPermanentUrl,
                     caption: caption,
                     time: time,
-                    prevFileName: `${user.username}-${groupData.group.groupid}-${Date.parse(prevTime)}`
+                    prevFileName: `${user.username}-${groupData.group.groupid}-${Date.parse(prevTime)}`,
+                    timecycle:groupData.timecycle
+
                 }),
             });
 

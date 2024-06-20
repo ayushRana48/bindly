@@ -13,6 +13,9 @@ const SignInScreen = () => {
     const { email, setEmail } = useUserContext();
     const navigation = useNavigation();
 
+    useEffect(()=>{    console.log(BASE_URL)
+    },[])
+
     const submit = async () => {
         if (loading) return; // Prevent double click
         setLoading(true);

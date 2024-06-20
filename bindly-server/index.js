@@ -27,9 +27,9 @@ app.use('/bindly', require('./routes/bindly'));
 
 
 // Start the server
-// app.listen(port, () => {
-//   console.log(`Listening app listening at ${port}`);
-// });
+app.listen(port, () => {
+  console.log(`Listening app listening at ${port}`);
+});
 
 
-module.exports.handler=serverless(app)
+// module.exports.handler=serverless(app)

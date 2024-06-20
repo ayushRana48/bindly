@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { supabase } = require('../initSupabase');
-const { uploadFile } = require('./uploadFile')
+const { uploadFile } = require('./uploadFile');
+const { post } = require('../routes/bindly');
+const { v4: uuidv4 } = require('uuid');
 
 
 // Function to create a new group
@@ -57,7 +59,6 @@ async function getAllGroups() {
   return { data, error };
 }
 
-
 async function getLeaderBoard(groupid) {
   try {
     // Fetch group details
@@ -74,6 +75,17 @@ async function getLeaderBoard(groupid) {
 
     const { startdate, tasksperweek } = groupData;
     const startDate = new Date(startdate);
+
+    // Fetch users for the group
+    const { data: usersData, error: usersError } = await supabase
+      .from('usergroup')
+      .select('username')
+      .eq('groupid', groupid);
+
+    if (usersError) {
+      console.error('Error fetching users data:', usersError);
+      return { error: usersError };
+    }
 
     // Fetch posts for the group
     const { data: postsData, error: postsError } = await supabase
@@ -105,9 +117,12 @@ async function getLeaderBoard(groupid) {
     });
 
     // Calculate counted and uncounted posts per week
-    const leaderboard = Object.keys(userPosts).map(username => {
-      const weeks = Object.keys(userPosts[username]).map(weekNum => {
-        const weekPosts = userPosts[username][weekNum];
+    const leaderboard = usersData.map(user => {
+      const username = user.username;
+      const userWeeks = userPosts[username] || {};
+
+      const weeks = Object.keys(userWeeks).map(weekNum => {
+        const weekPosts = userWeeks[weekNum];
         const countedPosts = weekPosts.slice(0, tasksperweek);
         const unCountedPosts = weekPosts.slice(tasksperweek);
 
@@ -146,9 +161,9 @@ async function getLeaderBoard(groupid) {
       leaderboard[i].place = currentPlace;
     }
 
-    console.log(leaderboard)
+    console.log(leaderboard);
 
-    return {leaderboard};
+    return { leaderboard };
   } catch (e) {
     console.error('Unexpected error:', e);
     return { error: e };
@@ -156,55 +171,164 @@ async function getLeaderBoard(groupid) {
 }
 
 
-
-// Function to get a group by groupId
 // Function to get a group by groupId
 async function getGroup(groupid) {
-  // Fetch group data
-  const { data: group, error: groupError } = await supabase
-    .from('groups')
-    .select('*')
-    .eq('groupid', groupid)
-    .single();
+  try {
+    // Fetch group data and usergroup data concurrently
+    const [groupResponse, usergroupResponse, inviteResponse] = await Promise.all([
+      supabase
+        .from('groups')
+        .select('*')
+        .eq('groupid', groupid)
+        .single(),
+      supabase
+        .from('usergroup')
+        .select(`
+        *,
+        users!inner(*)  -- Perform an inner join with the groups table
+      `)
+        .eq('groupid', groupid),
+      supabase
+        .from('invite')
+        .select('*')
+        .eq('groupid', groupid),
+    ]);
 
-  // Fetch usergroup data
-  const { data: usergroup, error: usergroupError } = await supabase
-    .from('usergroup')
-    .select(`
-    *,
-    users!inner(*)  -- Perform an inner join with the groups table
-  `)
-    .eq('groupid', groupid);
+    // Check for errors in the responses
+    const groupError = groupResponse.error;
+    const usergroupError = usergroupResponse.error;
+    const inviteError = inviteResponse.error;
 
-  // Fetch invite data
-  const { data: invite, error: inviteError } = await supabase
-    .from('invite')
-    .select('*')
-    .eq('groupid', groupid);
+    // Return if any errors occurred
+    if (groupError || usergroupError || inviteError) {
+      return { data: null, error: groupError || usergroupError || inviteError };
+    }
 
-  // Fetch post data
-  const { data: post, error: postError } = await supabase
+    // Fetch and process veto data
+    const { data: processData, error: processError } = await processVeto(groupid);
+    if (processError) {
+      return { data: null, error: processError };
+    }
+
+    // Fetch post data
+    const { data: postData, error: postError } = await supabase
     .from('post')
     .select('*')
-    .eq('groupid', groupid);
+    .eq('groupid', groupid)
+    .or('valid.is.null,valid.eq.true');
+  
 
-  // Sort post data by timepost, with later dates first
-  const sortedPost = post ? post.sort((a, b) => new Date(b.timepost) - new Date(a.timepost)) : [];
+    if (postError) {
+      return { data: null, error: postError };
+    }
 
-  // Fetch history data
-  const { data: history, error: historyError } = await supabase
-    .from('history')
-    .select('*')
-    .eq('groupid', groupid);
+    // Sort post data by timepost, with later dates first
+    const sortedPost = postData ? postData.sort((a, b) => new Date(b.timepost) - new Date(a.timepost)) : [];
 
+    // Combine data into a single response
+    const data = {
+      group: groupResponse.data,
+      usergroup: usergroupResponse.data,
+      invite: inviteResponse.data,
+      post: sortedPost,
+    };
 
-
-  // Combine all errors into one if any
-  const error = groupError || usergroupError || inviteError || postError || historyError;
-
-  // Return an object with all the fetched data, including sorted posts
-  return { data: { group, usergroup, invite, post: sortedPost, history }, error };
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error in getGroup:', error);
+    return { data: null, error: error.message };
+  }
 }
+
+async function processVeto(groupid) {
+  try {
+    // Fetch member count
+    const { data: memberData, error: memberError } = await supabase
+      .from('usergroup')
+      .select('username')
+      .eq('groupid', groupid);
+
+    if (memberError) throw memberError;
+
+    const memberCount = memberData.length;
+    console.log(memberCount);
+
+    if (memberCount <= 2) {
+      return { data: 'less than 2 members' };
+    }
+
+    // Fetch post data
+    const { data: postData, error: postError } = await supabase
+      .from('post')
+      .select('*')
+      .eq('groupid', groupid);
+
+    if (postError) throw postError;
+
+    const currentTime = new Date();
+    const cutoffTime = new Date(currentTime.getTime() - 48 * 60 * 60 * 1000); // 48 hours ago
+    const latePosts = [];
+
+    for (const post of postData) {
+      const postTime = new Date(post.timecycle);
+      if (postTime < cutoffTime) {
+        latePosts.push(post);
+      }
+    }
+
+    // Process posts that are late and may need to be invalidated
+    if (latePosts.length > 0) {
+      console.log(latePosts,'late')
+      const postIdsToInvalidate = latePosts
+        .filter(post => post.veto.length >= Math.ceil(memberCount * (1 / 2)))
+        .map(post => post.postid);
+
+      console.log(postIdsToInvalidate)
+
+      const postIdsToValidate = latePosts
+        .filter(post => post.veto.length < Math.ceil(memberCount * (1 / 2)))
+        .map(post => post.postid);
+
+      if (postIdsToValidate.length > 0) {
+        const { error: updateError } = await supabase
+          .from('post')
+          .update({ valid: true })
+          .in('postid', postIdsToValidate);
+      }
+
+      if (postIdsToInvalidate.length > 0) {
+        const { error: invalidateError } = await supabase
+          .from('post')
+          .update({ valid: false })
+          .in('postid', postIdsToInvalidate);
+
+        if (invalidateError) throw invalidateError;
+
+        const notifications = latePosts
+          .filter(post => postIdsToInvalidate.includes(post.postid))
+          .map(post => ({
+            notifyvetoid: uuidv4(),
+            postid: post.postid,
+            username: post.username,
+          }));
+
+        if (notifications.length > 0) {
+          const { error: notifyError } = await supabase
+            .from('notifyveto')
+            .insert(notifications);
+
+          if (notifyError) throw notifyError;
+        }
+      }
+    }
+
+    return { data: 'Process completed successfully' };
+  } catch (error) {
+    console.error('Error processing veto:', error);
+    return { error: error.message || 'An error occurred while processing veto' };
+  }
+}
+
 
 // Function to get groups by hostId
 async function getGroupsByHostId(hostid) {
@@ -335,4 +459,4 @@ async function deleteGroup(groupId) {
 
 
 
-module.exports = { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup,getLeaderBoard };
+module.exports = { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup, getLeaderBoard };

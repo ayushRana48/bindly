@@ -1,6 +1,6 @@
 
 
-const { createPost,postStatus, compressVideo, getAllPosts, getPost, getPostsByGroupId, getPresignedUrl, getPostsByUsername, updatePost, deletePost } = require('../transactions/postTransactions');
+const { createPost,postStatus,addVeto,removeVeto, compressVideo, getAllPosts, getPost, getPostsByGroupId, getPresignedUrl, getPostsByUsername, updatePost, deletePost } = require('../transactions/postTransactions');
 const path = require('path');
 
 const { supabase } = require('../initSupabase');
@@ -25,19 +25,19 @@ const postStatusController = async (req, res) => {
   const {username,groupId } = req.body;
   console.log(username,groupId)
   try {
-    const { data, error } = await postStatus(username, groupId);
+    const { data,startdate, error } = await postStatus(username, groupId);
     if (error) throw error;
-    res.status(200).json({data});
+    res.status(200).json({data,startdate});
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
 async function createPostController(req, res) {
-  const { username, groupId, photolink, videolink, caption, time, starddate } = req.body;
+  const { username, groupId, photolink, videolink, caption, time, starddate,timecycle } = req.body;
 
   try {
-    const { data, error } = await createPost(username, groupId, photolink, videolink, caption, time, starddate);
+    const { data, error } = await createPost(username, groupId, photolink, videolink, caption, time, starddate,timecycle);
 
     if (error) throw error;
     res.status(200).json(data);
@@ -140,6 +140,38 @@ async function updatePostController(req, res) {
   }
 }
 
+
+async function addVetoController(req, res) {
+
+  const{ postid,username,groupid} = req.body;
+
+  try {
+    const { data, error } = await addVeto(postid, username,groupid);
+    console.log('errorfromcont',error)
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
+
+
+async function removeVetoController(req, res) {
+
+  const{ postid,username,groupid} = req.body;
+
+  try {
+    const { data, error } = await removeVeto(postid, username,groupid);
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
+
+
 // Controller for deleting a user
 async function deletePostController(req, res) {
   const { postId } = req.params;
@@ -155,5 +187,5 @@ async function deletePostController(req, res) {
 }
 
 
-module.exports = { createPostController, deletePostController, getAllPostsController, updatePostController, getPostController, getPostsByGroupIdController, getPostsByUsernameController, getPresignedUrlController, compressVideoController,postStatusController };
+module.exports = { createPostController, deletePostController, getAllPostsController, updatePostController, getPostController, getPostsByGroupIdController, getPostsByUsernameController, getPresignedUrlController, compressVideoController,postStatusController,addVetoController,removeVetoController };
 

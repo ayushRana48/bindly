@@ -12,7 +12,7 @@ const { execFile } = require('child_process');
 
 
 // Function to create a new group
-async function createPost(username, groupid, photolink, videolink, caption, timepost, startdate) {
+async function createPost(username, groupid, photolink, videolink, caption, timepost, startdate,timecycle) {
 
   const postid = uuidv4()
 
@@ -20,7 +20,7 @@ async function createPost(username, groupid, photolink, videolink, caption, time
   const { data, error } = await supabase
     .from('post')
     .insert([
-      { postid, username, groupid, photolink, videolink, caption, startdate, timepost }
+      { postid, username, groupid, photolink, videolink, caption, startdate, timepost,timecycle }
     ]).select().single();
 
   return { data, error };
@@ -220,13 +220,13 @@ async function updatePost(postid, updateParams) {
   console.log(updateParams);
   console.log('paramsABOVE');
 
-  const { username, groupId, photolink, videolink, caption, time, prevFileName } = updateParams;
+  const { username, groupId, photolink, videolink, caption, time, prevFileName,timecycle } = updateParams;
 
   try {
     // Update post
     const { data, error } = await supabase
       .from('post')
-      .update({ postid, username, groupid: groupId, photolink, videolink, caption, timepost: time })
+      .update({ postid, username, groupid: groupId, photolink, videolink, caption, timepost: time,timecycle })
       .eq('postid', postid)
       .select()
       .single();
@@ -271,9 +271,98 @@ async function deletePost(postid) {
   const { data, error } = await supabase
     .from('post')
     .delete()
-    .eq('postid', postid);
+    .eq('postid', postid)
 
   return { data, error };
+}
+
+
+
+async function addVeto(postid, username, groupid) {
+  const { data: userData, error: userError } = await supabase
+    .from('usergroup')
+    .select('*')
+    .eq('groupid', groupid)
+    .eq('username', username)
+    .single();
+
+  if (userError) {
+    console.log('user',userError)
+    if(userError.message=='JSON object requested, multiple (or no) rows returned'){
+      return {error:{message:'user not in group'}}
+    }
+    return { error: userError };
+  }
+
+  const { data: postData, error: postError } = await supabase
+    .from('post')
+    .select('veto')
+    .eq('postid', postid)
+    .single();
+
+  if (postError) {
+    console.log(postid)
+    console.log('post',postError)
+    
+    return { error: postError };
+  }
+
+  const newVetoList = postData.veto || [];
+  if (!newVetoList.includes(username)) {
+    newVetoList.push(username);
+  }
+
+  const { data: updateData, error: updateError } = await supabase
+    .from('post')
+    .update({ veto: newVetoList })
+    .eq('postid', postid)
+    .select()
+    .single();
+
+  return { data: updateData, error: updateError };
+}
+
+
+
+async function removeVeto(postid, username, groupid) {
+  const { data: userData, error: userError } = await supabase
+    .from('usergroup')
+    .select('*')
+    .eq('groupid', groupid)
+    .eq('username', username)
+    .single();
+
+  if (userError) {
+    if(userError.message=='JSON object requested, multiple (or no) rows returned'){
+      return {error:{message:'user not in group'}}
+    }
+    return { error: userError };
+  }
+
+  const { data: postData, error: postError } = await supabase
+    .from('post')
+    .select('veto')
+    .eq('postid', postid)
+    .single();
+
+  if (postError) {
+    return { error: postError };
+  }
+
+  const newVetoList = postData.veto || [];
+  const index = newVetoList.indexOf(username);
+  if (index > -1) {
+    newVetoList.splice(index, 1);
+  }
+
+  const { data: updateData, error: updateError } = await supabase
+    .from('post')
+    .update({ veto: newVetoList })
+    .eq('postid', postid)
+    .select()
+    .single();
+
+  return { data: updateData, error: updateError };
 }
 
 async function postStatus(username, groupid) {
@@ -292,28 +381,35 @@ async function postStatus(username, groupid) {
 
     const startdate = new Date(groupData.startdate);
 
-    console.log('startdate',startdate)
+    console.log('startdate', startdate)
 
     // Fetch the latest timepost from the post table
     const { data: postData, error: postError } = await supabase
       .from('post')
       .select('timepost')
       .eq('username', username)
+      .eq('groupid', groupid)
       .order('timepost', { ascending: false })
       .limit(1)
       .single();
 
+    console.log(postData)
+
+
     if (postError) {
       console.error('Error fetching post data:', postError);
+      if (postError.message == 'JSON object requested, multiple (or no) rows returned') {
+        return { data: false }
+      }
       return { error: postError };
     }
 
     const timepost = new Date(postData.timepost);
-    console.log('timepost',timepost)
+    console.log('timepost', timepost)
 
     // Calculate the current cycle start time based on startdate
     const currentTime = new Date();
-    console.log('currentTime',currentTime)
+    console.log('currentTime', currentTime)
 
     const cycleStartTime = new Date(
       currentTime.getFullYear(),
@@ -325,7 +421,7 @@ async function postStatus(username, groupid) {
     );
 
 
-    
+
     // If the current time is before today's cycle start time, use the previous day's cycle start time
     if (currentTime < cycleStartTime) {
       cycleStartTime.setDate(cycleStartTime.getDate() - 1);
@@ -341,7 +437,7 @@ async function postStatus(username, groupid) {
 
     console.log(isInSame24HourCycle)
 
-    return { data:isInSame24HourCycle };
+    return { data: isInSame24HourCycle,startdate:cycleStartTime };
   } catch (e) {
     console.error('Unexpected error:', e);
     return { error: e };
@@ -349,4 +445,4 @@ async function postStatus(username, groupid) {
 }
 
 
-module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, compressVideo,postStatus };
+module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, compressVideo, postStatus,addVeto,removeVeto };

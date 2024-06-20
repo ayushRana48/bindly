@@ -64,11 +64,16 @@ router.put('/post/updatePost/:postId',postController.updatePostController)
 router.post('/post/getPresignedUrl',postController.getPresignedUrlController)
 router.post('/post/compressVideo',postController.compressVideoController)
 router.post('/post/postStatus',postController.postStatusController)
+router.put('/post/addVeto',postController.addVetoController)
+router.put('/post/removeVeto',postController.removeVetoController)
+
 
 router.post('/auth/signIn',authController.signInController)
 router.post('/auth/signUp',authController.signUpController)
 router.post('/auth/signOut',authController.signOutController)
 router.get('/auth/getUser',authController.getUserController)
+
+
 
 
 module.exports = router;

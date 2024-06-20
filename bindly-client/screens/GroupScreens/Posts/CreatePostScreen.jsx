@@ -257,7 +257,8 @@ const CreatePostScreen = () => {
                     photolink: imgPermanentUrl,
                     videolink: vidPermanentUrl,
                     caption: caption,
-                    time:time
+                    time:time,
+                    timecycle:groupData.timecycle
                 }),
             });
     

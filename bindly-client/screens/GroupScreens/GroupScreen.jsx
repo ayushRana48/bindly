@@ -42,6 +42,8 @@ const GroupScreen = () => {
   const getGroup = async () => {
     try {
       const isInGroup = await inGroup();
+
+      console.log(isInGroup)
       if (!isInGroup) {
         Alert.alert("Invalid Group", "Group has been deleted or not in group");
         navigation.navigate('GroupsList');
@@ -67,6 +69,8 @@ const GroupScreen = () => {
       setPosts(res.post || []);
       setGroupUsers(res?.usergroup)
 
+      console.log(res,'rlkdmlksdm')
+
       setVisiblePosts((res.post || []).slice(0, postsPerPage));
 
       const response2 = await fetch(`${BASE_URL}/bindly/post/postStatus`, {
@@ -78,16 +82,25 @@ const GroupScreen = () => {
         }),
       });
 
+      console.log(response2)
+
 
       if (!response2.ok) {
         const errorResponse = await response2.json();
-        throw new Error(errorResponse.error || 'Failed to fetch group data');
+        if(errorResponse.message=='JSON object requested, multiple (or no) rows returned]'){
+          setIsCreate(true)
+        }
+        console.log(errorResponse,'sdsd')
+
+        // throw new Error(errorResponse.error || 'Failed to fetch group data');
       }
 
       const res2 = await response2.json();
 
+      console.log(res2,'sdsd')
+
       if (res2.data) {
-        setGroupData(g =>{ return {...g, 'isCreate': !res2.data}})
+        setGroupData(g =>{ return {...g, 'isCreate': !res2.data,timecycle:res2.startdate}})
         setIsCreate(!res2.data)
     }
 
@@ -156,7 +169,7 @@ const toPost = () => {
     navigation.navigate("EditPost");
   }
   else{
-    navigation.navigate("CreatPost");
+    navigation.navigate("CreatePost");
   }
 };
 
@@ -233,12 +246,15 @@ return (
       {!loading && visiblePosts.map((post, index) => (
         <PostItem
           key={index}
+          postid={post.postid}
           imageLink={post.photolink}
           videoLink={post.videolink}
           username={post.username}
           caption={post.caption}
           users={groupUsers}
           time={post.timepost}
+          valid={post.valid}
+          veto={post.veto}
         />
       ))}
 
