@@ -12,7 +12,7 @@ import trashIcon from "../../../assets/trashIcon.png";
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../../utils/compressImage";
 import blobToBase64 from "../../../utils/blobToBase64";
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const GroupEditScreen = () => {
     const today = new Date();
@@ -48,7 +48,7 @@ const GroupEditScreen = () => {
         const diffDays = Math.floor(timeDiff / (1000 * 3600 * 24));
 
         if (diffDays % 7 !== 0) {
-            throw new Error(`The difference between startDate and endDate must be a multiple of 7. Start Date: ${startDate}, End Date: ${endDate}`);
+            // throw new Error(`The difference between startDate and endDate must be a multiple of 7. Start Date: ${startDate}, End Date: ${endDate}`);
         }
 
         const diffWeeks = diffDays / 7;
@@ -189,7 +189,7 @@ const GroupEditScreen = () => {
                 const startDateUTC = startTime.toISOString();
                 const endDateUTC = endTime.toISOString();
 
-                const response = await fetch(`${BASE_URL}/bindly/group/updateGroup/${groupid}`, {
+                const response = await fetch(`${BASEROOT_URL}/bindly/group/updateGroup/${groupid}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

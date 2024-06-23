@@ -6,7 +6,7 @@ import { useGroupsContext } from "../../GroupsContext";
 import { useRoute } from '@react-navigation/native';
 import placeholder from "../../../assets/GroupIcon.png";
 import backArrow from '../../../assets/backArrow.png';
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const GroupSetting = () => {
     const route = useRoute();
@@ -23,9 +23,11 @@ const GroupSetting = () => {
     const [deleting, setDeleting] = useState(false);
     const [showLeaveModal, setShowLeaveModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [ending, setEnding] = useState(false);
+    const [vetoing, setVetoing] = useState(false);
 
     const navigation = useNavigation();
-    const { user } = useUserContext();
+    const { user, setUser } = useUserContext();
     const { setGroups, setGroupData, groupData: gd } = useGroupsContext();
 
     useEffect(() => {
@@ -53,7 +55,7 @@ const GroupSetting = () => {
 
     const getGroup = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/bindly/group/${gd.group.groupid}`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/group/${gd.group.groupid}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
@@ -83,19 +85,17 @@ const GroupSetting = () => {
         }
     };
 
-    const openDeleteModal=()=>{
+    const openDeleteModal = () => {
         if (isPastDate) {
             Alert.alert('Can not delete, group already started');
             setDeleting(false);
             return;
         }
 
-        setShowDeleteModal(true)
+        setShowDeleteModal(true);
+    };
 
-    }
-
-    const openLeaveModal=()=>{
-       
+    const openLeaveModal = () => {
         if (isPastDate) {
             Alert.alert('Can not leave, group already started');
             setLeaving(false);
@@ -108,9 +108,8 @@ const GroupSetting = () => {
             return;
         }
 
-        setShowLeaveModal(true)
-
-    }
+        setShowLeaveModal(true);
+    };
 
     const toMembers = () => {
         navigation.navigate("MembersList");
@@ -133,7 +132,7 @@ const GroupSetting = () => {
         }
 
         try {
-            const response = await fetch(`${BASE_URL}/bindly/usergroup/leaveGroup`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/usergroup/leaveGroup`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -171,7 +170,7 @@ const GroupSetting = () => {
         }
 
         try {
-            const response = await fetch(`${BASE_URL}/bindly/group/deleteGroup`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/group/deleteGroup`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -198,9 +197,67 @@ const GroupSetting = () => {
         }
     };
 
+    const endGroup = async () => {
+        if (ending) return;
+        setEnding(true);
+
+        try {
+            const response = await fetch(`${BASEROOT_URL}/bindly/group/endGroup`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    groupid: gd.group.groupid,
+                }),
+            });
+
+            console.log(response, 'pre responseee');
+
+            const resp = await response.text();
+
+            console.log(resp, 'the reesponseee');
+
+            if (resp.includes('success')) {
+                let changeBuyIn = 0;
+                navigation.navigate("GroupsList");
+                setGroupData(null);
+                setUser(u => { return { ...u, balance: u.balance + changeBuyIn } });
+            } else {
+                console.error("An error occurred. Please try again.");
+            }
+        } catch (error) {
+            console.log("Fetch error: ", error);
+            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
+            setEnding(false);
+        }
+    };
+
+    const proccessVeto = async () => {
+        if (ending) return;
+        setVetoing(true);
+
+        try {
+            const response = await fetch(`${BASEROOT_URL}/bindly/group/proccessVetoDemo/${gd.group.groupid}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const resp = await response.text();
+
+            console.log('resp','heheslkfnlksd',resp)
+
+        } catch (error) {
+            console.log("Fetch error: ", error);
+            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
+            setVetoing(false);
+        }
+    };
+
     return (
         <ScrollView
             style={styles.container}
+            contentContainerStyle={styles.contentContainer}
             refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
@@ -219,11 +276,11 @@ const GroupSetting = () => {
                 <Text style={styles.title}>Group Settings</Text>
             </View>
 
-            <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
-                <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc} />
+            <View style={styles.centeredImage}>
+                <Image style={styles.image} source={imageSrc} />
             </View>
 
-            <Text style={{ fontSize: 24, fontWeight: 'bold' }}>{groupName}</Text>
+            <Text style={styles.groupName}>{groupName}</Text>
 
             <Text style={styles.label}>Description</Text>
             <Text style={styles.input}>{description}</Text>
@@ -240,18 +297,12 @@ const GroupSetting = () => {
             <Text style={styles.input}>{taskPerWeek}</Text>
 
             <View style={{ alignItems: 'center' }}>
-                <Pressable style={styles.viewMembers} onPress={toMembers}>
-                    <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>View Members</Text>
-                </Pressable>
-            </View>
-
-            <View style={{ alignItems: 'center' }}>
                 <Pressable
                     style={[styles.leaveGroup, { backgroundColor: isPastDate ? 'gray' : '#ed972d' }]}
                     onPress={openLeaveModal}
                     disabled={leaving}
                 >
-                    {leaving ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>Leave Group</Text>}
+                    {leaving ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Leave Group</Text>}
                 </Pressable>
             </View>
 
@@ -262,10 +313,30 @@ const GroupSetting = () => {
                         onPress={openDeleteModal}
                         disabled={deleting}
                     >
-                        {deleting ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>Delete Group</Text>}
+                        {deleting ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Delete Group</Text>}
                     </Pressable>
                 </View>
             )}
+
+            <View style={{ alignItems: 'center' }}>
+                <Pressable
+                    style={[styles.leaveGroup, { backgroundColor: '#ed972d' }]}
+                    disabled={ending}
+                    onPress={endGroup}
+                >
+                    {ending ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>End Group demo</Text>}
+                </Pressable>
+            </View>
+
+            <View style={{ alignItems: 'center' }}>
+                <Pressable
+                    style={[styles.leaveGroup, { backgroundColor: '#ed972d' }]}
+                    disabled={vetoing}
+                    onPress={proccessVeto}
+                >
+                    {vetoing ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Insta Veto demo</Text>}
+                </Pressable>
+            </View>
 
             <Modal
                 animationType="slide"
@@ -308,7 +379,7 @@ const GroupSetting = () => {
                                 style={[styles.button, styles.buttonDelete]}
                                 onPress={deleteGroup}
                             >
-                                {deleting ? <ActivityIndicator color="white" /> :<Text style={styles.textStyle}>Delete</Text>}
+                                {deleting ? <ActivityIndicator color="white" /> : <Text style={styles.textStyle}>Delete</Text>}
                             </Pressable>
                             <Pressable
                                 style={[styles.button, styles.buttonCancel]}
@@ -327,8 +398,12 @@ const GroupSetting = () => {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: 'white',
-        padding: 24,
         flex: 1,
+        paddingTop: 24,
+        paddingHorizontal: 16,
+    },
+    contentContainer: {
+        paddingBottom: 50, // Add padding to the bottom
     },
     cancel: {
         backgroundColor: 'red',
@@ -402,6 +477,24 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 8,
         marginTop: 20,
+    },
+    centeredImage: {
+        alignItems: 'center',
+    },
+    image: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+    },
+    groupName: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: '600',
     },
     modalContainer: {
         flex: 1,

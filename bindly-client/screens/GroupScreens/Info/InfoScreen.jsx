@@ -7,7 +7,7 @@ import backArrow from '../../../assets/backArrow.png';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import LeaderboardItem from "../components/LeaderboardItem";
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const InfoScreen = () => {
   const route = useRoute();
@@ -31,8 +31,7 @@ const InfoScreen = () => {
   const getLeaderBoard = async () => {
 
     try {
-      console.log(groupData.group.groupid)
-      const response = await fetch(`${BASE_URL}/bindly/group/getLeaderboard/${groupData.group.groupid}`, {
+      const response = await fetch(`${BASEROOT_URL}/bindly/group/getLeaderboard/${groupData.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -97,7 +96,7 @@ const InfoScreen = () => {
         {loading && <ActivityIndicator size="large" color="#0000ff" />}
 
         {!loading &&
-          (< ScrollView style={styles.groupList}>
+          (< ScrollView style={{paddingBottom:32}}>
             {leaderboard.map((l) => <LeaderboardItem key={l.username} memberData={l}></LeaderboardItem>)}
           </ScrollView>
           )}

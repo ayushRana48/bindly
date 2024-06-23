@@ -12,7 +12,7 @@ import trashIcon from "../../../assets/trashIcon.png";
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../../utils/compressImage";
 import blobToBase64 from "../../../utils/blobToBase64";
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const NewGroupScreen = () => {
     const today = new Date();
@@ -28,7 +28,7 @@ const NewGroupScreen = () => {
 
     const [groupName, setGroupName] = useState("");
     const [description, setDescription] = useState("");
-    const [startDate, setStartDate] = useState(tomorrow);
+    const [startDate, setStartDate] = useState(today);
     const [numWeeks, setNumWeeks] = useState(0);
     const [buyIn, setBuyIn] = useState(0);
     const [taskPerWeek, setTaskPerWeek] = useState(0);
@@ -166,7 +166,7 @@ const NewGroupScreen = () => {
         const endDateUTC = endTime.toISOString();
 
         try {
-            const response = await fetch(`${BASE_URL}/bindly/group/createGroup`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/group/createGroup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -184,7 +184,13 @@ const NewGroupScreen = () => {
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
-                setGroups(g => [...g, body]);
+                setGroups(g => {
+                    if (Array.isArray(g)) {
+                        return [...g, body];
+                    } else {
+                        return [body];
+                    }
+                });
                 setGroupData({ group: body, usergroup: user, invite: [], post: [], history: [] });
                 navigation.navigate("Group", { groupData: body });
             } else {
@@ -195,7 +201,6 @@ const NewGroupScreen = () => {
                 }
             }
         } catch (error) {
-            console.log("Fetch error: ", error);
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
         } finally {
             setLoading(false);
@@ -297,7 +302,7 @@ const NewGroupScreen = () => {
                                     value={startDate}
                                     onChange={onChange}
                                     style={{ height: 120 }}
-                                    minimumDate={tomorrow}
+                                    minimumDate={today}
                                 />
                                 <View style={styles.centeredRow}>
                                     <Pressable style={styles.doneButton} onPress={toggleDatepicker}>

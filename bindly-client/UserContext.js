@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const UserContext = createContext(null);
 
@@ -12,7 +12,7 @@ export const UserProvider = ({ children }) => {
 
     const getUserByEmail = async () => {
       try {
-        const response = await fetch(`${BASE_URL}/bindly/users/email/${email}`, {
+        const response = await fetch(`${BASEROOT_URL}/bindly/users/email/${email}`, {
           headers: { 'Content-Type': 'application/json' },
         });
         const data = await response.json();

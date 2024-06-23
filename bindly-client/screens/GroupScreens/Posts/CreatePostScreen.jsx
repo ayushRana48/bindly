@@ -7,7 +7,7 @@ import { useGroupsContext } from "../../GroupsContext";
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import compressPostImage from "../../../utils/compressPostImage";
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const CreatePostScreen = () => {
     const { setGroups, setGroupData, groupData } = useGroupsContext();
@@ -22,6 +22,9 @@ const CreatePostScreen = () => {
     const [modalContent, setModalContent] = useState("");
     const [modalIsImage, setIsModalImage] = useState(true);
 
+    useEffect(()=>{
+        console.log(groupData.timecycle,'time here')
+    },[])
    
 
     const takeImage = async () => {
@@ -160,7 +163,7 @@ const CreatePostScreen = () => {
     
         if (image) {
             try {
-                const response = await fetch(`${BASE_URL}/bindly/post/getPresignedUrl`, {
+                const response = await fetch(`${BASEROOT_URL}/bindly/post/getPresignedUrl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -202,7 +205,7 @@ const CreatePostScreen = () => {
     
         if (video) {
             try {
-                const response = await fetch(`${BASE_URL}/bindly/post/getPresignedUrl`, {
+                const response = await fetch(`${BASEROOT_URL}/bindly/post/getPresignedUrl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -248,7 +251,7 @@ const CreatePostScreen = () => {
     
      
     
-            const response = await fetch(`${BASE_URL}/bindly/post/createPost`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/post/createPost`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -279,7 +282,7 @@ const CreatePostScreen = () => {
                 // Call compressVideo API after navigation
                 if (video) {
     
-                    fetch(`${BASE_URL}/bindly/post/compressVideo`, {
+                    fetch(`${BASEROOT_URL}/bindly/post/compressVideo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ videolink: `airborm-be05f09f-9b48-444a-85f4-f12461bc5302-1717922731234v`}),

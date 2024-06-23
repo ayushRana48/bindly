@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const SignInScreen = () => {
     const [username, setUsername] = useState("");
@@ -13,14 +13,14 @@ const SignInScreen = () => {
     const { email, setEmail } = useUserContext();
     const navigation = useNavigation();
 
-    useEffect(()=>{    console.log(BASE_URL)
+    useEffect(()=>{    console.log(BASEROOT_URL)
     },[])
 
     const submit = async () => {
         if (loading) return; // Prevent double click
         setLoading(true);
         try {
-            const response = await fetch(`${BASE_URL}/bindly/auth/signIn`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/auth/signIn`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -1,6 +1,6 @@
 
 
-const { createPost,postStatus,addVeto,removeVeto, compressVideo, getAllPosts, getPost, getPostsByGroupId, getPresignedUrl, getPostsByUsername, updatePost, deletePost } = require('../transactions/postTransactions');
+const { createPost,postStatus, getInvalidPosts,addVeto,removeVeto, compressVideo, getAllPosts, getPost, getPostsByGroupId, getPresignedUrl, getPostsByUsername, updatePost, deletePost } = require('../transactions/postTransactions');
 const path = require('path');
 
 const { supabase } = require('../initSupabase');
@@ -82,6 +82,21 @@ async function getPostController(req, res) {
   }
 }
 
+
+async function getInvalidPostsController(req, res) {
+  const { username } = req.params;
+
+  try {
+    const { data, error } = await getInvalidPosts(username);
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
+}
+
+
 async function getPostsByGroupIdController(req, res) {
   const { groupId } = req.params;
 
@@ -120,6 +135,7 @@ async function getAllPostsController(req, res) {
     res.status(404).json({ error: error.message });
   }
 }
+
 // Controller for updating a user's details
 async function updatePostController(req, res) {
   console.log('call')
@@ -187,5 +203,5 @@ async function deletePostController(req, res) {
 }
 
 
-module.exports = { createPostController, deletePostController, getAllPostsController, updatePostController, getPostController, getPostsByGroupIdController, getPostsByUsernameController, getPresignedUrlController, compressVideoController,postStatusController,addVetoController,removeVetoController };
+module.exports = { createPostController, deletePostController, getAllPostsController, updatePostController, getPostController, getPostsByGroupIdController, getPostsByUsernameController, getPresignedUrlController, compressVideoController,postStatusController,addVetoController,removeVetoController,getInvalidPostsController };
 

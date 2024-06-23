@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const InviteItem = ({ inviteData, removeInvite }) => {
     const navigation = useNavigation();
@@ -35,7 +35,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
         setAccepting(true);
 
         try {
-            const response = await fetch(`${BASE_URL}/bindly/invite/acceptInvite`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/invite/acceptInvite`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -72,7 +72,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
         setRejecting(true);
 
         try {
-            const response = await fetch(`${BASE_URL}/bindly/invite/deleteInvite/${inviteId}`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/invite/deleteInvite/${inviteId}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
             });

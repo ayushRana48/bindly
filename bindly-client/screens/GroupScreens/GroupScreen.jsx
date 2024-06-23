@@ -9,7 +9,7 @@ import { useGroupsContext } from "../GroupsContext";
 import { useUserContext } from "../../UserContext";
 import members from '../../assets/members.png';
 import info from '../../assets/info.png';
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 import PostItem from '../GroupScreens/components/PostItem';
 
 const GroupScreen = () => {
@@ -26,6 +26,8 @@ const GroupScreen = () => {
   const [page, setPage] = useState(1);
   const [groupUsers, setGroupUsers] = useState([])
   const [isCreate,setIsCreate]=useState(true)
+  const [showModal,setShowModal]=useState(false)
+  const [vetos,setVetos]=useState([])
   const postsPerPage = 5; // Number of posts to load at a time
 
   useEffect(() => {
@@ -38,12 +40,40 @@ const GroupScreen = () => {
   }, [gd]);
 
 
+  useEffect(()=>{
+    getNotifyveto()
+  },[])
+
+
+  
+  const getNotifyveto=async ()=>{
+    try {
+      const response = await fetch(`${BASEROOT_URL}/bindly/notifyveto/${user.username}`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        throw new Error(errorResponse.error || 'Failed to fetch group data');
+      }
+
+      const res = await response.json();
+      if(res.length>0){
+        setShowModal(true)
+        setVetos(res)
+      }
+    }
+    catch(error){
+      console.log('error')
+    }
+  }
+
+
 
   const getGroup = async () => {
     try {
       const isInGroup = await inGroup();
 
-      console.log(isInGroup)
       if (!isInGroup) {
         Alert.alert("Invalid Group", "Group has been deleted or not in group");
         navigation.navigate('GroupsList');
@@ -55,7 +85,7 @@ const GroupScreen = () => {
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/bindly/group/${groupData.groupid}`, {
+      const response = await fetch(`${BASEROOT_URL}/bindly/group/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -69,11 +99,10 @@ const GroupScreen = () => {
       setPosts(res.post || []);
       setGroupUsers(res?.usergroup)
 
-      console.log(res,'rlkdmlksdm')
 
       setVisiblePosts((res.post || []).slice(0, postsPerPage));
 
-      const response2 = await fetch(`${BASE_URL}/bindly/post/postStatus`, {
+      const response2 = await fetch(`${BASEROOT_URL}/bindly/post/postStatus`, {
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
         body: JSON.stringify({
@@ -82,7 +111,6 @@ const GroupScreen = () => {
         }),
       });
 
-      console.log(response2)
 
 
       if (!response2.ok) {
@@ -90,16 +118,17 @@ const GroupScreen = () => {
         if(errorResponse.message=='JSON object requested, multiple (or no) rows returned]'){
           setIsCreate(true)
         }
-        console.log(errorResponse,'sdsd')
 
         // throw new Error(errorResponse.error || 'Failed to fetch group data');
       }
 
       const res2 = await response2.json();
 
-      console.log(res2,'sdsd')
 
-      if (res2.data) {
+      console.log(res2,'watchTHIIISSS')
+
+
+      if (res2) {
         setGroupData(g =>{ return {...g, 'isCreate': !res2.data,timecycle:res2.startdate}})
         setIsCreate(!res2.data)
     }
@@ -119,7 +148,7 @@ const GroupScreen = () => {
 
 const inGroup = async () => {
   try {
-    const response = await fetch(`${BASE_URL}/bindly/usergroup/inGroup`, {
+    const response = await fetch(`${BASEROOT_URL}/bindly/usergroup/inGroup`, {
       headers: { 'Content-Type': 'application/json' },
       method: 'PUT',
       body: JSON.stringify({

@@ -8,7 +8,7 @@ const historyController =  require('../controllers/historyController.js');
 const postController =  require('../controllers/postController.js');
 const authController =  require('../controllers/authController.js');
 const inviteController =  require('../controllers/inviteController.js');
-
+const notifyvetoController =  require('../controllers/notifyVetoController.js');
 
 router.post('/users/createUser',userController.createUserController)
 router.get('/users/',userController.getAllUsersController)
@@ -25,6 +25,8 @@ router.get('/group/',groupController.getAllGroupsController)
 router.delete('/group/deleteGroup',groupController.deleteGroupController)
 router.put('/group/updateGroup/:groupId',groupController.updateGroupController)
 router.put('/group/changeHost',groupController.changeHostController)
+router.put('/group/endGroup',groupController.endGroupController)
+router.get('/group/proccessVetoDemo/:groupId',groupController.proccessVetoDemoController)
 
 
 router.post('/usergroup/createUsergroup',usergroupController.createUserGroupController)
@@ -66,12 +68,18 @@ router.post('/post/compressVideo',postController.compressVideoController)
 router.post('/post/postStatus',postController.postStatusController)
 router.put('/post/addVeto',postController.addVetoController)
 router.put('/post/removeVeto',postController.removeVetoController)
+router.get('/post/getInvalid/:username',postController.getInvalidPostsController)
 
 
 router.post('/auth/signIn',authController.signInController)
 router.post('/auth/signUp',authController.signUpController)
 router.post('/auth/signOut',authController.signOutController)
 router.get('/auth/getUser',authController.getUserController)
+
+
+router.get('/notifyveto/:username',notifyvetoController.getNotifyVetoByGroupController)
+
+
 
 
 

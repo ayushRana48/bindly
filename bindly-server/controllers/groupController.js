@@ -1,4 +1,4 @@
-const { createGroup,getLeaderBoard, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup } = require('../transactions/groupTransactions.js');
+const { createGroup,processVetoDemo,getLeaderBoard,processGroups,endGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup } = require('../transactions/groupTransactions.js');
 const { createUserGroup} = require('../transactions/usergroupTransactions.js');
 const { getUser} = require('../transactions/usersTransactions.js');
 
@@ -48,6 +48,19 @@ async function getAllGroupsController(req, res) {
 }
 
 
+
+async function proccessVetoDemoController(req,res){
+  const { groupId } = req.params;
+
+  try {
+    const { leaderboard, error } = await processVetoDemo(groupId);
+
+    if (error) throw error;
+    res.status(200).json(leaderboard);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
 
 async function getLeaderBoardController(req, res) {
   const { groupId } = req.params;
@@ -170,6 +183,26 @@ async function changeHostController(req, res) {
   }
 }
 
+async function endGroupController(req,res){
+  const {groupid} =req.body
+
+  const input = new Array()
+  input.push(groupid)
+
+  try{
+    const { data, error } = await endGroup(input);
+
+    if (error) {
+      return res.status(400).json({ error });
+    }
+
+    res.status(200).json(data);
+  }
+  catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
+
 
 
 module.exports = {
@@ -180,5 +213,7 @@ module.exports = {
   updateGroupController,
   deleteGroupController,
   changeHostController,
-  getLeaderBoardController
+  getLeaderBoardController,
+  endGroupController,
+  proccessVetoDemoController
 };

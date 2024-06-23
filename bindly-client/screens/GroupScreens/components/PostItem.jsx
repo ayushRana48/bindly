@@ -5,7 +5,7 @@ import { Video } from 'expo-av';
 import placeholder from '../../../assets/profile.png'
 import { useGroupsContext } from '../../GroupsContext';
 import { useUserContext } from '../../../UserContext';
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const width = 300
 const height = width * 1.77777778
@@ -20,6 +20,10 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
 
     const { user } = useUserContext()
     const { groupData,setGroupData } = useGroupsContext()
+
+    useEffect(()=>{
+        console.log({ postid, imageLink, videoLink, username, caption, users, time, valid, veto })
+    },[])
 
     useEffect(() => {
         for (let i = 0; i < groupData?.post?.length; i++) {
@@ -59,7 +63,7 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
     const addVeto = async () => {
         setLoading(true)
         try {
-            const response = await fetch(`${BASE_URL}/bindly/post/addVeto`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/post/addVeto`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -103,7 +107,7 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
     const removeVeto = async () => {
         setLoading(true)
         try {
-            const response = await fetch(`${BASE_URL}/bindly/post/removeVeto`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/post/removeVeto`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const LeaderboardItem = ({ memberData }) => {
     const navigation = useNavigation();
@@ -34,8 +34,10 @@ const LeaderboardItem = ({ memberData }) => {
             />
             <Text style={styles.name}>{memberData.place}  {memberData.username}</Text>
             <View style={{marginLeft:'auto'}}>
+                <Text style={{fontSize:20}}>${memberData.netMoney}</Text>
                 <Text>{memberData.totalCountedPosts} posts</Text>
-                <Text>{memberData.totalUnCountedPosts} uncounted posts</Text>
+                <Text>{memberData.totalUnCountedPosts} uncounted</Text>
+
             </View>
         </Pressable>
     );

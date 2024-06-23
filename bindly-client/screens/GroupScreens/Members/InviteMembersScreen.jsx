@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import backArrow from "../../../assets/backArrow.png"
 import InviteMemberItem from "../components/InviteMemberItem";
 
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 
 const InviteMembersScreen = () => {
@@ -43,7 +43,7 @@ const InviteMembersScreen = () => {
 
     const fetchAllAvailableUsers = async () => {
       try {
-        const response = await fetch(`${BASE_URL}/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
+        const response = await fetch(`${BASEROOT_URL}/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
           headers: { 'Content-Type': 'application/json' },
         });
         const res = await response.json();

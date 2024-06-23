@@ -7,7 +7,7 @@ import { useGroupsContext } from "../../GroupsContext";
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import compressPostImage from "../../../utils/compressPostImage";
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const EditPostScreen = () => {
     const { setGroups, setGroupData, groupData } = useGroupsContext();
@@ -25,6 +25,11 @@ const EditPostScreen = () => {
     const [prevTime, setPrevTime] = useState(false)
 
 
+    useEffect(()=>{
+        console.log(groupData.timecycle,'time here')
+    },[])
+   
+    
     useEffect(()=>{
         const getPost = async () => {
             let correctPost = {}
@@ -183,7 +188,7 @@ const EditPostScreen = () => {
 
         if (image) {
             try {
-                const response = await fetch(`${BASE_URL}/bindly/post/getPresignedUrl`, {
+                const response = await fetch(`${BASEROOT_URL}/bindly/post/getPresignedUrl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -225,7 +230,7 @@ const EditPostScreen = () => {
 
         if (video) {
             try {
-                const response = await fetch(`${BASE_URL}/bindly/post/getPresignedUrl`, {
+                const response = await fetch(`${BASEROOT_URL}/bindly/post/getPresignedUrl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -269,7 +274,7 @@ const EditPostScreen = () => {
         try {
             const time = new Date(time1); // Record the start time
 
-            const response = await fetch(`${BASE_URL}/bindly/post/updatePost/${postId}`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/post/updatePost/${postId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -302,7 +307,7 @@ const EditPostScreen = () => {
                 // Call compressVideo API after navigation
                 if (video) {
 
-                    fetch(`${BASE_URL}/bindly/post/compressVideo`, {
+                    fetch(`${BASEROOT_URL}/bindly/post/compressVideo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ videolink: `${user.username}-${groupData.group.groupid}-${time1}v` }),

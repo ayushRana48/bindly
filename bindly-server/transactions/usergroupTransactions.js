@@ -112,16 +112,35 @@ async function getUserGroupsByGroupId(groupid) {
 // Function to get groups by hostId
 // Function to get groups by username
 async function getUserGroupsByUsername(username) {
-  const { data, error } = await supabase
+  const { data: currentGroups, error: currentError } = await supabase
     .from('usergroup')
     .select(`
       *,
       groups:groups!inner(*)  -- Perform an inner join with the groups table
     `)
-    .eq('username', username);
+    .eq('username', username)
+    .eq('groups.archive', false);  // Check the archive attribute on the groups table
 
-  return { data, error };
+  if (currentError) {
+    return { error: currentError };
+  }
+
+  const { data: archiveGroups, error: archiveError } = await supabase
+    .from('usergroup')
+    .select(`
+      *,
+      groups:groups!inner(*)  -- Perform an inner join with the groups table
+    `)
+    .eq('username', username)
+    .eq('groups.archive', true);  // Check the archive attribute on the groups table
+
+  if (archiveError) {
+    return { error: archiveError };
+  }
+
+  return { data: { current: currentGroups, archive: archiveGroups }, error: null };
 }
+
 
 
 // Function to get a group by userGroupId

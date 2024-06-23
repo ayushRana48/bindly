@@ -12,7 +12,7 @@ const { execFile } = require('child_process');
 
 
 // Function to create a new group
-async function createPost(username, groupid, photolink, videolink, caption, timepost, startdate,timecycle) {
+async function createPost(username, groupid, photolink, videolink, caption, timepost, startdate, timecycle) {
 
   const postid = uuidv4()
 
@@ -20,7 +20,7 @@ async function createPost(username, groupid, photolink, videolink, caption, time
   const { data, error } = await supabase
     .from('post')
     .insert([
-      { postid, username, groupid, photolink, videolink, caption, startdate, timepost,timecycle }
+      { postid, username, groupid, photolink, videolink, caption, startdate, timepost, timecycle }
     ]).select().single();
 
   return { data, error };
@@ -210,8 +210,20 @@ async function getPostsByUsername(username) {
 async function getPostsByGroupId(groupid) {
   const { data, error } = await supabase
     .from('post')
-    .select('*')
+    .select(`*`)
     .eq('groupid', groupid);
+
+  return { data, error };
+}
+
+async function getInvalidPosts(username) {
+  const { data, error } = await supabase
+    .from('post')
+    .select(`*,
+      groups:groupid(*)`)
+    .eq('username', username)
+    .eq('valid', false);
+
 
   return { data, error };
 }
@@ -220,13 +232,13 @@ async function updatePost(postid, updateParams) {
   console.log(updateParams);
   console.log('paramsABOVE');
 
-  const { username, groupId, photolink, videolink, caption, time, prevFileName,timecycle } = updateParams;
+  const { username, groupId, photolink, videolink, caption, time, prevFileName, timecycle } = updateParams;
 
   try {
     // Update post
     const { data, error } = await supabase
       .from('post')
-      .update({ postid, username, groupid: groupId, photolink, videolink, caption, timepost: time,timecycle })
+      .update({ postid, username, groupid: groupId, photolink, videolink, caption, timepost: time, timecycle })
       .eq('postid', postid)
       .select()
       .single();
@@ -287,9 +299,9 @@ async function addVeto(postid, username, groupid) {
     .single();
 
   if (userError) {
-    console.log('user',userError)
-    if(userError.message=='JSON object requested, multiple (or no) rows returned'){
-      return {error:{message:'user not in group'}}
+    console.log('user', userError)
+    if (userError.message == 'JSON object requested, multiple (or no) rows returned') {
+      return { error: { message: 'user not in group' } }
     }
     return { error: userError };
   }
@@ -302,8 +314,8 @@ async function addVeto(postid, username, groupid) {
 
   if (postError) {
     console.log(postid)
-    console.log('post',postError)
-    
+    console.log('post', postError)
+
     return { error: postError };
   }
 
@@ -333,8 +345,8 @@ async function removeVeto(postid, username, groupid) {
     .single();
 
   if (userError) {
-    if(userError.message=='JSON object requested, multiple (or no) rows returned'){
-      return {error:{message:'user not in group'}}
+    if (userError.message == 'JSON object requested, multiple (or no) rows returned') {
+      return { error: { message: 'user not in group' } }
     }
     return { error: userError };
   }
@@ -395,19 +407,6 @@ async function postStatus(username, groupid) {
 
     console.log(postData)
 
-
-    if (postError) {
-      console.error('Error fetching post data:', postError);
-      if (postError.message == 'JSON object requested, multiple (or no) rows returned') {
-        return { data: false }
-      }
-      return { error: postError };
-    }
-
-    const timepost = new Date(postData.timepost);
-    console.log('timepost', timepost)
-
-    // Calculate the current cycle start time based on startdate
     const currentTime = new Date();
     console.log('currentTime', currentTime)
 
@@ -419,6 +418,21 @@ async function postStatus(username, groupid) {
       startdate.getMinutes(),
       startdate.getSeconds()
     );
+
+
+    if (postError) {
+      console.error('Error fetching post data:', postError);
+      if (postError.message == 'JSON object requested, multiple (or no) rows returned') {
+        return { data: false,startdate:cycleStartTime }
+      }
+      return { error: postError };
+    }
+
+    const timepost = new Date(postData.timepost);
+    console.log('timepost', timepost)
+
+    // Calculate the current cycle start time based on startdate
+    
 
 
 
@@ -437,7 +451,7 @@ async function postStatus(username, groupid) {
 
     console.log(isInSame24HourCycle)
 
-    return { data: isInSame24HourCycle,startdate:cycleStartTime };
+    return { data: isInSame24HourCycle, startdate: cycleStartTime };
   } catch (e) {
     console.error('Unexpected error:', e);
     return { error: e };
@@ -445,4 +459,4 @@ async function postStatus(username, groupid) {
 }
 
 
-module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, compressVideo, postStatus,addVeto,removeVeto };
+module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, compressVideo, postStatus, addVeto, removeVeto, getInvalidPosts };

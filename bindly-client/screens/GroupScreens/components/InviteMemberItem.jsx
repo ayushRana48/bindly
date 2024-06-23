@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import placeholder from '../../../assets/GroupIcon.png';
-import { BASE_URL } from "@env";
+import { BASEROOT_URL } from "@env";
 
 const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
     const navigation = useNavigation();
@@ -24,7 +24,7 @@ const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
         setInviting(true);
 
         try {
-            const response = await fetch(`${BASE_URL}/bindly/invite/createInvite`, {
+            const response = await fetch(`${BASEROOT_URL}/bindly/invite/createInvite`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

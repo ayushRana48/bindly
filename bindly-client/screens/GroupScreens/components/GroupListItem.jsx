@@ -4,21 +4,28 @@ import { useNavigation } from '@react-navigation/native';
 import placeholder from '../../../assets/GroupIcon.png';
 import { useGroupsContext } from "../../GroupsContext";
 
-const GroupListItem = ({ groupData }) => {
+const GroupListItem = ({ groupData,activeTab }) => {
   const navigation = useNavigation();
   const [imageUrl, setImageUrl] = useState("");
   const {groups}= useGroupsContext()
 
   useEffect(() => {
     // Append a timestamp to force image refresh
-    setImageUrl(groupData.pfp);
-  }, [groupData.pfp,groups]);
+    setImageUrl(groupData?.pfp);
+  }, [groupData?.pfp,groups]);
 
 
 
   const toGroup = () => {
-    navigation.navigate("Group", { groupData: groupData });
+    if(activeTab==='current'){
+      navigation.navigate("Group", { groupData: groupData });
+    }
+    else{
+      navigation.navigate("ArchiveGroup", { groupData: groupData });
+
+    }
   }
+
 
 
 
