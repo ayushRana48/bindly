@@ -9,6 +9,8 @@ const postController =  require('../controllers/postController.js');
 const authController =  require('../controllers/authController.js');
 const inviteController =  require('../controllers/inviteController.js');
 const notifyvetoController =  require('../controllers/notifyVetoController.js');
+const stripeController = require('../controllers/stripeController');
+const paypalController = require('../controllers/paypalController.js')
 
 router.post('/users/createUser',userController.createUserController)
 router.get('/users/',userController.getAllUsersController)
@@ -81,7 +83,14 @@ router.get('/notifyveto/:username',notifyvetoController.getNotifyVetoByGroupCont
 
 
 
+router.post('/stripe/saveCard', stripeController.saveCardController);
+router.post('/stripe/addMoney', stripeController.addMoneyController);
+router.post('/stripe/detachOldPaymentMethods', stripeController.detachOldPaymentMethods);
+router.get('/stripe/getSavedCards/:customerId', stripeController.getSavedCardsController);
 
+
+
+router.post('/paypal/payout', paypalController.createPayoutController);
 
 
 module.exports = router;

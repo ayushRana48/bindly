@@ -37,7 +37,6 @@ const GroupListItem = ({ groupData,activeTab }) => {
       />
       <Text style={styles.name}>{groupData?.groupname}</Text>
       <Text style={styles.id}>#{groupData?.groupid?.slice(-4)}</Text>
-      <Text style={styles.status}>Not Started</Text>
     </Pressable>
   );
 };

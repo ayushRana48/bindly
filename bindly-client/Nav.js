@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SignInScreen from './screens/AuthScreens/SignInScreen';
 import SignUpScreen from './screens/AuthScreens/SignUpScreen';
 import ConfirmEmailScreen from './screens/AuthScreens/ConfirmEmailScreen';
-import ProfileScreen from './screens/ProfileScreen';
+import ProfileScreen from './screens/ProfileScreens/ProfileScreen';
 import LoggedInNav from './screens/LoggedInNav';
 import { useUserContext } from './UserContext';
 import { BASEROOT_URL } from "@env";

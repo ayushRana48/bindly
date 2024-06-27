@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, StyleSheet, Pressable, Modal, Alert, TouchableWithoutFeedback, ScrollView, RefreshControl } from "react-native";
 import { useNavigation } from '@react-navigation/native';
-import { useUserContext } from "../UserContext";
-import placeholder from "../assets/GroupIcon.png";
-import camera from "../assets/Camera.png";
-import cameraIcon from "../assets/cameraIcon.png";
-import galleryIcon from "../assets/galleryIcon.png";
-import trashIcon from "../assets/trashIcon.png";
+import { useUserContext } from "../../UserContext";
+import placeholder from "../../assets/GroupIcon.png";
+import camera from "../../assets/Camera.png";
+import cameraIcon from "../../assets/cameraIcon.png";
+import galleryIcon from "../../assets/galleryIcon.png";
+import trashIcon from "../../assets/trashIcon.png";
+import wallet from "../../assets/wallet.png";
 import * as ImagePicker from 'expo-image-picker';
-import compressImage from "../utils/compressImage";
-import blobToBase64 from "../utils/blobToBase64";
+import compressImage from "../../utils/compressImage";
+import blobToBase64 from "../../utils/blobToBase64";
 import { BASEROOT_URL } from "@env";
 
 const ProfileScreen = () => {
@@ -26,6 +27,12 @@ const ProfileScreen = () => {
     }, [user]);
 
     const navigation = useNavigation();
+
+
+    const toWallet = () => {
+          navigation.navigate("Wallet");
+        
+      };
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -107,7 +114,7 @@ const ProfileScreen = () => {
             });
             const data = await response.json();
 
-            console.log(data,'user')
+            console.log(data, 'user')
 
             if (response.status === 200) {
                 setUser(data);
@@ -151,7 +158,7 @@ const ProfileScreen = () => {
             }
         >
             <View style={styles.logoContainer}>
-                <Image source={require("../assets/logo.png")} style={styles.logo} />
+                <Image source={require("../../assets/logo.png")} style={styles.logo} />
             </View>
 
             <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
@@ -160,6 +167,11 @@ const ProfileScreen = () => {
                     <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
                 </Pressable>
             </View>
+
+                <Pressable style={styles.wallet} onPress={toWallet}>
+                    <Image resizeMode="contain"  style={{width:40, height:30, margin:'auto'}} source={wallet} />
+                </Pressable>
+            
 
             <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
                 <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
@@ -267,6 +279,14 @@ const styles = StyleSheet.create({
         top: 50,
         left: 30,
     },
+    wallet: {
+        position: 'absolute',
+        top: 90,
+        right: 20,
+        zIndex: 10,
+        width:50,
+        height:50
+      },
 });
 
 export default ProfileScreen;

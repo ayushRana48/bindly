@@ -2,20 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { useUserContext } from "../../UserContext";
-import ActivityScreen from './ActivityScreen';
-import VetoScreen from './VetoScreen';
+import ProfileScreen from './ProfileScreen';
+import WalletScreen from './WalletScreen';
 
 const Stack = createNativeStackNavigator();
 
-export default function ActivityNav() {
-
-
+export default function ProfileNav() {
 
     return (
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="Activity" component={ActivityScreen} />
-                <Stack.Screen name="Veto" component={VetoScreen} />
+                <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+                <Stack.Screen name="Wallet" component={WalletScreen} />
             </Stack.Navigator>
     );
 }
