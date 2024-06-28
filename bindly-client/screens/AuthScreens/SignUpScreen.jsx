@@ -12,6 +12,7 @@ import galleryIcon from "../../assets/galleryIcon.png";
 import trashIcon from "../../assets/trashIcon.png";
 import * as ImagePicker from 'expo-image-picker';
 import { BASEROOT_URL } from "@env";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SignUpScreen = () => {
     const [email, setEmail] = useState("");
@@ -148,7 +149,8 @@ const SignUpScreen = () => {
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
-                setEmail2(email);
+                setEmail2(email.toLowerCase());
+                await AsyncStorage.setItem('userEmail', JSON.stringify(email.toLowerCase()));
                 navigation.navigate('SignIn');
             } else {
                 if (body.error) {

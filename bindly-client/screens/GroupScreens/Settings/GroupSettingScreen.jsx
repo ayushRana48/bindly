@@ -195,62 +195,7 @@ const GroupSetting = () => {
         }
     };
 
-    const endGroup = async () => {
-        if (ending) return;
-        setEnding(true);
-
-        try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/group/endGroup`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    groupid: gd.group.groupid,
-                }),
-            });
-
-            console.log(response, 'pre responseee');
-
-            const resp = await response.text();
-
-            console.log(resp, 'the reesponseee');
-
-            if (resp.includes('success')) {
-                let changeBuyIn = 0;
-                navigation.navigate("GroupsList");
-                setGroupData(null);
-                setUser(u => { return { ...u, balance: u.balance + changeBuyIn } });
-            } else {
-                console.error("An error occurred. Please try again.");
-            }
-        } catch (error) {
-            console.log("Fetch error: ", error);
-            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
-        } finally {
-            setEnding(false);
-        }
-    };
-
-    const proccessVeto = async () => {
-        if (ending) return;
-        setVetoing(true);
-
-        try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/group/proccessVetoDemo/${gd.group.groupid}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            const resp = await response.text();
-
-            console.log('resp','heheslkfnlksd',resp)
-
-        } catch (error) {
-            console.log("Fetch error: ", error);
-            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
-        } finally {
-            setVetoing(false);
-        }
-    };
+  
 
     return (
         <ScrollView
@@ -316,25 +261,7 @@ const GroupSetting = () => {
                 </View>
             )}
 
-            <View style={{ alignItems: 'center' }}>
-                <Pressable
-                    style={[styles.leaveGroup, { backgroundColor: '#ed972d' }]}
-                    disabled={ending}
-                    onPress={endGroup}
-                >
-                    {ending ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>End Group demo</Text>}
-                </Pressable>
-            </View>
-
-            <View style={{ alignItems: 'center' }}>
-                <Pressable
-                    style={[styles.leaveGroup, { backgroundColor: '#ed972d' }]}
-                    disabled={vetoing}
-                    onPress={proccessVeto}
-                >
-                    {vetoing ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Insta Veto demo</Text>}
-                </Pressable>
-            </View>
+           
 
             <Modal
                 animationType="slide"
@@ -404,7 +331,6 @@ const styles = StyleSheet.create({
         paddingBottom: 50, // Add padding to the bottom
     },
     cancel: {
-        backgroundColor: 'red',
         zIndex: 10,
         height: 40,
         width: 40,

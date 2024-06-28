@@ -187,7 +187,7 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
             </Swiper>
             <View style={styles.captionContainer}>
                 <View style={{ flexDirection: 'row' }}>
-                    <Text style={{ marginLeft: 'auto' }}>{valid == null && `${veto.length}/${Math.ceil(users.length / 2)} vetos`}</Text>
+                    {users.length>2 && <Text style={{ marginLeft: 'auto' }}>{valid == null && `${veto.length}/${Math.ceil(users.length / 2)} vetos`}</Text>}
                 </View>
                 <Text style={styles.caption}><Text style={styles.username}>{username}</Text>    {caption}</Text>
             </View>

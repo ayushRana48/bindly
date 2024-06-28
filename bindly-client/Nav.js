@@ -8,6 +8,7 @@ import ProfileScreen from './screens/ProfileScreens/ProfileScreen';
 import LoggedInNav from './screens/LoggedInNav';
 import { useUserContext } from './UserContext';
 import { BASEROOT_URL } from "@env";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,8 +28,13 @@ export default function Nav() {
                 if (response.status === 200) {
                     if(data.user){
                         setEmail(data.user.email)
+                        await AsyncStorage.setItem('userEmail', JSON.stringify(data.user.email));
                     }
                 } else if (data.error) {
+                    const userEmail = await AsyncStorage.getItem('userEmail');
+                    if(userEmail){
+                        setEmail(JSON.parse(storedUser))
+                    }
                     console.log('Error received:', data.error);
                 }
             } catch (error) {

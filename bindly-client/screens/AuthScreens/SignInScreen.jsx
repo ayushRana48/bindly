@@ -3,6 +3,8 @@ import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, ScrollView,
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import { BASEROOT_URL } from "@env";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const SignInScreen = () => {
     const [username, setUsername] = useState("");
@@ -34,7 +36,9 @@ const SignInScreen = () => {
 
 
             if (response.status === 200) {
-                setEmail(username);
+                setEmail(username.toLowerCase());
+                //here username refers to email
+                await AsyncStorage.setItem('userEmail', JSON.stringify(username.toLowerCase()));
             } else {
                 if (data.error) {
                     if (data.error.includes('Invalid login credentials')) {

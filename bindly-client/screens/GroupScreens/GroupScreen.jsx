@@ -287,15 +287,19 @@ return (
           )}
         </View>
 
-        {(!loading && started) && (
+        {(!loading && started && !ended) && (
           <><Pressable style={styles.createPost} onPress={toPost}>
             <Text style={{ color: 'white' }}>{createStatus=='edit' ? 'Edit Post':'Create Post'}</Text>
           </Pressable>
             <Text style={{textAlign:'center'}}>Post by {new Date(groupData.startdate).toLocaleTimeString()}</Text>
           </>
+          
         )}
 
-        {(!loading && !started) &&<Text>Starts {new Date(groupData.startdate).toLocaleTimeString()}</Text>}
+        {(!loading && !started) &&<Text style={{textAlign:'center', fontSize:18, marginTop:20}} >Starts {new Date(groupData.startdate).toLocaleDateString()}</Text>}
+
+        {(!loading && ended) &&<Text style={{textAlign:'center', fontSize:18, marginTop:20}}>Ended {new Date(groupData.enddate).toLocaleDateString()}</Text>}
+
       </View>
 
       {loading && <ActivityIndicator size="large" color="#0000ff" />}

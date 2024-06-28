@@ -7,11 +7,15 @@ import camera from "../../assets/Camera.png";
 import cameraIcon from "../../assets/cameraIcon.png";
 import galleryIcon from "../../assets/galleryIcon.png";
 import trashIcon from "../../assets/trashIcon.png";
+import rules from "../../assets/rules.png";
 import wallet from "../../assets/wallet.png";
+
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
 import { BASEROOT_URL } from "@env";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const ProfileScreen = () => {
 
@@ -33,6 +37,12 @@ const ProfileScreen = () => {
           navigation.navigate("Wallet");
         
       };
+
+    const toRules = () => {
+        navigation.navigate("Rules");
+    
+    };
+
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -136,6 +146,7 @@ const ProfileScreen = () => {
 
             if (response.status === 200) {
                 setEmail(null);
+                await AsyncStorage.removeItem('userEmail');
             } else if (data.error) {
                 console.log('Error received:', data.error);
             }
@@ -157,20 +168,41 @@ const ProfileScreen = () => {
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
         >
-            <View style={styles.logoContainer}>
+            {/* <View style={styles.logoContainer}>
                 <Image source={require("../../assets/logo.png")} style={styles.logo} />
+            </View> */}
+
+        <Text style={{ fontSize: 30, fontWeight: 'bold', textAlign: 'center', alignItems: 'center', marginTop: 80 }}>Profile</Text>
+            <View style={{ marginTop:40,marginRight:50,flexDirection:'row'}}>
+                <View style={{width:120, position: 'relative' }}>
+                    <Image style={{ width: 120, height: 120, borderRadius: 8 }} source={imageSrc} />
+                    <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 20 }} onPress={() => setOpenModal(true)}>
+                        <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
+                    </Pressable>
+                </View>
+                <View style={{marginLeft:40, alignContent:'center'}}>
+                    <Text style={{fontSize:30,fontWeight:700}}>{user.username}</Text>
+                    <Text style={{fontSize:20,fontWeight:700}}>Balance: ${user.balance}</Text>
+                </View>
             </View>
 
-            <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
-                <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc} />
-                <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 20 }} onPress={() => setOpenModal(true)}>
-                    <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
-                </Pressable>
-            </View>
-
+            <View style={{flexDirection:'row',width:'100%',justifyContent:'space-around', marginTop:50}}>
                 <Pressable style={styles.wallet} onPress={toWallet}>
-                    <Image resizeMode="contain"  style={{width:40, height:30, margin:'auto'}} source={wallet} />
+                    <View style={{margin:'auto'}}>
+                    <Image resizeMode="contain"  style={{width:100, height:100, marginBottom:5}} source={wallet} />
+                    <Text style={{fontSize:18, textAlign:'center', fontWeight:400}}>Wallet</Text>
+                    </View>
                 </Pressable>
+
+                <Pressable style={styles.wallet} onPress={toRules}>
+                    <View style={{margin:'auto'}}>
+                    <Image resizeMode="contain"  style={{width:120, height:100, marginBottom:5}} source={rules} />
+                    <Text style={{fontSize:18, textAlign:'center', fontWeight:400}}>Rules</Text>
+                    </View>
+                </Pressable>
+
+               
+            </View>
             
 
             <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
@@ -199,14 +231,14 @@ const ProfileScreen = () => {
                 </TouchableWithoutFeedback>
             </Modal>
 
-            <Text style={styles.ProfileText}>Profile: {user.username}</Text>
-            <Text style={{ fontSize: 20, marginBottom:60 }}>Balance: {user?.balance}</Text>
+            {/* <Text style={styles.ProfileText}>Profile: {user.username}</Text>
+            <Text style={{ fontSize: 20, marginBottom:60 }}>Balance: {user?.balance}</Text> */}
             {/* <Pressable style={styles.pressableButton} onPress={getUser}>
                 <Text>Get User</Text>
             </Pressable> */}
 
             <Pressable style={styles.pressableButton} onPress={logOut}>
-                <Text>Log Out</Text>
+                <Text style={{color:'white',fontSize:18,fontWeight:800, textAlign:'center'}}t>Log Out</Text>
             </Pressable>
         </ScrollView>
     );
@@ -217,8 +249,6 @@ const styles = StyleSheet.create({
         padding: 24,
         marginTop: -50,
         flexGrow: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
         backgroundColor: 'white',
     },
     logoContainer: {
@@ -238,8 +268,13 @@ const styles = StyleSheet.create({
     pressableButton: {
         marginTop: 16,
         padding: 10,
-        backgroundColor: '#007BFF',
+        backgroundColor: 'red',
         borderRadius: 5,
+        width:200,
+        marginLeft:'auto',
+        marginRight:'auto',
+        marginTop:80
+
     },
     modalOverlay: {
         flex: 1,
@@ -280,12 +315,12 @@ const styles = StyleSheet.create({
         left: 30,
     },
     wallet: {
-        position: 'absolute',
-        top: 90,
-        right: 20,
+    
         zIndex: 10,
-        width:50,
-        height:50
+        width:150,
+        height:150,
+        backgroundColor:'lightgray',
+        borderRadius:20
       },
 });
 
