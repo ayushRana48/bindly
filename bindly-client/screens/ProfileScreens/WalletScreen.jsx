@@ -6,6 +6,7 @@ import backArrow from '../../assets/backArrow.png';
 import AddCard from './components/AddCard';
 import DepositMoney from './components/DepositMoney';
 import TransferMoney from './components/TransferMoney';
+import { BASEROOT_URL } from "@env";
 
 const WalletScreen = () => {
     const [cards, setCards] = useState([]);
@@ -14,7 +15,7 @@ const WalletScreen = () => {
 
     useEffect(() => {
         if (user && user.stripeid) {
-            fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${user.stripeid}`)
+            fetch(`${BASEROOT_URL}/bindly/stripe/getSavedCards/${user.stripeid}`)
                 .then(response => response.json())
                 .then(data => setCards(data.data))
                 .catch(error => console.error('Error fetching cards:', error));

@@ -80,7 +80,7 @@ const NewGroupScreen = () => {
 
     const navigation = useNavigation();
 
-    const { user } = useUserContext();
+    const { user,setUser } = useUserContext();
     const { setGroups, setGroupData } = useGroupsContext();
 
     const cancel = () => {
@@ -192,6 +192,7 @@ const NewGroupScreen = () => {
                     }
                 });
                 setGroupData({ group: body, usergroup: user, invite: [], post: [], history: [] });
+                setUser(u=>{return {...u,balance:u.balance-parseFloat(buyIn)}})
                 navigation.navigate("Group", { groupData: body });
             } else {
                 if (body.error === "Insufficient Funds") {
@@ -211,7 +212,6 @@ const NewGroupScreen = () => {
         if (type === 'set') {
             const currentDate = selectedDate || startDate;
             setStartDate(currentDate);
-            setShow(false);
         } else {
             toggleDatepicker();
         }

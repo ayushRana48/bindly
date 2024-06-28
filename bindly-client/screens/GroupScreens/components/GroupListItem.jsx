@@ -22,7 +22,6 @@ const GroupListItem = ({ groupData,activeTab }) => {
     }
     else{
       navigation.navigate("ArchiveGroup", { groupData: groupData });
-
     }
   }
 

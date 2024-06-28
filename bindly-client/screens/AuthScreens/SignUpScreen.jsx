@@ -77,38 +77,41 @@ const SignUpScreen = () => {
     const submit = async () => {
         if (loading) return; // Prevent double click
         setLoading(true);
-        if (!firstName.trim() || !lastName.trim()) {
-            setErrorMessage("Please enter both your first and last name.");
-            setLoading(false);
-            return;
-        }
+        // if (!firstName.trim() || !lastName.trim()) {
+        //     setErrorMessage("Please enter both your first and last name.");
+        //     setLoading(false);
+        //     return;
+        // }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setErrorMessage("Please enter a valid email address.");
-            setLoading(false);
-            return;
-        }
+        // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // if (!emailRegex.test(email)) {
+        //     setErrorMessage("Please enter a valid email address.");
+        //     setLoading(false);
+        //     return;
+        // }
 
-        if (!password.trim()) {
-            setErrorMessage("Please enter password.");
-            setLoading(false);
-            return;
-        }
+        // if (!password.trim()) {
+        //     setErrorMessage("Please enter password.");
+        //     setLoading(false);
+        //     return;
+        // }
 
-        if (password !== confirmPassword) {
-            setErrorMessage("The passwords do not match.");
-            setLoading(false);
-            return;
-        }
+        // if (password !== confirmPassword) {
+        //     setErrorMessage("The passwords do not match.");
+        //     setLoading(false);
+        //     return;
+        // }
 
         const today = new Date();
         const birthDate = new Date(date);
-        const age = today.getFullYear() - birthDate.getFullYear();
+        let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
             age--;
         }
+
+       
+
 
         if (age < 18) {
             setErrorMessage("You must be at least 18 years old to sign up.");
@@ -159,6 +162,7 @@ const SignUpScreen = () => {
                 }
             }
         } catch (error) {
+            setLoading(false);
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
         } finally {
             setLoading(false);

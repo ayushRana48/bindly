@@ -54,6 +54,9 @@ async function createGroup(groupid, groupname, hostid, description, buyin, week,
 
 // Function to get all groups
 async function getAllGroups() {
+  console.log('here')
+
+
   const { data:currentGroups, error } = await supabase
     .from('groups')
     .select('*')
@@ -300,7 +303,7 @@ async function getLeaderBoard(groupid) {
         weekEnd.setDate(weekStart.getDate() + 7);
 
         return {
-          weekNum: parseInt(weekNum) + 1,
+          weekNum: parseFloat(weekNum) + 1,
           weekRange: `${weekStart.toISOString()} - ${weekEnd.toISOString()}`,
           countedPosts: countedPosts.length,
           unCountedPosts: unCountedPosts.length,
@@ -413,6 +416,7 @@ async function getGroup(groupid) {
 }
 
 async function processVeto(groupid) {
+  console.log('startVeto')
   try {
     // Fetch member count
     const { data: memberData, error: memberError } = await supabase
@@ -431,9 +435,11 @@ async function processVeto(groupid) {
 
     // Fetch post data
     const { data: postData, error: postError } = await supabase
-      .from('post')
-      .select('*')
-      .eq('groupid', groupid);
+    .from('post')
+    .select('*')
+    .eq('groupid', groupid)
+    .is('valid', null);
+  
 
     if (postError) throw postError;
 
@@ -494,9 +500,13 @@ async function processVeto(groupid) {
         }
       }
     }
+    console.log('finsihVeto')
+
 
     return { data: 'Process completed successfully' };
   } catch (error) {
+    console.log('finsihVeto','Error')
+
     console.error('Error processing veto:', error);
     return { error: error.message || 'An error occurred while processing veto' };
   }
@@ -723,6 +733,9 @@ async function deleteGroup(groupId) {
 
 async function endGroup(groupIds) {
   // Fetch leaderboards for all groupIds
+
+  await Promise.all(groupIds.map(groupId => processVeto(groupId)));
+  console.log('start leader')
   let leaderboards = await Promise.all(groupIds.map(groupId => getLeaderBoard(groupId)));
 
   leaderboards = leaderboards.map(l=>l.leaderboard)
@@ -788,22 +801,16 @@ async function endGroup(groupIds) {
 
 
 
-async function processGroups() {
-  const { data: groups, error: groupsError } = await supabase
-    .from('groups')
-    .select('groupid, enddate')
-    .eq('archive', false); // Get only active groups
+async function processGroups(groups) {
 
-  if (groupsError) {
-    console.error('Error fetching groups:', groupsError);
-    return { error: groupsError.message };
-  }
-
+  
   const now = new Date();
   const groupsToEnd = groups.filter(group => {
     const endDate = new Date(group.enddate);
     return now - endDate >= 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   }).map(group => group.groupid);
+
+  console.log(groupsToEnd,'g2e')
 
   if (groupsToEnd.length === 0) {
     return { data: 'No groups to process' };

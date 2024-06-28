@@ -13,7 +13,7 @@ export const GroupsProvider = ({ children }) => {
 
 
     useEffect(()=>{
-        console.log(groupData,'from groupData context')
+        // console.log(groupData,'from groupData context')
     },[groupData])
 
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Modal, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Modal, Pressable, FlatList, ActivityIndicator,Alert } from 'react-native';
 import { useUserContext } from '../../../UserContext';
+import { BASEROOT_URL } from "@env";
 
 const DepositMoney = ({ cards }) => {
     const [isAddMoneyModalVisible, setAddMoneyModalVisible] = useState(false);
@@ -12,10 +13,16 @@ const DepositMoney = ({ cards }) => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        setSelectedCard(cards[0]);
+        if(cards && cards?.length>0 && cards[0]){
+            setSelectedCard(cards[0]);
+        }
     }, [cards]);
 
     const handleAddMoney = () => {
+        if(cards.length==0){
+            Alert.alert('add card')
+            return
+        }
         setLoading(true);
         if (!amount) {
             setError('Please enter a valid amount within your balance and select a payment method.');
@@ -24,7 +31,7 @@ const DepositMoney = ({ cards }) => {
         }
 
         setError('');
-        fetch(`${'http://localhost:3000'}/bindly/stripe/addMoney`, {
+        fetch(`${BASEROOT_URL}/bindly/stripe/addMoney`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -36,7 +43,7 @@ const DepositMoney = ({ cards }) => {
         })
             .then(response => response.json())
             .then(data => {
-                setUser(u => ({ ...u, balance: parseInt(u.balance) + parseInt(amount) }));
+                setUser(u => ({ ...u, balance: parseFloat(u.balance) + parseFloat(amount) }));
                 setLoading(false);
                 setAddMoneyModalVisible(false);
                 setAmount('');

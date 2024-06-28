@@ -73,17 +73,17 @@ const GroupSetting = () => {
 
     const isPastDate = new Date(gd?.group.startdate) < new Date();
 
-    const toEdit = () => {
-        if (isPastDate) {
-            Alert.alert("Can't edit already started");
-        } else {
-            try {
-                navigation.navigate("GroupEdit");
-            } catch (err) {
-                console.log(err);
-            }
-        }
-    };
+    // const toEdit = () => {
+    //     if (isPastDate) {
+    //         Alert.alert("Can't edit already started");
+    //     } else {
+    //         try {
+    //             navigation.navigate("GroupEdit");
+    //         } catch (err) {
+    //             console.log(err);
+    //         }
+    //     }
+    // };
 
     const openDeleteModal = () => {
         if (isPastDate) {
@@ -111,9 +111,7 @@ const GroupSetting = () => {
         setShowLeaveModal(true);
     };
 
-    const toMembers = () => {
-        navigation.navigate("MembersList");
-    };
+
 
     const leaveGroup = async () => {
         if (leaving) return;
@@ -266,11 +264,11 @@ const GroupSetting = () => {
                 <Image style={{ height: 40, width: 40 }} source={backArrow} />
             </Pressable>
 
-            {user.username === gd.group.hostid && (
+            {/* {user.username === gd.group.hostid && (
                 <Pressable style={styles.edit} onPress={toEdit}>
                     <Text style={{ color: isPastDate ? "gray" : "blue" }}>Edit</Text>
                 </Pressable>
-            )}
+            )} */}
 
             <View style={styles.logoContainer}>
                 <Text style={styles.title}>Group Settings</Text>

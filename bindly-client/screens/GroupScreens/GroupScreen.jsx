@@ -25,9 +25,7 @@ const GroupScreen = () => {
   const [visiblePosts, setVisiblePosts] = useState([]);
   const [page, setPage] = useState(1);
   const [groupUsers, setGroupUsers] = useState([])
-  const [isCreate,setIsCreate]=useState(true)
-  const [showModal,setShowModal]=useState(false)
-  const [vetos,setVetos]=useState([])
+  const [createStatus,setCreateStatus]=useState('post')
   const postsPerPage = 5; // Number of posts to load at a time
 
   useEffect(() => {
@@ -39,34 +37,57 @@ const GroupScreen = () => {
     }
   }, [gd]);
 
+  const started = new Date(groupData.startdate) < new Date();
 
-  useEffect(()=>{
-    getNotifyveto()
-  },[])
+  const ended= new Date(groupData.enddate) < new Date();
+
+
+
+
+
 
 
   
-  const getNotifyveto=async ()=>{
-    try {
-      const response = await fetch(`${BASEROOT_URL}/bindly/notifyveto/${user.username}`, {
+
+
+  useEffect(()=>{
+    console.log('init postStajjjhjtusCheck')
+    const postStatusCheck = async () =>{
+      const response2 = await fetch(`${BASEROOT_URL}/bindly/post/postStatus`, {
         headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        body: JSON.stringify({
+          "username": user.username,
+          "groupId": groupData.groupid
+        }),
       });
 
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        throw new Error(errorResponse.error || 'Failed to fetch group data');
+
+
+      if (!response2.ok) {
+        const errorResponse = await response2.json();
+        if(errorResponse.message=='JSON object requested, multiple (or no) rows returned]'){
+          setCreateStatus('post')
+        }
       }
 
-      const res = await response.json();
-      if(res.length>0){
-        setShowModal(true)
-        setVetos(res)
-      }
+      const res2 = await response2.json();
+
+
+
+
+      if (res2) {
+        setCreateStatus(res2.data)
+        if(res2.data!=gd?.createStatus){
+          setGroupData(g =>{ return {...g, 'createStatus': res2.data,timecycle:res2.startdate}})
+          console.log('new create status',res2.data)
+        }
     }
-    catch(error){
-      console.log('error')
     }
-  }
+    postStatusCheck()
+
+  },[gd?.post,gd?.createStatus])
+
 
 
 
@@ -116,7 +137,7 @@ const GroupScreen = () => {
       if (!response2.ok) {
         const errorResponse = await response2.json();
         if(errorResponse.message=='JSON object requested, multiple (or no) rows returned]'){
-          setIsCreate(true)
+          setCreateStatus('post')
         }
 
         // throw new Error(errorResponse.error || 'Failed to fetch group data');
@@ -124,13 +145,13 @@ const GroupScreen = () => {
 
       const res2 = await response2.json();
 
+      console.log(res2,'looka t mee')
 
-      console.log(res2,'watchTHIIISSS')
 
 
       if (res2) {
-        setGroupData(g =>{ return {...g, 'isCreate': !res2.data,timecycle:res2.startdate}})
-        setIsCreate(!res2.data)
+        setGroupData(g =>{ return {...g, 'createStatus': res2.data,timecycle:res2.startdate}})
+        setCreateStatus(res2.data)
     }
 
 
@@ -194,11 +215,14 @@ const toMembers = () => {
 };
 
 const toPost = () => {
-  if(!isCreate){
+  if(createStatus=='edit'){
     navigation.navigate("EditPost");
   }
-  else{
+  else if(createStatus=='post'){
     navigation.navigate("CreatePost");
+  }
+  else{
+    Alert.alert('Wait 4 hours from previous post')
   }
 };
 
@@ -263,15 +287,20 @@ return (
           )}
         </View>
 
-        {!loading && (
-          <Pressable style={styles.createPost} onPress={toPost}>
-            <Text style={{ color: 'white' }}>{!isCreate ? 'Edit Post':'Create Post'}</Text>
+        {(!loading && started) && (
+          <><Pressable style={styles.createPost} onPress={toPost}>
+            <Text style={{ color: 'white' }}>{createStatus=='edit' ? 'Edit Post':'Create Post'}</Text>
           </Pressable>
+            <Text style={{textAlign:'center'}}>Post by {new Date(groupData.startdate).toLocaleTimeString()}</Text>
+          </>
         )}
+
+        {(!loading && !started) &&<Text>Starts {new Date(groupData.startdate).toLocaleTimeString()}</Text>}
       </View>
 
       {loading && <ActivityIndicator size="large" color="#0000ff" />}
 
+      <View style={{marginBottom:60}}>
       {!loading && visiblePosts.map((post, index) => (
         <PostItem
           key={index}
@@ -286,6 +315,7 @@ return (
           veto={post.veto}
         />
       ))}
+      </View>
 
     </ScrollView>
   </View>

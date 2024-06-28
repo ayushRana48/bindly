@@ -21,10 +21,7 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
     const { user } = useUserContext()
     const { groupData,setGroupData } = useGroupsContext()
 
-    useEffect(()=>{
-        console.log({ postid, imageLink, videoLink, username, caption, users, time, valid, veto })
-    },[])
-
+   
     useEffect(() => {
         for (let i = 0; i < groupData?.post?.length; i++) {
             const currPost = groupData?.post[i]
@@ -170,7 +167,7 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
                             margin: 'auto'
                         }} source={{ uri: imageLink }} />
 
-                        {valid == null && <Pressable onPress={() => setModalVisible(true)} style={{ backgroundColor: 'red', position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, padding: 2, borderRadius: 20 }}><Text style={{ margin: 'auto', color: 'white', fontWeight: 'bold' }}>X</Text></Pressable>}
+                        {valid == null && users.length>2 && <Pressable onPress={() => setModalVisible(true)} style={{ backgroundColor: 'red', position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, padding: 2, borderRadius: 20 }}><Text style={{ margin: 'auto', color: 'white', fontWeight: 'bold' }}>X</Text></Pressable>}
 
                     </View>
                 )}
@@ -184,7 +181,7 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
                             resizeMode="contain"
                             isLooping
                         />
-                        {valid == null && <Pressable onPress={() => setModalVisible(true)} style={{ backgroundColor: 'red', position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, padding: 2, borderRadius: 20 }}><Text style={{ margin: 'auto', color: 'white', fontWeight: 'bold' }}>X</Text></Pressable>}
+                        {valid == null && users.length>2 && <Pressable onPress={() => setModalVisible(true)} style={{ backgroundColor: 'red', position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, padding: 2, borderRadius: 20 }}><Text style={{ margin: 'auto', color: 'white', fontWeight: 'bold' }}>X</Text></Pressable>}
                     </View>
                 )}
             </Swiper>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Button, TextInput, StyleSheet, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { useUserContext } from '../../../UserContext';
 import { useNavigation } from '@react-navigation/native';
+import { BASEROOT_URL } from "@env";
 
 const TransferMoney = () => {
     const [isTransferMoneyModalVisible, setTransferMoneyModalVisible] = useState(false);
@@ -14,6 +15,9 @@ const TransferMoney = () => {
     const [loading, setLoading] = useState(false)
 
     const handleWithdrawMoney = () => {
+        console.log('call')
+        console.log(email)
+        console.log(confirmEmail)
         // Validate email format
         if (loading) {
             return
@@ -22,25 +26,33 @@ const TransferMoney = () => {
         // Validate amount is not null and within balance
         if (!amount || parseFloat(amount) > user.balance) {
             setError('Please enter a valid amount within your balance.');
+            setLoading(false)
             return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        console.log(!emailRegex.test(email))
         if (!emailRegex.test(email)) {
             setError('Please enter a valid email address.');
+            setLoading(false)
             return;
         }
 
         // Validate emails match
+        console.log(email)
+        console.log(confirmEmail)
+
         if (email !== confirmEmail) {
             setError('Emails do not match.');
+            setLoading(false)
+
             return;
         }
 
 
         setError('');
 
-        fetch(`${'http://localhost:3000'}/bindly/paypal/payout`, {
+        fetch(`${BASEROOT_URL}/bindly/paypal/payout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -53,7 +65,7 @@ const TransferMoney = () => {
             .then(response => response.json())
             .then(data => {
                 setTransferMoneyModalVisible(false);
-                setUser(u => ({ ...u, balance: parseInt(u.balance) - parseInt(amount) }));
+                setUser(u => ({ ...u, balance: parseFloat(u.balance) - parseFloat(amount) }));
                 setLoading(false)
 
             })
@@ -137,7 +149,7 @@ const TransferMoney = () => {
                                 style={[styles.button, styles.buttonConfirm]}
                                 onPress={handleWithdrawMoney}
                             >
-                                <Text style={styles.buttonText}>Confirm</Text>
+                               {loading? <ActivityIndicator color={'white'}></ActivityIndicator> :<Text style={styles.buttonText}>Confirm</Text>}
                             </Pressable>
                             <Pressable
                                 style={[styles.button, styles.buttonCancel]}

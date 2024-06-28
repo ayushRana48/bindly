@@ -18,7 +18,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
     const [rejecting, setRejecting] = useState(false);
 
     const { setGroups, groupData } = useGroupsContext();
-    const { user } = useUserContext();
+    const { user,setUser } = useUserContext();
 
     useEffect(() => {
         if (inviteData?.groups?.pfp) {
@@ -51,6 +51,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
                 setGroups(g => [...g, inviteData.groups]);
                 removeInvite(inviteId);
                 setModalVisible(false);
+                setUser(u=>{return {...u,balance:body.newBalance}})
             } else {
                 if (body.error === "JSON object requested, multiple (or no) rows returned") {
                     Alert.alert('Invalid Invite', "Group is deleted");
@@ -58,6 +59,14 @@ const InviteItem = ({ inviteData, removeInvite }) => {
                 }
                 if (body.error == "Insufficient Funds") {
                     Alert.alert("Insufficient Funds", "buy in is higher than current balance")
+                }
+                if(body.error=="Group already started"){
+                    Alert.alert('Invalid Invite', "Group Already Started");
+                    removeInvite(inviteId);
+                }
+                if(body.error=="Group already ended"){
+                    Alert.alert('Invalid Invite', "Group Already Ended");
+                    removeInvite(inviteId);
                 }
             }
         } catch (error) {

@@ -1,4 +1,5 @@
 const { supabase } = require('../initSupabase');
+const { processGroups }= require('./groupTransactions');
 
 // Function to create a new group
 async function createUserGroup(usergroupid, username, groupid) {
@@ -46,7 +47,7 @@ async function createUserGroup(usergroupid, username, groupid) {
     .select()
     .single();
 
-  return { data, error };
+  return { data,newBalance, error };
 }
 
 
@@ -112,6 +113,27 @@ async function getUserGroupsByGroupId(groupid) {
 // Function to get groups by hostId
 // Function to get groups by username
 async function getUserGroupsByUsername(username) {
+
+  const { data: allGroups, error: error } = await supabase
+  .from('usergroup')
+  .select(`
+    groupid,
+    groups:groups!inner(groupid,archive,enddate)  -- Perform an inner join with the groups table
+  `)
+  .eq('username', username)
+  .eq('groups.archive', false);  // Check the archive attribute on the groups table
+
+  console.log(allGroups)
+
+  const groups = allGroups.map(g=>g.groups)
+
+  console.log(groups)
+
+  await processGroups(groups)
+
+
+
+
   const { data: currentGroups, error: currentError } = await supabase
     .from('usergroup')
     .select(`
@@ -120,6 +142,7 @@ async function getUserGroupsByUsername(username) {
     `)
     .eq('username', username)
     .eq('groups.archive', false);  // Check the archive attribute on the groups table
+
 
   if (currentError) {
     return { error: currentError };

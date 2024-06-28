@@ -22,9 +22,6 @@ const CreatePostScreen = () => {
     const [modalContent, setModalContent] = useState("");
     const [modalIsImage, setIsModalImage] = useState(true);
 
-    useEffect(()=>{
-        console.log(groupData.timecycle,'time here')
-    },[])
    
 
     const takeImage = async () => {
@@ -44,15 +41,6 @@ const CreatePostScreen = () => {
         }
     };
 
-    const calculateBase64Size = (base64String) => {
-        let padding = 0;
-        if (base64String.endsWith('==')) {
-            padding = 2;
-        } else if (base64String.endsWith('=')) {
-            padding = 1;
-        }
-        return (base64String.length * 3 / 4) - padding;
-    };
 
     const takeVideo = async () => {
         try {
@@ -248,6 +236,41 @@ const CreatePostScreen = () => {
     
         try {
             const time = new Date(time1); // Record the start time
+
+            const response2 = await fetch(`${BASEROOT_URL}/bindly/post/postStatus`, {
+            headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            body: JSON.stringify({
+                "username": user.username,
+                "groupId": groupData.group.groupid
+            }),
+            });
+    
+    
+    
+            // if (!response2.ok) {
+            //     const errorResponse = await response2.json();
+            //     if(errorResponse.message=='JSON object requested, multiple (or no) rows returned]'){
+            //         setCreateStatus('post')
+            //     }
+            // }
+
+    
+            const res2 = await response2.json();
+    
+    
+    
+    
+            if (res2) {
+                if(res2.data!=='post'){
+                    setGroupData(g =>{ return {...g, 'createStatus': res2.data,timecycle:res2.startdate}})
+                    Alert.alert('something went wrong')
+                    navigation.goBack()
+                    return
+                }
+            }
+                
+            
     
      
     
@@ -268,10 +291,12 @@ const CreatePostScreen = () => {
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
     
             if (status === 200) {
+                console.log(res2.data,'in the creations')
                 setGroupData(g => {
                     return {
                         ...g,
-                        post: [body,...g.post]
+                        post: [body,...g.post],
+                        'createStatus': res2.data
                     };
                 });
         
@@ -281,14 +306,14 @@ const CreatePostScreen = () => {
     
                 // Call compressVideo API after navigation
                 if (video) {
-    
+                    const link = `${user.username}-${groupData.group.groupid}-${time1}v`
                     fetch(`${BASEROOT_URL}/bindly/post/compressVideo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ videolink: `airborm-be05f09f-9b48-444a-85f4-f12461bc5302-1717922731234v`}),
+                    
+                        body: JSON.stringify({ videolink: link}),
                     })
                     .then(response => {
-                        console.log(response)
                         return response.json()})
                     .then(data => {
                         console.log('Video compressed:', data);
@@ -334,7 +359,7 @@ const CreatePostScreen = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 }}>
                             <View>
                                 <Text>Select Picture</Text>
-                                <Pressable style={styles.selectMedia} onPress={takeImage}>
+                                <Pressable style={styles.selectMedia} onPress={pickImage}>
                                     {image ? (
                                         <Pressable onPress={() => openModal(image, true)}>
                                             <Image source={{ uri: image }} style={{ width: 140, height: 140, borderRadius: 10 }} />

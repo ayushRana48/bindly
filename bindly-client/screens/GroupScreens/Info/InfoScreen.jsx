@@ -24,6 +24,9 @@ const InfoScreen = () => {
     if (groupData?.leaderboard) {
       setLeaderboard(groupData?.leaderboard)
     }
+    if(groupData?.group?.pfp){
+      setImageUrl(groupData.group.pfp)
+    }
   }, [groupData]);
 
 

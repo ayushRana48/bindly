@@ -37,6 +37,7 @@ async function createGroupController(req, res) {
 }
 
 async function getAllGroupsController(req, res) {
+  console.log('call controller')
   try {
     const { data, error } = await getAllGroups();
 

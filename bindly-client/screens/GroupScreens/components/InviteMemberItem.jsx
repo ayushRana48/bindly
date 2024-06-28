@@ -3,7 +3,7 @@ import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator, Alert } fr
 import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
-import placeholder from '../../../assets/GroupIcon.png';
+import placeholder from '../../../assets/profile.png';
 import { BASEROOT_URL } from "@env";
 
 const InviteMemberItem = ({ memberData, changeInviteStatus }) => {

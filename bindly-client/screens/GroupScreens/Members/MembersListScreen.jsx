@@ -17,6 +17,14 @@ const MembersListScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
 
 
+  const started = new Date(g2.group.startdate) < new Date();
+
+  useEffect(()=>{
+    console.log(started,'started')
+    console.log(g2)
+    console.log( new Date(g2.group.startdate), new Date())
+
+  },[])
 
   const [members, setMembers] = useState([]);
 
@@ -87,9 +95,10 @@ const MembersListScreen = () => {
         <Pressable onPress={() => navigation.goBack()} style={styles.backArrow}>
           <Image source={backArrow} style={{ height: 35, width: 35 }}></Image>
         </Pressable>
-        <Pressable style={styles.invite} onPress={toInvite} >
+        {!started && <Pressable style={styles.invite} onPress={toInvite} >
           <Image style={{ height: 35, width: 35 }} source={invite}></Image>
         </Pressable>
+        }
 
         <View style={styles.groupname}>
           <Text style={{ fontSize: 20,fontWeight:'bold' }}>{g2.group.groupname} Members</Text>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, Image, StyleSheet, Pressable, Modal, Alert, TouchableWithoutFeedback, ScrollView, RefreshControl } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
-import placeholder from "../../assets/GroupIcon.png";
+import placeholder from "../../assets/profile.png";
 import camera from "../../assets/Camera.png";
 import cameraIcon from "../../assets/cameraIcon.png";
 import galleryIcon from "../../assets/galleryIcon.png";
@@ -199,11 +199,11 @@ const ProfileScreen = () => {
                 </TouchableWithoutFeedback>
             </Modal>
 
-            <Text style={styles.ProfileText}>Profile!</Text>
-            <Text style={{ fontSize: 20 }}>Balance: {user?.balance}</Text>
-            <Pressable style={styles.pressableButton} onPress={getUser}>
+            <Text style={styles.ProfileText}>Profile: {user.username}</Text>
+            <Text style={{ fontSize: 20, marginBottom:60 }}>Balance: {user?.balance}</Text>
+            {/* <Pressable style={styles.pressableButton} onPress={getUser}>
                 <Text>Get User</Text>
-            </Pressable>
+            </Pressable> */}
 
             <Pressable style={styles.pressableButton} onPress={logOut}>
                 <Text>Log Out</Text>
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
         height: 60,
     },
     ProfileText: {
-        marginTop: 8,
+        marginTop: 30,
         fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',

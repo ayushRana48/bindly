@@ -30,7 +30,7 @@ const ActivityScreen = () => {
 
   const getNotifyVeto = async () => {
     try {
-      const response = await fetch(`${BASEROOT_URL}/bindly/notifyveto/${'js'}`, {
+      const response = await fetch(`${BASEROOT_URL}/bindly/notifyveto/${user.username}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 

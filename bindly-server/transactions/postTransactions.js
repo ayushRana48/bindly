@@ -392,8 +392,7 @@ async function postStatus(username, groupid) {
     }
 
     const startdate = new Date(groupData.startdate);
-
-    console.log('startdate', startdate)
+    console.log('startdate', startdate);
 
     // Fetch the latest timepost from the post table
     const { data: postData, error: postError } = await supabase
@@ -405,10 +404,8 @@ async function postStatus(username, groupid) {
       .limit(1)
       .single();
 
-    console.log(postData)
-
     const currentTime = new Date();
-    console.log('currentTime', currentTime)
+    console.log('currentTime', currentTime);
 
     const cycleStartTime = new Date(
       currentTime.getFullYear(),
@@ -419,22 +416,17 @@ async function postStatus(username, groupid) {
       startdate.getSeconds()
     );
 
-
     if (postError) {
       console.error('Error fetching post data:', postError);
       if (postError.message == 'JSON object requested, multiple (or no) rows returned') {
-        return { data: false,startdate:cycleStartTime }
+        console.log('here')
+        return { data: 'post', startdate: cycleStartTime };
       }
       return { error: postError };
     }
 
     const timepost = new Date(postData.timepost);
-    console.log('timepost', timepost)
-
-    // Calculate the current cycle start time based on startdate
-    
-
-
+    console.log('timepost', timepost);
 
     // If the current time is before today's cycle start time, use the previous day's cycle start time
     if (currentTime < cycleStartTime) {
@@ -442,21 +434,34 @@ async function postStatus(username, groupid) {
     }
 
     const cycleEndTime = new Date(cycleStartTime.getTime() + 24 * 60 * 60 * 1000);
-
     const isInSame24HourCycle = timepost >= cycleStartTime && timepost < cycleEndTime;
 
-    console.log(cycleStartTime)
-    console.log(timepost)
-    console.log(cycleEndTime)
+    console.log(cycleStartTime);
+    console.log(timepost);
+    console.log(cycleEndTime);
+    console.log(isInSame24HourCycle);
 
-    console.log(isInSame24HourCycle)
+    const fourHoursAfterLastPost = new Date(timepost.getTime() + 4 * 60 * 60 * 1000);
 
-    return { data: isInSame24HourCycle, startdate: cycleStartTime };
+    let status;
+    if (isInSame24HourCycle) {
+      status = 'edit';
+    } else if (currentTime < fourHoursAfterLastPost) {
+      status = "disable";
+    } else {
+      status = 'post';
+    }
+
+    console.log({ data: status, startdate: cycleStartTime })
+
+    
+    return { data: status, startdate: cycleStartTime };
   } catch (e) {
     console.error('Unexpected error:', e);
     return { error: e };
   }
 }
+
 
 
 module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, compressVideo, postStatus, addVeto, removeVeto, getInvalidPosts };

@@ -3,7 +3,7 @@ import { View, Text, Pressable, Image, StyleSheet, Modal, Alert, TouchableWithou
 import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
-import placeholder from '../../../assets/GroupIcon.png';
+import placeholder from '../../../assets/profile.png';
 import { BASEROOT_URL } from "@env";
 
 const MemberListItem = ({ memberData, kickMember }) => {
@@ -14,6 +14,12 @@ const MemberListItem = ({ memberData, kickMember }) => {
     const { user } = useUserContext();
 
     const isPastDate = new Date(groupData.group.startdate) < new Date();
+
+    useEffect(() => {
+        if (memberData.users.pfp) {
+            setImageUrl(memberData.users.pfp);
+        }
+    }, [memberData]);
 
  
 

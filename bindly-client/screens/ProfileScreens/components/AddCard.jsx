@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Button, Alert, StyleSheet, FlatList, Text, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { useStripe } from '@stripe/stripe-react-native';
 import { useUserContext } from '../../../UserContext';
+import { BASEROOT_URL } from "@env";
 
 const AddCard = ({ setCards: setCards2 }) => {
     const { user, setUser } = useUserContext();
@@ -23,7 +24,7 @@ const AddCard = ({ setCards: setCards2 }) => {
     const getCards = async (customer) => {
         if(customer){
         try {
-            const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${user.stripeid}`);
+            const response = await fetch(`${BASEROOT_URL}/bindly/stripe/getSavedCards/${user.stripeid}`);
             const data = await response.json();
             setCards(data.data);
             setCards2(data.data);
@@ -58,7 +59,7 @@ const AddCard = ({ setCards: setCards2 }) => {
     };
 
     const fetchPaymentSheetParams = async () => {
-        const response = await fetch(`http://localhost:3000/bindly/stripe/saveCard`, {
+        const response = await fetch(`${BASEROOT_URL}/bindly/stripe/saveCard`, {
             method: 'POST',
             body: JSON.stringify({ email: user.email }),
             headers: { 'Content-Type': 'application/json' },
@@ -81,10 +82,11 @@ const AddCard = ({ setCards: setCards2 }) => {
             await confirmPaymentSheetPayment();
             try {
                 console.log('customer in buy press',customer)
-                const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${customer}`);
+                const response = await fetch(`${BASEROOT_URL}/bindly/stripe/getSavedCards/${customer}`);
                 const data = await response.json();
                 setCards(data.data);
                 setCards2(data.data);
+                console.log(data.data)
             } catch (error) {
                 console.error('Error fetching cards:', error);
             }
@@ -105,7 +107,7 @@ const AddCard = ({ setCards: setCards2 }) => {
         }
         setLoadingRemove(true);
 
-        const response = await fetch(`http://localhost:3000/bindly/stripe/detachOldPaymentMethods`, {
+        const response = await fetch(`${BASEROOT_URL}/bindly/stripe/detachOldPaymentMethods`, {
             method: 'POST',
             body: JSON.stringify({ customerId: user.stripeid, cardId: cardToDelete }),
             headers: { 'Content-Type': 'application/json' },

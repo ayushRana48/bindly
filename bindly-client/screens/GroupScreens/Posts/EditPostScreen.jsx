@@ -69,15 +69,6 @@ const EditPostScreen = () => {
         }
     };
 
-    const calculateBase64Size = (base64String) => {
-        let padding = 0;
-        if (base64String.endsWith('==')) {
-            padding = 2;
-        } else if (base64String.endsWith('=')) {
-            padding = 1;
-        }
-        return (base64String.length * 3 / 4) - padding;
-    };
 
     const takeVideo = async () => {
         try {
@@ -274,6 +265,40 @@ const EditPostScreen = () => {
         try {
             const time = new Date(time1); // Record the start time
 
+            const response2 = await fetch(`${BASEROOT_URL}/bindly/post/postStatus`, {
+                headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+                body: JSON.stringify({
+                    "username": user.username,
+                    "groupId": groupData.group.groupid
+                }),
+                });
+        
+        
+        
+                if (!response2.ok) {
+                const errorResponse = await response2.json();
+                if(errorResponse.message=='JSON object requested, multiple (or no) rows returned]'){
+                    setCreateStatus('post')
+                }
+                }
+        
+                const res2 = await response2.json();
+        
+        
+                console.log(res2,'watchTHIIISSS')
+        
+        
+                if (res2) {
+                    if(res2.data!=='edit'){
+                        setGroupData(g =>{ return {...g, 'createStatus': res2.data,timecycle:res2.startdate}})
+                        Alert.alert('something went wrong')
+                        navigation.goBack()
+                        return
+                    }
+                }
+                    
+
             const response = await fetch(`${BASEROOT_URL}/bindly/post/updatePost/${postId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -293,19 +318,21 @@ const EditPostScreen = () => {
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
-                setGroupData(g => {
-                    return {
-                        ...g,
-                        post: [body, ...g.post]
-                    };
-                });
-
+                let newPostList = [...groupData.post]
+                console.log(postId)
+                newPostList = newPostList.filter(p => p.postid !== postId);
+                console.log(newPostList,'new post list heree')
+                console.log('should be empty')
+                newPostList=[body,...newPostList]
+                setGroupData(g=>{return{...g,post:newPostList}})
 
                 // Navigate to the desired page
                 navigation.goBack()
 
                 // Call compressVideo API after navigation
                 if (video) {
+
+                    console.log(`${user.username}-${groupData.group.groupid}-${time1}v`)
 
                     fetch(`${BASEROOT_URL}/bindly/post/compressVideo`, {
                         method: 'POST',
@@ -360,7 +387,7 @@ const EditPostScreen = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 }}>
                             <View>
                                 <Text>Select Picture</Text>
-                                <Pressable style={styles.selectMedia} onPress={takeImage}>
+                                <Pressable style={styles.selectMedia} onPress={pickImage}>
                                     {image ? (
                                         <Pressable onPress={() => openModal(image, true)}>
                                             <Image source={{ uri: image }} style={{ width: 140, height: 140, borderRadius: 10 }} />
