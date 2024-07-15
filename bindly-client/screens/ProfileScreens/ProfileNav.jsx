@@ -11,7 +11,7 @@ const Stack = createNativeStackNavigator();
 export default function ProfileNav() {
 
     return (
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Navigator screenOptions={{ headerShown: false,gestureEnabled: false }}>
                 <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
                 <Stack.Screen name="Wallet" component={WalletScreen} />
                 <Stack.Screen name="Rules" component={RulesScreen} />

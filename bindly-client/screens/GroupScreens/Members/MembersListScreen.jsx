@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { View, Text, Image, StyleSheet, ScrollView, Pressable, RefreshControl } from "react-native";
+import { View, Text, Image, StyleSheet, ScrollView, Pressable, RefreshControl,ActivityIndicator } from "react-native";
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
@@ -15,6 +15,7 @@ const MembersListScreen = () => {
   const { user } = useUserContext();
   const route = useRoute();
   const [refreshing, setRefreshing] = useState(false);
+  const [loading,setLoading]=useState(false)
 
 
   const started = new Date(g2.group.startdate) < new Date();
@@ -45,7 +46,8 @@ const MembersListScreen = () => {
 
   const getAllMembers = async () => {
     try {
-      const response = await fetch(`${BASEROOT_URL}/bindly/usergroup/getUsergroupByGroup/${g2.group.groupid}`, {
+      setLoading(true)
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByGroup/${g2.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const res = await response.json();
@@ -59,11 +61,13 @@ const MembersListScreen = () => {
     } catch (error) {
       console.log(error);
     }
+    setLoading(false)
   };
 
   const getGroup = async () => {
     try {
-      const response = await fetch(`${BASEROOT_URL}/bindly/group/${g2.group.groupid}`, {
+      setLoading(true)
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${g2.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -72,6 +76,7 @@ const MembersListScreen = () => {
     } catch (error) {
       console.log(error);
     } 
+    setLoading(false)
   };
 
 
@@ -102,13 +107,9 @@ const MembersListScreen = () => {
 
         <View style={styles.groupname}>
           <Text style={{ fontSize: 20,fontWeight:'bold' }}>{g2.group.groupname} Members</Text>
-
         </View>
-
-
-
         {members.length === 0 && g2.group ? (
-          <Text style={styles.NoGroups}>No Members</Text>
+          loading?  <ActivityIndicator  size="large"  style={{width:80,marginTop:20,marginHorizontal:'auto'}} color={'dodgerblue'}></ActivityIndicator> : <Text style={styles.NoGroups}>No Members</Text>
         ) : (
           <ScrollView style={styles.groupList}>
             {members.map((m) => <MemberListItem key={m.username} memberData={m} kickMember={kickMember}></MemberListItem>)}

@@ -2,19 +2,19 @@
   "expo": {
     "name": "bindly-client",
     "slug": "bindly-client",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.airborm.bindly",
-      "buildNumber": "1.0.0"
+      "buildNumber": "21"
     },
     "android": {
       "adaptiveIcon": {

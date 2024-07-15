@@ -19,7 +19,8 @@ const DepositMoney = ({ cards }) => {
     }, [cards]);
 
     const handleAddMoney = () => {
-        if(cards.length==0){
+        console.log(cards,'the carfd')
+        if(cards?.length==0){
             Alert.alert('add card')
             return
         }
@@ -31,7 +32,7 @@ const DepositMoney = ({ cards }) => {
         }
 
         setError('');
-        fetch(`${BASEROOT_URL}/bindly/stripe/addMoney`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/addMoney`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -56,7 +57,7 @@ const DepositMoney = ({ cards }) => {
     };
 
     const openModal = () => {
-        if (!user.stripeid && cards.length == 0) {
+        if (!cards || !user.stripeid || cards.length == 0) {
             Alert.alert('Add Card first');
             return;
         } else {
@@ -126,7 +127,7 @@ const DepositMoney = ({ cards }) => {
                         ) : (
                             <>
                                 <Text style={styles.selectPaymentMethod}>Select Payment Method</Text>
-                                {cards.length > 0 ? (
+                                {cards?.length > 0 ? (
                                     <FlatList
                                         data={cards}
                                         keyExtractor={item => item.id}

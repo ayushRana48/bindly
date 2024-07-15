@@ -1,18 +1,70 @@
 const { supabase } = require('../initSupabase');
+const { Expo } = require('expo-server-sdk');
+const expo = new Expo();
 const { v4: uuidv4 } = require('uuid');
 
-// Function to create a new group
 async function createInvite(senderid, receiverid, groupid) {
-  const inviteid = uuidv4()
+  console.log('createInvite')
+  const inviteid = uuidv4();
 
   const { data, error } = await supabase
     .from('invite')
-    .insert([
-      { inviteid, senderid, receiverid, groupid }
-    ]).select().single();
+    .insert([{ inviteid, senderid, receiverid, groupid }])
+    .select()
+    .single();
+
+  if (error) {
+    return { data, error };
+  }
+
+  // Fetch receiver's user details
+  const { data: receiverData, error: receiverError } = await supabase
+    .from('users')
+    .select('username, tokens')
+    .eq('username', receiverid)
+    .single();
+
+  if (receiverError) {
+    console.log('receiver', receiverError);
+    return { data, error: receiverError };
+  }
 
 
-  return { data, error };
+  // Notify the receiver about the invite
+  console.log(receiverData)
+
+  const tokens = receiverData.tokens.filter(token => Expo.isExpoPushToken(token));
+
+  if (tokens.length === 0) {
+    console.log(`No valid tokens found for receiver ${receiverid}.`);
+    return { data, error: null };
+  }
+
+  console.log(tokens,'tokens')
+
+  const notifications = tokens.map(token => ({
+    to: token,
+    sound: 'default',
+    title: `Bindly`,
+    body: `You received an invite from ${senderid}`,
+  }));
+
+  await sendBatchNotifications(notifications);
+
+  return { data, error: null };
+}
+
+async function sendBatchNotifications(notifications) {
+  console.log('notifications',notifications)
+  const chunks = expo.chunkPushNotifications(notifications);
+  for (const chunk of chunks) {
+    try {
+      let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+      console.log(ticketChunk);  // Log the response from Expo
+    } catch (error) {
+      console.error('Error sending notifications:', error);
+    }
+  }
 }
 
 // Function to get all groups

@@ -4,37 +4,31 @@ import { useStripe } from '@stripe/stripe-react-native';
 import { useUserContext } from '../../../UserContext';
 import { BASEROOT_URL } from "@env";
 
-const AddCard = ({ setCards: setCards2 }) => {
+const AddCard = ({ setCards: setCards2,cards:cards2 }) => {
     const { user, setUser } = useUserContext();
     const { initPaymentSheet, presentPaymentSheet, confirmPaymentSheetPayment } = useStripe();
     const [loading, setLoading] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
-    const [cards, setCards] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
     const [cardToDelete, setCardToDelete] = useState(null);
     const [loadingRemove, setLoadingRemove] = useState(false);
 
-    useEffect(() => {
-        console.log(user.stripeid,'in the useEffect')
-        if (user && user.stripeid) {
-            getCards(user.stripeid);
-        }
-    }, []);
+    // useEffect(() => {
+    //     console.log(user.stripeid,'in the useEffect')
+    //     if (user && user.stripeid) {
+    //         getCards(user.stripeid);
+    //     }
+    // }, []);
 
-    const getCards = async (customer) => {
-        if(customer){
-        try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/stripe/getSavedCards/${user.stripeid}`);
-            const data = await response.json();
-            setCards(data.data);
-            setCards2(data.data);
-        } catch (error) {
-            console.error('Error fetching cards:', error);
-        }
-    }
+    useEffect(()=>{
+        console.log('cardUpatde here')
+        console.log(cards2)
+        console.log(cards2?.length)
+    },[cards2])
 
-    };
 
+
+  
     const initialisePaymentSheet = async () => {
         setLoading(true);
         const { setupIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
@@ -59,7 +53,7 @@ const AddCard = ({ setCards: setCards2 }) => {
     };
 
     const fetchPaymentSheetParams = async () => {
-        const response = await fetch(`${BASEROOT_URL}/bindly/stripe/saveCard`, {
+        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/saveCard`, {
             method: 'POST',
             body: JSON.stringify({ email: user.email }),
             headers: { 'Content-Type': 'application/json' },
@@ -69,6 +63,9 @@ const AddCard = ({ setCards: setCards2 }) => {
     };
 
     const handleBuyPress = async () => {
+        if(cards2?.length >= 3){
+            return
+        }
         let customer
         if (!isInitialized) {
             customer = await initialisePaymentSheet();
@@ -82,15 +79,21 @@ const AddCard = ({ setCards: setCards2 }) => {
             await confirmPaymentSheetPayment();
             try {
                 console.log('customer in buy press',customer)
-                const response = await fetch(`${BASEROOT_URL}/bindly/stripe/getSavedCards/${customer}`);
+                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/getSavedCards/${customer}`);
                 const data = await response.json();
-                setCards(data.data);
-                setCards2(data.data);
-                console.log(data.data)
+                
+    
+
+                if (JSON.stringify(cards2) !== JSON.stringify(data.data)) {
+                    console.log('heree')
+                    setCards2(data.data);
+                    console.log(data.data)
+                    console.log(data.data?.length,'in the call')
+                }
+
             } catch (error) {
                 console.error('Error fetching cards:', error);
             }
-            Alert.alert('Success', 'The payment method was setup successfully');
             setIsInitialized(false);
             
         }
@@ -107,15 +110,14 @@ const AddCard = ({ setCards: setCards2 }) => {
         }
         setLoadingRemove(true);
 
-        const response = await fetch(`${BASEROOT_URL}/bindly/stripe/detachOldPaymentMethods`, {
+        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/detachOldPaymentMethods`, {
             method: 'POST',
             body: JSON.stringify({ customerId: user.stripeid, cardId: cardToDelete }),
             headers: { 'Content-Type': 'application/json' },
         });
         const data = await response.json();
         if (data.success) {
-            const updatedCards = cards.filter(card => card.id !== cardToDelete);
-            setCards(updatedCards);
+            const updatedCards = cards2.filter(card => card.id !== cardToDelete);
             setCards2(updatedCards);
             setCardToDelete(null);
             setModalVisible(false);
@@ -143,9 +145,9 @@ const AddCard = ({ setCards: setCards2 }) => {
             <Text style={{fontSize:20,fontWeight:'600'}}>Payment Methods</Text>
             </View>
             <View style={{marginTop:10,marginBottom:16}}>
-            {cards?.length > 0 ? (
+            {cards2?.length > 0 ? (
                 <FlatList
-                    data={cards}
+                    data={cards2}
                     keyExtractor={item => item.id}
                     renderItem={renderCard}
                 />
@@ -155,7 +157,7 @@ const AddCard = ({ setCards: setCards2 }) => {
             </View>
           
             <Pressable style={styles.button} onPress={handleBuyPress}>
-                <Text style={styles.buttonText}>{loading ? 'Loading...' : cards?.length >= 3 ? 'Maximum cards added' : 'Set up payment method'}</Text>
+                <Text style={styles.buttonText}>{loading ? 'Loading...' : cards2?.length >= 3 ? 'Maximum cards added' : 'Set up payment method'}</Text>
             </Pressable>
             <Modal
                 visible={modalVisible}

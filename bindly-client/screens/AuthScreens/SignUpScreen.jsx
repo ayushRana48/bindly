@@ -37,7 +37,7 @@ const SignUpScreen = () => {
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
             quality: 1,
@@ -78,30 +78,30 @@ const SignUpScreen = () => {
     const submit = async () => {
         if (loading) return; // Prevent double click
         setLoading(true);
-        // if (!firstName.trim() || !lastName.trim()) {
-        //     setErrorMessage("Please enter both your first and last name.");
-        //     setLoading(false);
-        //     return;
-        // }
+        if (!firstName.trim() || !lastName.trim()) {
+            setErrorMessage("Please enter both your first and last name.");
+            setLoading(false);
+            return;
+        }
 
-        // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        // if (!emailRegex.test(email)) {
-        //     setErrorMessage("Please enter a valid email address.");
-        //     setLoading(false);
-        //     return;
-        // }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setErrorMessage("Please enter a valid email address.");
+            setLoading(false);
+            return;
+        }
 
-        // if (!password.trim()) {
-        //     setErrorMessage("Please enter password.");
-        //     setLoading(false);
-        //     return;
-        // }
+        if (!password.trim()) {
+            setErrorMessage("Please enter password.");
+            setLoading(false);
+            return;
+        }
 
-        // if (password !== confirmPassword) {
-        //     setErrorMessage("The passwords do not match.");
-        //     setLoading(false);
-        //     return;
-        // }
+        if (password !== confirmPassword) {
+            setErrorMessage("The passwords do not match.");
+            setLoading(false);
+            return;
+        }
 
         const today = new Date();
         const birthDate = new Date(date);
@@ -133,7 +133,7 @@ const SignUpScreen = () => {
         }
 
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/auth/signUp`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signUp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -150,7 +150,7 @@ const SignUpScreen = () => {
 
             if (status === 200) {
                 setEmail2(email.toLowerCase());
-                await AsyncStorage.setItem('userEmail', JSON.stringify(email.toLowerCase()));
+                await AsyncStorage.setItem('userEmail', email.toLowerCase());
                 navigation.navigate('SignIn');
             } else {
                 if (body.error) {

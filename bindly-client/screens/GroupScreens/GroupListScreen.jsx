@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { View, Text, Pressable, Image, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import { View, Text, Pressable, Image, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../GroupsContext";
 import { useUserContext } from "../../UserContext";
 import GroupListItem from "./components/GroupListItem";
 import { BASEROOT_URL } from "@env";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { registerForPushNotificationsAsync } from "../../notificationUtils";
+
 
 const GroupListScreen = () => {
     const navigation = useNavigation();
@@ -15,25 +18,45 @@ const GroupListScreen = () => {
     const [archiveGroup, setArchiveGroup] = useState([]);
     const [filteredGroups, setFilteredGroups] = useState([]);
 
+    const [loading, setLoading] = useState(false)
+
+
+
+    useEffect(() => {
+        const checkToken = async () => {
+            await registerForPushNotificationsAsync(user.username);
+        };
+
+        checkToken();
+    }, [user]);
+
+
+
     const toNewGroup = () => {
         setActiveTab("current")
         navigation.navigate('NewGroup');
     };
 
+
+
+
+
     const getAllGroups = async () => {
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
+            setLoading(true)
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
             const res = await response.json();
-            const groupList= res.current.map(r=>r.groups)
+            const groupList = res.current.map(r => r.groups)
             setGroups(groupList);
-            const groupList2= res.archive.map(r=>r.groups)
+            const groupList2 = res.archive.map(r => r.groups)
             setArchiveGroup(groupList2);
         } catch (error) {
             console.log(error);
         }
+        setLoading(false)
     };
 
     useEffect(() => {
@@ -63,35 +86,39 @@ const GroupListScreen = () => {
                 <Text style={styles.headerText}>Groups</Text>
             </View>
             <View style={styles.tabs}>
-                <TouchableOpacity 
-                    style={[styles.tab, activeTab === "current" && styles.activeTab]} 
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === "current" && styles.activeTab]}
                     onPress={() => setActiveTab("current")}
                 >
                     <Text style={styles.tabText}>Current</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[styles.tab, activeTab === "archive" && styles.activeTab]} 
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === "archive" && styles.activeTab]}
                     onPress={() => setActiveTab("archive")}
                 >
                     <Text style={styles.tabText}>Archive</Text>
                 </TouchableOpacity>
             </View>
-            <ScrollView
-                contentContainerStyle={styles.scrollView}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }
-            >
-                {
-                    filteredGroups.length === 0 ?
-                        (<Text style={styles.noGroups}>No Groups</Text>) :
-                        (
-                            <View style={styles.groupList}>
-                                {filteredGroups.map((g, index) => <GroupListItem key={index} groupData={g} activeTab={activeTab} />)}
-                            </View>
-                        )
-                }
-            </ScrollView>
+            {loading ?
+                <ActivityIndicator  size="large"  style={{width:80,marginTop:20,marginHorizontal:'auto'}} color={'dodgerblue'}></ActivityIndicator>
+                :
+                <ScrollView
+                    contentContainerStyle={styles.scrollView}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
+                >
+                    {
+                        filteredGroups.length === 0 ?
+                            (<Pressable onPress={toNewGroup} style={styles.noGroups}><Text style={{color:'white',fontSize:20,fontWeight:'700'}}>Create Group</Text></Pressable>) :
+                            (
+                                <View style={styles.groupList}>
+                                    {filteredGroups.map((g, index) => <GroupListItem key={index} groupData={g} activeTab={activeTab} />)}
+                                </View>
+                            )
+                    }
+                </ScrollView>
+            }
         </View>
     );
 };
@@ -148,10 +175,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 32,
     },
     noGroups: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'dodgerblue',
+        width: 200,
+        height: 50,
+        padding: 10,
+        borderRadius: 8,
+        marginTop: 50,
+        marginHorizontal:'auto'
     },
     groupList: {
         marginTop: 20,

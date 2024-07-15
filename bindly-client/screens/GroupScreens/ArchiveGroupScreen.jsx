@@ -39,7 +39,7 @@ const ArchiveGroupScreen = () => {
   const getLeaderBoard = async () => {
 
     try {
-      const response = await fetch(`${BASEROOT_URL}/bindly/group/getLeaderboard/${groupData.groupid}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/getLeaderboard/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 

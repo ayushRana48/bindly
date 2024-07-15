@@ -1,66 +1,69 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, Image, Pressable, Modal,ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Image, Pressable, Modal, ActivityIndicator, Alert } from 'react-native';
 import Swiper from 'react-native-swiper';
 import { Video } from 'expo-av';
-import placeholder from '../../../assets/profile.png'
+import placeholder from '../../../assets/profile.png';
 import { useGroupsContext } from '../../GroupsContext';
 import { useUserContext } from '../../../UserContext';
 import { BASEROOT_URL } from "@env";
 
-const width = 300
-const height = width * 1.77777778
+const width = 300;
+const height = width * 1.77777778;
+
 const PostComponent = ({ postid, imageLink, videoLink, username, caption, users, time, valid, veto }) => {
+    const [pfpLink, setPfpLink] = useState(placeholder);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
+    const [beenVeto, setBeenVeto] = useState(false);
+    const [extraModalVisible, setExtraModalVisible] = useState(false);
+    const [deleteConfirmationVisible, setDeleteConfirmationVisible] = useState(false);
 
-    const [pfpLink, setPfpLink] = useState(placeholder)
-    const [modalVisible, setModalVisible] = useState(false)
-    const [loading, setLoading] = useState(false)
+    const { user } = useUserContext();
+    const { groupData, setGroupData } = useGroupsContext();
 
-    const [beenVeto, setBeenVeto] = useState(false)
-
-    const { user } = useUserContext()
-    const { groupData,setGroupData } = useGroupsContext()
-
-   
     useEffect(() => {
         for (let i = 0; i < groupData?.post?.length; i++) {
-            const currPost = groupData?.post[i]
+            const currPost = groupData?.post[i];
             if (currPost.postid == postid) {
                 if (currPost.veto.includes(user.username)) {
-                    setBeenVeto(true)
-                }
-                else {
-                    setBeenVeto(false)
+                    setBeenVeto(true);
+                } else {
+                    setBeenVeto(false);
                 }
             }
         }
-    }, [groupData])
-
+    }, [groupData]);
 
     useEffect(() => {
         for (let i = 0; i < users?.length; i++) {
-            const user = users[i]
+            const user = users[i];
             if (user.username == username) {
                 if (user.users.pfp) {
-                    setPfpLink({ uri: user.users.pfp })
+                    setPfpLink({ uri: user.users.pfp });
                 }
             }
         }
-    }, [users])
+    }, [users]);
 
     const displayDate = (time) => {
-        const date = new Date(time)
-        return date.toLocaleDateString()
-    }
+        const date = new Date(time);
+        return date.toLocaleDateString();
+    };
+
     const displayTime = (time) => {
         const date = new Date(time);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     const addVeto = async () => {
-        setLoading(true)
+        if(loading){
+            return
+        }
+        setLoading(true);
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/post/addVeto`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addVeto`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -73,17 +76,14 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
-                //possibly change to body
-
                 setGroupData(g => {
                     const newPost = g.post.map(p => {
                         if (p.postid == postid) {
-                            return body
+                            return body;
+                        } else {
+                            return p;
                         }
-                        else {
-                            return p
-                        }
-                    })
+                    });
 
                     return {
                         ...g,
@@ -95,16 +95,18 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
             console.log("Fetch error: ", error);
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
         } finally {
-            setModalVisible(false)
+            setModalVisible(false);
             setLoading(false);
         }
-    }
-
+    };
 
     const removeVeto = async () => {
-        setLoading(true)
+        if(loading){
+            return
+        }
+        setLoading(true);
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/post/removeVeto`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeVeto`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -117,17 +119,14 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
-                //possibly change to body
-
                 setGroupData(g => {
                     const newPost = g.post.map(p => {
                         if (p.postid == postid) {
-                            return body
+                            return body;
+                        } else {
+                            return p;
                         }
-                        else {
-                            return p
-                        }
-                    })
+                    });
 
                     return {
                         ...g,
@@ -139,11 +138,47 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
             console.log("Fetch error: ", error);
             Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
         } finally {
-            setModalVisible(false)
+            setModalVisible(false);
             setLoading(false);
         }
-    }
+    };
 
+    const deletePost = async () => {
+        // Add your delete post logic here
+        // Example: Call API to delete the post
+        if(deleteLoading){
+            return
+        }
+
+   
+
+        setDeleteLoading(true)
+       
+        try {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/deletePost/${postid}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
+
+            if (status === 200) {
+                setGroupData(g => {
+                    const newPost = g.post.filter(p => p.postid !== postid);
+                    return {
+                        ...g,
+                        post: newPost
+                    };
+                });
+            }
+        } catch (error) {
+            console.log("Fetch error: ", error);
+            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
+            setDeleteConfirmationVisible(false);
+            setDeleteLoading(false);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -157,18 +192,24 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
                     </View>
                 </View>
 
+                {username === user.username && (
+                    <Pressable
+                        style={{width: 30, height: 30, alignItems: 'center', marginLeft: 'auto', marginRight: 10, justifyContent: 'center' }}
+                        onPress={() => setExtraModalVisible(true)}
+                    >
+                        <Text style={{ fontSize: 18, marginBottom: 8 }}>...</Text>
+                    </Pressable>
+                )}
             </View>
             <Swiper style={styles.wrapper} showsButtons={false} paginationStyle={{ bottom: 10 }} dotColor="rgba(255, 255, 255, 0.5)" activeDotColor="#fff">
                 {imageLink && (
                     <View style={styles.mediaContainer}>
-                        <Image key="image" style={{
-                            width: width,
-                            height: width,
-                            margin: 'auto'
-                        }} source={{ uri: imageLink }} />
-
-                        {valid == null && users.length>2 && <Pressable onPress={() => setModalVisible(true)} style={{ backgroundColor: 'red', position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, padding: 2, borderRadius: 20 }}><Text style={{ margin: 'auto', color: 'white', fontWeight: 'bold' }}>X</Text></Pressable>}
-
+                        <Image key="image" style={{ width: width, height: width, margin: 'auto' }} source={{ uri: imageLink }} />
+                        {valid == null  && users.length > 2  && (
+                            <Pressable onPress={() => setModalVisible(true)} style={{ backgroundColor: 'red', position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, padding: 2, borderRadius: 20 }}>
+                                <Text style={{ margin: 'auto', color: 'white', fontWeight: 'bold' }}>X</Text>
+                            </Pressable>
+                        )}
                     </View>
                 )}
                 {videoLink && (
@@ -181,18 +222,22 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
                             resizeMode="contain"
                             isLooping
                         />
-                        {valid == null && users.length>2 && <Pressable onPress={() => setModalVisible(true)} style={{ backgroundColor: 'red', position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, padding: 2, borderRadius: 20 }}><Text style={{ margin: 'auto', color: 'white', fontWeight: 'bold' }}>X</Text></Pressable>}
+                        {valid == null && users.length > 2 && (
+                            <Pressable onPress={() => setModalVisible(true)} style={{ backgroundColor: 'red', position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, padding: 2, borderRadius: 20 }}>
+                                <Text style={{ margin: 'auto', color: 'white', fontWeight: 'bold' }}>X</Text>
+                            </Pressable>
+                        )}
                     </View>
                 )}
             </Swiper>
             <View style={styles.captionContainer}>
                 <View style={{ flexDirection: 'row' }}>
-                    {users.length>2 && <Text style={{ marginLeft: 'auto' }}>{valid == null && `${veto.length}/${Math.ceil(users.length / 2)} vetos`}</Text>}
+                    {users.length > 2 && <Text style={{ marginLeft: 'auto' }}>{valid == null && `${veto.length}/${Math.ceil(users.length / 2)} vetos`}</Text>}
                 </View>
                 <Text style={styles.caption}><Text style={styles.username}>{username}</Text>    {caption}</Text>
             </View>
 
-
+            {/* Veto Modal */}
             <Modal
                 transparent={true}
                 visible={modalVisible}
@@ -215,12 +260,10 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
                             {!beenVeto ? <Pressable style={styles.confirmButton} onPress={addVeto}>
                                 {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Veto</Text>}
                             </Pressable> :
-                            
-                            <Pressable style={styles.confirmButton} onPress={removeVeto}>
+                                <Pressable style={styles.confirmButton} onPress={removeVeto}>
+                                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Remove Veto</Text>}
+                                </Pressable>}
 
-                                {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Remove Veto</Text>}
-                            </Pressable>}
-                           
                             <Pressable style={styles.cancelButton} onPress={() => setModalVisible(false)} >
                                 <Text style={styles.buttonText}>Cancel</Text>
                             </Pressable>
@@ -229,6 +272,58 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
                 </View>
             </Modal>
 
+            {/* Delete Modal */}
+            <Modal
+                transparent={true}
+                visible={extraModalVisible}
+                animationType="slide"
+                onRequestClose={() => setExtraModalVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}></Text>
+                        <View style={{width:'100%',flexDirection:'column',justifyContent:'space-between',alignItems:'center'}}>
+                            <Pressable style={styles.cancelButton} onPress={() => {
+                                setExtraModalVisible(false)
+                                setDeleteConfirmationVisible(true)
+                            }
+                                }>
+                                <Text style={styles.buttonText}>Delete</Text>
+                            </Pressable>
+                            <Pressable style={{...styles.confirmButton,marginTop:20}} onPress={() => setExtraModalVisible(false)} >
+                                <Text style={styles.buttonText}>Cancel</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                transparent={true}
+                visible={deleteConfirmationVisible}
+                animationType="slide"
+                onRequestClose={() => setDeleteConfirmationVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Confirm Deletion</Text>
+                        <View style={styles.modalText}>
+                            <View style={styles.modalItem}>
+                                <Text style={styles.boldText}>This action cannot be undone. Are you sure you want to delete this post?</Text>
+                            </View>
+                        </View>
+                        <View style={styles.modalButtons}>
+                            <Pressable style={styles.confirmButton} onPress={deletePost}>
+                                {deleteLoading ? <ActivityIndicator color={'white'}></ActivityIndicator>: <Text style={styles.buttonText}>Confirm</Text>}
+                            </Pressable>
+                            <Pressable style={styles.cancelButton} onPress={() => setDeleteConfirmationVisible(false)} >
+                                <Text style={styles.buttonText}>Cancel</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -244,29 +339,28 @@ const styles = StyleSheet.create({
         paddingTop: 10,
         paddingBottom: 10,
         flexDirection: 'row',
-        justifyContent: 'cener',
-        alignItems: 'center'
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     username: {
         fontWeight: 'bold',
-        fontSize: 14
+        fontSize: 14,
     },
     wrapper: {
         height: height,
         justifyContent: 'center',
-        alignContent: 'center'
+        alignContent: 'center',
     },
     mediaContainer: {
         width: width,
         height: height,
         backgroundColor: '#e3e3e3',
-        margin: 'auto'
+        margin: 'auto',
     },
     media: {
         width: width,
         height: height,
-        margin: 'auto'
-
+        margin: 'auto',
     },
     captionContainer: {
         paddingLeft: 28,
@@ -278,7 +372,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     date: {
-        color: '#757575'
+        color: '#757575',
     },
     modalBackground: {
         flex: 1,
@@ -311,7 +405,9 @@ const styles = StyleSheet.create({
     modalButtons: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: '100%',
+        width:'100%',
+        marginBottom:20
+    
     },
     confirmButton: {
         backgroundColor: 'dodgerblue',
@@ -335,7 +431,7 @@ const styles = StyleSheet.create({
         marginBottom: 0,
         flexDirection: 'row',
         fontSize: 28,
-    }
+    },
 });
 
 export default PostComponent;

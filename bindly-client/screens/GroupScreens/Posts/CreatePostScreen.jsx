@@ -151,7 +151,7 @@ const CreatePostScreen = () => {
     
         if (image) {
             try {
-                const response = await fetch(`${BASEROOT_URL}/bindly/post/getPresignedUrl`, {
+                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/getPresignedUrl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -193,7 +193,7 @@ const CreatePostScreen = () => {
     
         if (video) {
             try {
-                const response = await fetch(`${BASEROOT_URL}/bindly/post/getPresignedUrl`, {
+                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/getPresignedUrl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -237,7 +237,7 @@ const CreatePostScreen = () => {
         try {
             const time = new Date(time1); // Record the start time
 
-            const response2 = await fetch(`${BASEROOT_URL}/bindly/post/postStatus`, {
+            const response2 = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/postStatus`, {
             headers: { 'Content-Type': 'application/json' },
             method: 'POST',
             body: JSON.stringify({
@@ -274,7 +274,7 @@ const CreatePostScreen = () => {
     
      
     
-            const response = await fetch(`${BASEROOT_URL}/bindly/post/createPost`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/createPost`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -307,7 +307,7 @@ const CreatePostScreen = () => {
                 // Call compressVideo API after navigation
                 if (video) {
                     const link = `${user.username}-${groupData.group.groupid}-${time1}v`
-                    fetch(`${BASEROOT_URL}/bindly/post/compressVideo`, {
+                    fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/compressVideo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                     
@@ -352,14 +352,14 @@ const CreatePostScreen = () => {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View>
                         <Pressable style={styles.cancel} onPress={cancel}>
-                            <Text style={{ color: "red" }}>cancel</Text>
+                            <Text style={{ color: "red" }}>Cancel</Text>
                         </Pressable>
                         <Text style={styles.title}>{groupData.group.groupname}</Text>
 
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 }}>
                             <View>
                                 <Text>Select Picture</Text>
-                                <Pressable style={styles.selectMedia} onPress={pickImage}>
+                                <Pressable style={styles.selectMedia} onPress={takeImage}>
                                     {image ? (
                                         <Pressable onPress={() => openModal(image, true)}>
                                             <Image source={{ uri: image }} style={{ width: 140, height: 140, borderRadius: 10 }} />

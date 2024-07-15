@@ -1,14 +1,10 @@
 const fetch = require('node-fetch');
 const { getAccessToken } = require('./tokenUtility');
-
-const BASE_URL = 'https://api-m.sandbox.paypal.com';
-// const BASE_URL = 'https://api-m.paypal.com';
 const { supabase } = require('../initSupabase');
 
-
+const BASE_URL = 'https://api-m.paypal.com';
 
 async function createPayout(user_id, recipient_email, amount, is_venmo) {
-
     const { data: userData, error: userError } = await supabase
         .from('users')
         .select('balance')
@@ -17,18 +13,12 @@ async function createPayout(user_id, recipient_email, amount, is_venmo) {
 
     if (userError) {
         return { error: userError };
-
     }
 
     const balance = parseFloat(userData.balance);
 
-    if (balance < 20) {
-        return { error: { message: 'Balance not high enough' } };
-    }
-
     if (balance < amount) {
         return { error: { message: 'Cannot withdraw more than balance' } };
-
     }
 
     try {
@@ -42,7 +32,7 @@ async function createPayout(user_id, recipient_email, amount, is_venmo) {
                 email_subject: 'You have a payout!'
             },
             items: [{
-                recipient_type: 'EMAIL', // Use 'EMAIL' for both PayPal and Venmo
+                recipient_type: 'EMAIL',
                 amount: {
                     value: amount,
                     currency: 'USD'
@@ -55,6 +45,7 @@ async function createPayout(user_id, recipient_email, amount, is_venmo) {
 
         if (is_venmo) {
             payout.items[0].recipient_wallet = "Venmo";
+            payout.items[0].recipient_type = "PHONE";
         }
 
         console.log(payout, 'payout');
@@ -70,6 +61,10 @@ async function createPayout(user_id, recipient_email, amount, is_venmo) {
 
         const payoutData = await response.json();
 
+        if (!response.ok) {
+            return { error: payoutData };
+        }
+
         const newBalance = balance - parseFloat(amount);
         console.log(payoutData, 'payout data');
 
@@ -81,16 +76,14 @@ async function createPayout(user_id, recipient_email, amount, is_venmo) {
 
         if (updateError) {
             console.log(updateError, 'Update error');
-            return {error:updateError};
+            return { error: updateError };
         }
 
         console.log(updatedUser, 'Updated user data');
-        return {payoutData}
+        return {payoutData };
     } catch (error) {
-        return {error}
+        return { error };
     }
 }
 
-
-
-module.exports = {createPayout};
+module.exports = { createPayout };

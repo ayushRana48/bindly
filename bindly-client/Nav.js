@@ -14,13 +14,20 @@ const Stack = createNativeStackNavigator();
 
 export default function Nav() {
     const [initialRoute, setInitialRoute] = useState('SignIn');
-    const {user,setEmail}= useUserContext();
+    const {user,setEmail,loading,setLoading}= useUserContext();
 
 
     useEffect(() => {
         const getUser = async () => {
+            setLoading(true)
+            const userEmail = await AsyncStorage.getItem('userEmail');
+            console.log('userEmail set Here',userEmail)
+            if(userEmail){
+                setEmail(userEmail)
+                return
+            }
             try {
-                const response = await fetch(`${BASEROOT_URL}/bindly/auth/getUser`, {
+                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/getUser`, {
                     headers: { 'Content-Type': 'application/json' },
                 });
                 const data = await response.json();
@@ -28,16 +35,17 @@ export default function Nav() {
                 if (response.status === 200) {
                     if(data.user){
                         setEmail(data.user.email)
-                        await AsyncStorage.setItem('userEmail', JSON.stringify(data.user.email));
+                        await AsyncStorage.setItem('userEmail', `${data.user.email}`);
+                    }
+                    else{                
+                        setLoading(false)
                     }
                 } else if (data.error) {
-                    const userEmail = await AsyncStorage.getItem('userEmail');
-                    if(userEmail){
-                        setEmail(JSON.parse(storedUser))
-                    }
                     console.log('Error received:', data.error);
                 }
+
             } catch (error) {
+                setLoading(false)
                 console.error('Network or server error:', error);
             }
         }
@@ -48,7 +56,7 @@ export default function Nav() {
   
     return (
         <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Navigator screenOptions={{ headerShown: false,gestureEnabled: false }}>
                 {user==null ?
                     (
                         <><Stack.Screen name="SignIn" component={SignInScreen} />

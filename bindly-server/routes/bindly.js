@@ -11,6 +11,7 @@ const inviteController =  require('../controllers/inviteController.js');
 const notifyvetoController =  require('../controllers/notifyVetoController.js');
 const stripeController = require('../controllers/stripeController');
 const paypalController = require('../controllers/paypalController.js')
+const notificationController = require('../controllers/notificationController.js')
 
 router.post('/users/createUser',userController.createUserController)
 router.get('/users/',userController.getAllUsersController)
@@ -63,7 +64,7 @@ router.get('/post/:postId',postController.getPostController)
 router.get('/post/',postController.getAllPostsController)
 router.get('/post/getPostByUsername/:username',postController.getPostsByUsernameController)
 router.get('/post/getPostByGroup/:groupId',postController.getPostsByGroupIdController)
-router.delete('/post/deleteUsergroup/:postId',postController.deletePostController)
+router.delete('/post/deletePost/:postId',postController.deletePostController)
 router.put('/post/updatePost/:postId',postController.updatePostController)
 router.post('/post/getPresignedUrl',postController.getPresignedUrlController)
 router.post('/post/compressVideo',postController.compressVideoController)
@@ -89,8 +90,9 @@ router.post('/stripe/detachOldPaymentMethods', stripeController.detachOldPayment
 router.get('/stripe/getSavedCards/:customerId', stripeController.getSavedCardsController);
 
 
-
 router.post('/paypal/payout', paypalController.createPayoutController);
 
+router.post('/notification/registerToken', notificationController.registerTokenController);
+router.post('/notification/removeToken', notificationController.removeTokenController);
 
 module.exports = router;

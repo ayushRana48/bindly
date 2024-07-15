@@ -53,7 +53,7 @@ const GroupScreen = () => {
   useEffect(()=>{
     console.log('init postStajjjhjtusCheck')
     const postStatusCheck = async () =>{
-      const response2 = await fetch(`${BASEROOT_URL}/bindly/post/postStatus`, {
+      const response2 = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/postStatus`, {
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
         body: JSON.stringify({
@@ -106,7 +106,7 @@ const GroupScreen = () => {
     }
 
     try {
-      const response = await fetch(`${BASEROOT_URL}/bindly/group/${groupData.groupid}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -123,7 +123,7 @@ const GroupScreen = () => {
 
       setVisiblePosts((res.post || []).slice(0, postsPerPage));
 
-      const response2 = await fetch(`${BASEROOT_URL}/bindly/post/postStatus`, {
+      const response2 = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/postStatus`, {
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
         body: JSON.stringify({
@@ -169,7 +169,7 @@ const GroupScreen = () => {
 
 const inGroup = async () => {
   try {
-    const response = await fetch(`${BASEROOT_URL}/bindly/usergroup/inGroup`, {
+    const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/inGroup`, {
       headers: { 'Content-Type': 'application/json' },
       method: 'PUT',
       body: JSON.stringify({
@@ -296,9 +296,12 @@ return (
           
         )}
 
-        {(!loading && !started) &&<Text style={{textAlign:'center', fontSize:18, marginTop:20}} >Starts {new Date(groupData.startdate).toLocaleDateString()}</Text>}
+        {(!loading && !started) &&<Text style={{textAlign:'center', fontSize:18, marginTop:20}} >Starts {new Date(groupData.startdate).toLocaleDateString() + ' ' + new Date(groupData.startdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }</Text>}
 
-        {(!loading && ended) &&<Text style={{textAlign:'center', fontSize:18, marginTop:20}}>Ended {new Date(groupData.enddate).toLocaleDateString()}</Text>}
+
+        {(!loading && ended) &&<Text style={{textAlign:'center', fontSize:18, marginTop:20}}>Ended {new Date(groupData.enddate).toLocaleDateString() + ' ' + new Date(groupData.enddate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }</Text>}
 
       </View>
 

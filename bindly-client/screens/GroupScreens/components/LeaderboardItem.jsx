@@ -34,7 +34,7 @@ const LeaderboardItem = ({ memberData }) => {
             />
             <Text style={styles.name}>{memberData.place}  {memberData.username}</Text>
             <View style={{marginLeft:'auto'}}>
-                <Text style={{fontSize:20}}>${memberData.netMoney}</Text>
+                <Text style={{fontSize:20}}>${memberData.netMoney.toFixed(2)}</Text>
                 <Text>{memberData.totalCountedPosts} posts</Text>
                 <Text>{memberData.totalUnCountedPosts} uncounted</Text>
 

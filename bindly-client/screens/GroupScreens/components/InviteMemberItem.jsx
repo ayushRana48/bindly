@@ -24,7 +24,7 @@ const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
         setInviting(true);
 
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/invite/createInvite`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/createInvite`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -12,17 +12,21 @@ const SignInScreen = () => {
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
-    const { email, setEmail } = useUserContext();
+
+    const { email, setEmail, loading: l2 } = useUserContext();
     const navigation = useNavigation();
 
-    useEffect(()=>{    console.log(BASEROOT_URL)
-    },[])
+    useEffect(() => {
+        console.log(BASEROOT_URL)
+    }, [])
+
+
 
     const submit = async () => {
         if (loading) return; // Prevent double click
         setLoading(true);
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/auth/signIn`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signIn`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -38,7 +42,8 @@ const SignInScreen = () => {
             if (response.status === 200) {
                 setEmail(username.toLowerCase());
                 //here username refers to email
-                await AsyncStorage.setItem('userEmail', JSON.stringify(username.toLowerCase()));
+                await AsyncStorage.setItem('userEmail', `${username.toLowerCase()}`);
+
             } else {
                 if (data.error) {
                     if (data.error.includes('Invalid login credentials')) {
@@ -75,7 +80,7 @@ const SignInScreen = () => {
                     />
                 </View>
 
-                <View>
+               {!l2 && <><View>
                     <Text style={styles.label}>Email</Text>
                     <TextInput
                         style={styles.input}
@@ -83,40 +88,42 @@ const SignInScreen = () => {
                         value={username}
                         onChangeText={setUsername}
                         placeholder="email"
-                        keyboardType="email-address"
+                        keyboardType="text"
+                        textContentType="username" 
                     />
                 </View>
 
-                <View>
-                    <Text style={styles.label}>Password</Text>
-                    <TextInput
-                        style={styles.input}
-                        autoCapitalize='none'
-                        value={password}
-                        onChangeText={setPassword}
-                        placeholder="password"
-                        secureTextEntry={true}
-                    />
-                </View>
-
-                <View style={styles.signInButtonContainer}>
-                    <Pressable style={styles.signInButton} onPress={submit} disabled={loading}>
-                        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.signInButtonText}>Sign In</Text>}
-                    </Pressable>
-                </View>
-
-                {errorMessage.length > 0 &&
-                    <View style={styles.errorContainer}>
-                        <Text style={styles.errorText}>{errorMessage}</Text>
+                    <View>
+                        <Text style={styles.label}>Password</Text>
+                        <TextInput
+                            style={styles.input}
+                            autoCapitalize='none'
+                            value={password}
+                            onChangeText={setPassword}
+                            placeholder="password"
+                            secureTextEntry={true}
+                        />
                     </View>
-                }
 
-                <View style={styles.footer}>
-                    <Pressable style={styles.footerPressable} onPress={toSignUp}>
-                        <Text style={styles.footerText}>Don't have an account?</Text>
-                        <Text style={[styles.footerText, styles.bold]}> Sign Up Here</Text>
-                    </Pressable>
-                </View>
+                    <View style={styles.signInButtonContainer}>
+                        <Pressable style={styles.signInButton} onPress={submit} disabled={loading}>
+                            {loading ? <ActivityIndicator color="white" /> : <Text style={styles.signInButtonText}>Sign In</Text>}
+                        </Pressable>
+                    </View>
+
+                    {errorMessage.length > 0 &&
+                        <View style={styles.errorContainer}>
+                            <Text style={styles.errorText}>{errorMessage}</Text>
+                        </View>
+                    }
+
+                    <View style={styles.footer}>
+                        <Pressable style={styles.footerPressable} onPress={toSignUp}>
+                            <Text style={styles.footerText}>Don't have an account?</Text>
+                            <Text style={[styles.footerText, styles.bold]}> Sign Up Here</Text>
+                        </Pressable>
+                    </View>
+                </>}
             </ScrollView>
         </KeyboardAvoidingView>
     );

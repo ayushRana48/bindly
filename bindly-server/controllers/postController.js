@@ -196,7 +196,7 @@ async function deletePostController(req, res) {
     const { data, error } = await deletePost(postId);
 
     if (error) throw error;
-    res.status(204).send();
+    res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

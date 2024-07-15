@@ -28,7 +28,7 @@ const NewGroupScreen = () => {
 
     const [groupName, setGroupName] = useState("");
     const [description, setDescription] = useState("");
-    const [startDate, setStartDate] = useState(today);
+    const [startDate, setStartDate] = useState(tomorrow);
     const [numWeeks, setNumWeeks] = useState(0);
     const [buyIn, setBuyIn] = useState(0);
     const [taskPerWeek, setTaskPerWeek] = useState(0);
@@ -40,7 +40,7 @@ const NewGroupScreen = () => {
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
             quality: 1,
@@ -166,7 +166,7 @@ const NewGroupScreen = () => {
         const endDateUTC = endTime.toISOString();
 
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/group/createGroup`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/createGroup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -226,7 +226,7 @@ const NewGroupScreen = () => {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View>
                         <Pressable style={styles.cancel} onPress={cancel}>
-                            <Text style={{ color: "red" }}>cancel</Text>
+                            <Text style={{ color: "red" }}>Cancel</Text>
                         </Pressable>
                         <View style={styles.logoContainer}>
                             <Text style={styles.title}>Create Group</Text>
@@ -302,7 +302,7 @@ const NewGroupScreen = () => {
                                     value={startDate}
                                     onChange={onChange}
                                     style={{ height: 120 }}
-                                    minimumDate={today}
+                                    minimumDate={tomorrow}
                                 />
                                 <View style={styles.centeredRow}>
                                     <Pressable style={styles.doneButton} onPress={toggleDatepicker}>

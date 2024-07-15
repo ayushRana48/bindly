@@ -55,7 +55,7 @@ const GroupSetting = () => {
 
     const getGroup = async () => {
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/group/${gd.group.groupid}`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${gd.group.groupid}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
@@ -73,17 +73,17 @@ const GroupSetting = () => {
 
     const isPastDate = new Date(gd?.group.startdate) < new Date();
 
-    // const toEdit = () => {
-    //     if (isPastDate) {
-    //         Alert.alert("Can't edit already started");
-    //     } else {
-    //         try {
-    //             navigation.navigate("GroupEdit");
-    //         } catch (err) {
-    //             console.log(err);
-    //         }
-    //     }
-    // };
+    const toEdit = () => {
+        if (isPastDate) {
+            Alert.alert("Can't edit already started");
+        } else {
+            try {
+                navigation.navigate("GroupEdit");
+            } catch (err) {
+                console.log(err);
+            }
+        }
+    };
 
     const openDeleteModal = () => {
         if (isPastDate) {
@@ -130,7 +130,7 @@ const GroupSetting = () => {
         }
 
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/usergroup/leaveGroup`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/leaveGroup`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -168,7 +168,7 @@ const GroupSetting = () => {
         }
 
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/group/deleteGroup`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/deleteGroup`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -209,11 +209,11 @@ const GroupSetting = () => {
                 <Image style={{ height: 40, width: 40 }} source={backArrow} />
             </Pressable>
 
-            {/* {user.username === gd.group.hostid && (
+            {user.username === gd.group.hostid  && !isPastDate && (
                 <Pressable style={styles.edit} onPress={toEdit}>
-                    <Text style={{ color: isPastDate ? "gray" : "blue" }}>Edit</Text>
+                    <Text style={{ color: isPastDate ? "gray" : "black", fontSize:16 }}>Edit</Text>
                 </Pressable>
-            )} */}
+            )}
 
             <View style={styles.logoContainer}>
                 <Text style={styles.title}>Group Settings</Text>
@@ -225,7 +225,7 @@ const GroupSetting = () => {
 
             <Text style={styles.groupName}>{groupName}</Text>
 
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.label}>Task Description</Text>
             <Text style={styles.input}>{description}</Text>
 
             <Text style={styles.label}>Start Time</Text>
@@ -347,7 +347,6 @@ const styles = StyleSheet.create({
         zIndex: 10,
         height: 40,
         width: 40,
-        backgroundColor: 'red',
         alignItems: 'center',
         justifyContent: 'center',
     },

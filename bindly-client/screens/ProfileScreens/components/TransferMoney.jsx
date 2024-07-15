@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Button, TextInput, StyleSheet, Modal, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Modal, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert} from 'react-native';
 import { useUserContext } from '../../../UserContext';
-import { useNavigation } from '@react-navigation/native';
 import { BASEROOT_URL } from "@env";
 
 const TransferMoney = () => {
@@ -10,69 +9,90 @@ const TransferMoney = () => {
     const [isVenmo, setIsVenmo] = useState(false);
     const [email, setEmail] = useState('');
     const [confirmEmail, setConfirmEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [confirmPhone, setConfirmPhone] = useState('');
     const [amount, setAmount] = useState('');
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(false);
 
     const handleWithdrawMoney = () => {
-        console.log('call')
-        console.log(email)
-        console.log(confirmEmail)
-        // Validate email format
-        if (loading) {
-            return
-        }
-        setLoading(true)
-        // Validate amount is not null and within balance
-        if (!amount || parseFloat(amount) > user.balance) {
+        if (loading) return;
+
+        setLoading(true);
+        const amountNumber = parseFloat(amount);
+        if (!amount || amountNumber > user.balance) {
             setError('Please enter a valid amount within your balance.');
-            setLoading(false)
+            setLoading(false);
             return;
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        console.log(!emailRegex.test(email))
-        if (!emailRegex.test(email)) {
-            setError('Please enter a valid email address.');
-            setLoading(false)
-            return;
+        if (isVenmo) {
+            const phoneRegex = /^\(\d{3}\)-\d{3}-\d{4}$/;
+            if (!phoneRegex.test(phone)) {
+                setError('Please enter a valid phone number.');
+                setLoading(false);
+                return;
+            }
+
+            if (phone !== confirmPhone) {
+                setError('Phone numbers do not match.');
+                setLoading(false);
+                return;
+            }
+        } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                setError('Please enter a valid email address.');
+                setLoading(false);
+                return;
+            }
+
+            if (email !== confirmEmail) {
+                setError('Emails do not match.');
+                setLoading(false);
+                return;
+            }
         }
-
-        // Validate emails match
-        console.log(email)
-        console.log(confirmEmail)
-
-        if (email !== confirmEmail) {
-            setError('Emails do not match.');
-            setLoading(false)
-
-            return;
-        }
-
 
         setError('');
-
-        fetch(`${BASEROOT_URL}/bindly/paypal/payout`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/paypal/payout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 user_id: user.username,
-                recipient_email: email,
+                recipient_email: isVenmo ? phone : email,
                 is_venmo: isVenmo,
-                amount: amount
+                amount: amountNumber,
             }),
         })
             .then(response => response.json())
             .then(data => {
+                if (data.error) {
+                    throw new Error(data.error.message || 'Error processing payout');
+                }
+                console.log('data', data, 'heree');
                 setTransferMoneyModalVisible(false);
-                setUser(u => ({ ...u, balance: parseFloat(u.balance) - parseFloat(amount) }));
-                setLoading(false)
-
+                setUser(u => ({ ...u, balance: u.balance - amountNumber }));
+                Alert.alert('Transfer Pending', 'Should receive money in 2-5 minutes');
+                setLoading(false);
             })
             .catch(error => {
-                setLoading(false)
-                console.error('Error withdrawing money:', error)
+                setLoading(false);
+                Alert.alert('Error withdrawing money', error.message || 'Unknown error');
+                console.error('Error withdrawing money:', error);
             });
+        setLoading(false)
+        setTransferMoneyModalVisible(false);
+
+    };
+
+    const formatPhoneNumber = (value) => {
+        const cleaned = ('' + value).replace(/\D/g, '').substring(0, 10);
+        const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+        if (match) {
+            return !match[2] ? match[1] : `(${match[1]})-${match[2]}${match[3] ? `-${match[3]}` : ''}`;
+        }
+        return value;
     };
 
     return (
@@ -86,80 +106,117 @@ const TransferMoney = () => {
                 animationType="slide"
                 onRequestClose={() => setTransferMoneyModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>Transfer Money</Text>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.modalOverlay}>
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            style={styles.keyboardAvoidingView}
+                        >
+                            <View style={styles.modalContainer}>
+                                <Text style={styles.modalTitle}>Transfer Money</Text>
 
-                        <Text style={styles.balanceText}>Current Balance: ${user.balance}</Text>
+                                <Text style={styles.balanceText}>Current Balance: ${user.balance.toFixed(2)}</Text>
 
-                        <Text style={styles.modalText}>Select Transfer Method:</Text>
-                        <View style={styles.buttonContainer}>
-                            <Pressable
-                                style={[styles.methodButton, !isVenmo && styles.selectedButton]}
-                                onPress={() => setIsVenmo(false)}
-                            >
-                                <Text style={styles.buttonText}>PayPal</Text>
-                            </Pressable>
-                            <Pressable
-                                style={[styles.methodButton, isVenmo && styles.selectedButton]}
-                                onPress={() => setIsVenmo(true)}
-                            >
-                                <Text style={styles.buttonText}>Venmo</Text>
-                            </Pressable>
-                        </View>
+                                <Text style={styles.modalText}>Select Transfer Method:</Text>
+                                <View style={styles.buttonContainer}>
+                                    <Pressable
+                                        style={[styles.methodButton, !isVenmo && styles.selectedButton]}
+                                        onPress={() => setIsVenmo(false)}
+                                    >
+                                        <Text style={styles.buttonText}>PayPal</Text>
+                                    </Pressable>
+                                    <Pressable
+                                        style={[styles.methodButton, isVenmo && styles.selectedButton]}
+                                        onPress={() => setIsVenmo(true)}
+                                    >
+                                        <Text style={styles.buttonText}>Venmo</Text>
+                                    </Pressable>
+                                </View>
 
-                        <Text style={styles.modalText}>Enter Amount to Transfer:</Text>
-                        <View style={styles.amountInputContainer}>
-                            <View style={{ height: 40, textAlign: 'center' }}><Text style={styles.dollarSign}>$</Text></View>
-                            <TextInput
-                                placeholder="Amount"
-                                onChangeText={text => setAmount(text.replace(/[^0-9]/g, ''))}
-                                value={amount}
-                                keyboardType="numeric"
-                                style={styles.input}
-                            />
-                        </View>
+                                <Text style={styles.modalText}>Enter Amount to Transfer:</Text>
+                                <View style={styles.amountInputContainer}>
+                                    <Text style={styles.dollarSign}>$</Text>
+                                    <TextInput
+                                        placeholder="Amount"
+                                        onChangeText={text => setAmount(text.replace(/[^0-9.]/g, ''))}
+                                        value={amount}
+                                        keyboardType="numeric"
+                                        style={styles.input}
+                                    />
+                                </View>
 
-                        <Text style={styles.modalText}>Enter Email Associated with Account:</Text>
-                        <View style={{ ...styles.amountInputContainer, marginBottom: 10 }}>
-                            <TextInput
-                                placeholder="Email"
-                                onChangeText={setEmail}
-                                value={email}
-                                keyboardType="email-address"
-                                style={styles.input}
-                            />
-                        </View>
+                                {isVenmo ? (
+                                    <>
+                                        <Text style={{...styles.modalText,textAlign:'center'}}>Enter Phone Number Associated with Venmo:</Text>
+                                        <View style={{...styles.amountInputContainer, marginBottom:10}}>
+                                            <TextInput
+                                                placeholder="Phone Number"
+                                                onChangeText={text => setPhone(formatPhoneNumber(text))}
+                                                value={phone}
+                                                keyboardType="phone-pad"
+                                                style={styles.input}
+                                                maxLength={14}
+                                            />
+                                        </View>
 
-                        <Text>Confirm Email:</Text>
-                        <View style={styles.amountInputContainer}>
-                            <TextInput
-                                placeholder="Confirm Email"
-                                onChangeText={setConfirmEmail}
-                                value={confirmEmail}
-                                keyboardType="email-address"
-                                style={styles.input}
-                            />
-                        </View>
+                                        <Text style={styles.modalText}>Confirm Phone Number:</Text>
+                                        <View style={{...styles.amountInputContainer, marginBottom:10}}>
+                                            <TextInput
+                                                placeholder="Confirm Phone Number"
+                                                onChangeText={text => setConfirmPhone(formatPhoneNumber(text))}
+                                                value={confirmPhone}
+                                                keyboardType="phone-pad"
+                                                style={styles.input}
+                                                maxLength={14}
+                                            />
+                                        </View>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Text style={{...styles.modalText}}>Enter Email Associated with Account:</Text>
+                                        <View style={{...styles.amountInputContainer, marginBottom:10}}>
+                                            <TextInput
+                                                placeholder="Email"
+                                                onChangeText={setEmail}
+                                                value={email}
+                                                keyboardType="email-address"
+                                                style={styles.input}
+                                            />
+                                        </View>
 
-                        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                                        <Text style={styles.modalText}>Confirm Email:</Text>
+                                        <View style={styles.amountInputContainer}>
+                                            <TextInput
+                                                placeholder="Confirm Email"
+                                                onChangeText={setConfirmEmail}
+                                                value={confirmEmail}
+                                                keyboardType="email-address"
+                                                style={styles.input}
+                                            />
+                                        </View>
+                                    </>
+                                )}
 
-                        <View style={styles.buttonContainer}>
-                            <Pressable
-                                style={[styles.button, styles.buttonConfirm]}
-                                onPress={handleWithdrawMoney}
-                            >
-                               {loading? <ActivityIndicator color={'white'}></ActivityIndicator> :<Text style={styles.buttonText}>Confirm</Text>}
-                            </Pressable>
-                            <Pressable
-                                style={[styles.button, styles.buttonCancel]}
-                                onPress={() => setTransferMoneyModalVisible(false)}
-                            >
-                                <Text style={styles.buttonText}>Cancel</Text>
-                            </Pressable>
-                        </View>
+                                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+                                <View style={styles.buttonContainer}>
+                                    <Pressable
+                                        style={[styles.button, styles.buttonConfirm]}
+                                        onPress={handleWithdrawMoney}
+                                    >
+                                        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Confirm</Text>}
+                                    </Pressable>
+                                    <Pressable
+                                        style={[styles.button, styles.buttonCancel]}
+                                        onPress={() => setTransferMoneyModalVisible(false)}
+                                    >
+                                        <Text style={styles.buttonText}>Cancel</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        </KeyboardAvoidingView>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
         </View>
     );
@@ -208,11 +265,11 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     button: {
-        flex: 1,
+        backgroundColor: '#2196F3',
         borderRadius: 10,
-        padding: 10,
-        elevation: 2,
-        marginHorizontal: 5,
+        padding: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     buttonConfirm: {
         backgroundColor: '#2196F3',
@@ -256,17 +313,11 @@ const styles = StyleSheet.create({
         color: 'red',
         marginBottom: 10,
     },
-    button: {
-        backgroundColor: '#2196F3',
-        borderRadius: 10,
-        padding: 15,
-        alignItems: 'center',
+    keyboardAvoidingView: {
+        flex: 1,
         justifyContent: 'center',
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
+        alignItems: 'center',
+        width: '100%',
     },
 });
 

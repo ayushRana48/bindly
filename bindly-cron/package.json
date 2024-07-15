@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@supabase/supabase-js": "^2.44.3",
+    "expo-server-sdk": "^3.10.0"
+  }
+}

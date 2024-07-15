@@ -1,3 +1,3 @@
-const stripe = require('stripe')('sk_test_51PVKUSBgzlfK4h49tBChOo2Da6guBHjIHM0uIsmM6VRS2osV5toT0kDcNoqNyZNRcwJlMPmvuGeXjKW61EP8pirO00PseMscAg');
+const stripe = require('stripe')('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');
 
 module.exports= { stripe };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, StyleSheet, Pressable, Modal, Alert, TouchableWithoutFeedback, ScrollView, RefreshControl } from "react-native";
+import { View, Text, Image, StyleSheet, Pressable, Modal, Alert, TouchableWithoutFeedback, ScrollView, RefreshControl, ActivityIndicator } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import placeholder from "../../assets/profile.png";
@@ -15,6 +15,7 @@ import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
 import { BASEROOT_URL } from "@env";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { removePushTokenAsync } from "../../notificationUtils";
 
 
 const ProfileScreen = () => {
@@ -23,6 +24,7 @@ const ProfileScreen = () => {
     const [imageSrc, setImageSrc] = useState(placeholder);
     const [openModal, setOpenModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (user && user.pfp) {
@@ -46,7 +48,7 @@ const ProfileScreen = () => {
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
             quality: 1,
@@ -95,7 +97,7 @@ const ProfileScreen = () => {
             imgBase64 = await blobToBase64(blob);
         }
 
-        fetch(`${BASEROOT_URL}/bindly/users/updateUser/${user.username}`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users/updateUser/${user.username}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -119,7 +121,7 @@ const ProfileScreen = () => {
 
     const getUser = async () => {
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/users/email/${email}`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users/email/${email}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
             const data = await response.json();
@@ -137,21 +139,32 @@ const ProfileScreen = () => {
     };
 
     const logOut = async () => {
+        if(loading){
+            return
+        }
+        setLoading(true)
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/auth/signOut`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signOut`, {
                 headers: { 'Content-Type': 'application/json' },
                 method: "POST",
             });
             const data = await response.json();
 
             if (response.status === 200) {
-                setEmail(null);
                 await AsyncStorage.removeItem('userEmail');
+                await removePushTokenAsync(user.username);
+                console.log('removeTest')
+                setEmail(null);
+
+
             } else if (data.error) {
                 console.log('Error received:', data.error);
             }
         } catch (error) {
             console.error('Network or server error:', error);
+        }
+        finally{
+            setLoading(false)
         }
     };
 
@@ -168,10 +181,7 @@ const ProfileScreen = () => {
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
         >
-            {/* <View style={styles.logoContainer}>
-                <Image source={require("../../assets/logo.png")} style={styles.logo} />
-            </View> */}
-
+    
         <Text style={{ fontSize: 30, fontWeight: 'bold', textAlign: 'center', alignItems: 'center', marginTop: 80 }}>Profile</Text>
             <View style={{ marginTop:40,marginRight:50,flexDirection:'row'}}>
                 <View style={{width:120, position: 'relative' }}>
@@ -182,7 +192,7 @@ const ProfileScreen = () => {
                 </View>
                 <View style={{marginLeft:40, alignContent:'center'}}>
                     <Text style={{fontSize:30,fontWeight:700}}>{user.username}</Text>
-                    <Text style={{fontSize:20,fontWeight:700}}>Balance: ${user.balance}</Text>
+                    <Text style={{fontSize:20,fontWeight:700}}>Balance: ${user.balance.toFixed(2)}</Text>
                 </View>
             </View>
 
@@ -231,14 +241,9 @@ const ProfileScreen = () => {
                 </TouchableWithoutFeedback>
             </Modal>
 
-            {/* <Text style={styles.ProfileText}>Profile: {user.username}</Text>
-            <Text style={{ fontSize: 20, marginBottom:60 }}>Balance: {user?.balance}</Text> */}
-            {/* <Pressable style={styles.pressableButton} onPress={getUser}>
-                <Text>Get User</Text>
-            </Pressable> */}
 
             <Pressable style={styles.pressableButton} onPress={logOut}>
-                <Text style={{color:'white',fontSize:18,fontWeight:800, textAlign:'center'}}t>Log Out</Text>
+                {loading ? <ActivityIndicator color={'white'}></ActivityIndicator> : <Text style={{color:'white',fontSize:18,fontWeight:800, textAlign:'center'}}t>Log Out</Text>}
             </Pressable>
         </ScrollView>
     );

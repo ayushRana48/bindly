@@ -22,7 +22,7 @@ export default function GroupsNav() {
 
 
     return (
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
                 <Stack.Screen name="GroupsList" component={GroupListScreen} />
                 <Stack.Screen name="NewGroup" component={NewGroupScreen} />
                 <Stack.Screen name="Group" component={GroupScreen} />

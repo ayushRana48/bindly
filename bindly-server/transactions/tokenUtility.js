@@ -1,10 +1,13 @@
 const fetch = require('node-fetch');
 
-const CLIENT_ID = 'AekF5AYefHO-N9KvZtOHDV6sWsd7KKvvt211XBrLaZrXRQlCjmHk8a88vA9b9pd0dg7xYGS1aCHMLiY-'
-const SECRET = 'ENyFJX8OwEbTWyXqF3dGQKrF_MFFPcbxuX5NyFpb5TnvUSqriFmhKB1jT-DEpw5r9l6b7hmbxbol91-k';
+// const CLIENT_ID = 'AekF5AYefHO-N9KvZtOHDV6sWsd7KKvvt211XBrLaZrXRQlCjmHk8a88vA9b9pd0dg7xYGS1aCHMLiY-'
+const CLIENT_ID = 'AbXWnwy9qO2FC5CDAL2SeOWOSSinFCuckHQU5mj-ivJSPMmwohSoc0n6Qaj1AffuEy9uSxhNckFXtLHi'
 
-// const BASE_URL = 'https://api-m.paypal.com';
-const BASE_URL = 'https://api-m.sandbox.paypal.com';
+// const SECRET = 'ENyFJX8OwEbTWyXqF3dGQKrF_MFFPcbxuX5NyFpb5TnvUSqriFmhKB1jT-DEpw5r9l6b7hmbxbol91-k';
+const SECRET = 'EDY4Wcky6wmFISCqv4LkV_bxKH0z1vaXaYUw9Y8wnP8Aj2JZGtnMB_BBMXGX4nqn-_YMA4hWUoQS0PUA';
+
+// const BASE_URL = 'https://api-m.sandbox.paypal.com';
+const BASE_URL = 'https://api-m.paypal.com';
 
 let accessToken = null;
 let tokenExpiry = null;

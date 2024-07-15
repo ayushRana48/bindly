@@ -164,7 +164,6 @@ async function processVeto(groupid) {
     }
 }
 
-module.exports = { processVeto };
 
 
 

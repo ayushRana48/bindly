@@ -13,7 +13,7 @@ export default function ActivityNav() {
 
 
     return (
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Navigator screenOptions={{ headerShown: false,gestureEnabled: false }}>
                 <Stack.Screen name="Activity" component={ActivityScreen} />
                 <Stack.Screen name="Veto" component={VetoScreen} />
             </Stack.Navigator>

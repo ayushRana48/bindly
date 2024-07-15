@@ -35,7 +35,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
         setAccepting(true);
 
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/invite/acceptInvite`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/acceptInvite`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -81,7 +81,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
         setRejecting(true);
 
         try {
-            const response = await fetch(`${BASEROOT_URL}/bindly/invite/deleteInvite/${inviteId}`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/deleteInvite/${inviteId}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -136,13 +136,14 @@ const InviteItem = ({ inviteData, removeInvite }) => {
                             </View>
                             <View style={styles.modalItem}>
                                 <Text style={styles.boldText}>Buy In: </Text>
-                                <Text>{inviteData?.groups?.buyin}</Text>
+                                <Text>${inviteData?.groups?.buyin.toFixed(2)}</Text>
                             </View>
                             <View style={styles.modalItem}>
                                 <Text style={styles.boldText}>Description: </Text>
                                 <Text>{inviteData?.groups?.description}</Text>
                             </View>
-                            <Text>You can get your buy-in back if you leave the group before {new Date(inviteData?.groups?.startdate).toLocaleDateString()}.</Text>
+                            <Text>You can get your buy-in back if you leave the group before {new Date(inviteData?.groups?.startdate).toLocaleDateString() + ' ' + new Date(inviteData?.groups?.startdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        }</Text>
                         </View>
                         <View style={styles.modalButtons}>
                             <Pressable style={styles.confirmButton} onPress={acceptInvite} disabled={accepting}>

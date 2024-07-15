@@ -23,6 +23,15 @@ app.get('/hello', (req, res) => {
   res.send('Hello10 World!');
 });
 
+
+app.post('/log', (req, res) => {
+  const {logData} = req.body;
+  console.log('Received log data:', logData);
+  res.status(200).json({ message: 'Log received' });
+});
+
+
+
 app.use('/bindly', require('./routes/bindly'));
 
 

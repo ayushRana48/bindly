@@ -1,12 +1,12 @@
 const { supabase } = require('../initSupabase');
-const { uploadFile } = require('./uploadFile')
 const { v4: uuidv4 } = require('uuid');
-// const ffmpeg = require('fluent-ffmpeg');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { execFile } = require('child_process');
+const { Expo } = require('expo-server-sdk');
+const expo = new Expo();
 
 
 
@@ -238,7 +238,7 @@ async function updatePost(postid, updateParams) {
     // Update post
     const { data, error } = await supabase
       .from('post')
-      .update({ postid, username, groupid: groupId, photolink, videolink, caption, timepost: time, timecycle })
+      .update({ postid, username, groupid: groupId, photolink, videolink, caption, timepost: time, timecycle,veto:[] })
       .eq('postid', postid)
       .select()
       .single();
@@ -285,7 +285,11 @@ async function deletePost(postid) {
     .delete()
     .eq('postid', postid)
 
-  return { data, error };
+  if (error){
+    return {error}
+  }
+
+  return { data:{message:'success'}};
 }
 
 
@@ -293,15 +297,23 @@ async function deletePost(postid) {
 async function addVeto(postid, username, groupid) {
   const { data: userData, error: userError } = await supabase
     .from('usergroup')
-    .select('*')
+    .select(`
+      *,
+      user:username!inner(
+        tokens
+      ),
+      group:groupid!inner(
+        groupname
+      )
+    `)
     .eq('groupid', groupid)
     .eq('username', username)
     .single();
 
   if (userError) {
-    console.log('user', userError)
-    if (userError.message == 'JSON object requested, multiple (or no) rows returned') {
-      return { error: { message: 'user not in group' } }
+    console.log('user', userError);
+    if (userError.message === 'JSON object requested, multiple (or no) rows returned') {
+      return { error: { message: 'user not in group' } };
     }
     return { error: userError };
   }
@@ -313,9 +325,8 @@ async function addVeto(postid, username, groupid) {
     .single();
 
   if (postError) {
-    console.log(postid)
-    console.log('post', postError)
-
+    console.log(postid);
+    console.log('post', postError);
     return { error: postError };
   }
 
@@ -331,10 +342,32 @@ async function addVeto(postid, username, groupid) {
     .select()
     .single();
 
-  return { data: updateData, error: updateError };
+  if (updateError) {
+    return { data: updateData, error: updateError };
+  }
+
+  const vetoCount = newVetoList.length;
+  const ordinalVetoCount = getOrdinalSuffix(vetoCount);
+
+  // Notify the user who received the veto
+  const tokens = userData.user.tokens.filter(token => Expo.isExpoPushToken(token));
+  const notifications = tokens.map(token => ({
+    to: token,
+    sound: 'default',
+    title: `Bindly`,
+    body: `You received your ${ordinalVetoCount} veto for group ${userData.group.groupname}`,
+  }));
+
+  await sendBatchNotifications(notifications);
+
+  return { data: updateData, error: null };
 }
 
-
+function getOrdinalSuffix(n) {
+  const s = ["th", "st", "nd", "rd"],
+        v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
 
 async function removeVeto(postid, username, groupid) {
   const { data: userData, error: userError } = await supabase
@@ -459,6 +492,18 @@ async function postStatus(username, groupid) {
   } catch (e) {
     console.error('Unexpected error:', e);
     return { error: e };
+  }
+}
+
+
+async function sendBatchNotifications(notifications) {
+  const chunks = expo.chunkPushNotifications(notifications);
+  for (const chunk of chunks) {
+    try {
+      await expo.sendPushNotificationsAsync(chunk);
+    } catch (error) {
+      console.error('Error sending notifications:', error);
+    }
   }
 }
 

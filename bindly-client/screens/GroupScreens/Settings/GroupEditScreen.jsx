@@ -80,7 +80,7 @@ const GroupEditScreen = () => {
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
             quality: 1,
@@ -189,7 +189,7 @@ const GroupEditScreen = () => {
                 const startDateUTC = startTime.toISOString();
                 const endDateUTC = endTime.toISOString();
 
-                const response = await fetch(`${BASEROOT_URL}/bindly/group/updateGroup/${groupid}`, {
+                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupid}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -249,7 +249,7 @@ const GroupEditScreen = () => {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View>
                         <Pressable style={styles.cancel} onPress={cancel}>
-                            <Text style={{ color: "red" }}>cancel</Text>
+                            <Text style={{ color: "red" }}>Cancel</Text>
                         </Pressable>
                         <View style={styles.logoContainer}>
                             <Text style={styles.title}>Edit Group</Text>
@@ -300,7 +300,7 @@ const GroupEditScreen = () => {
                         </View>
 
                         <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Description</Text>
+                            <Text style={styles.label}>Task Description</Text>
                             <TextInput
                                 style={styles.input}
                                 autoCapitalize='none'
@@ -319,7 +319,7 @@ const GroupEditScreen = () => {
 
                         {show && (
                             <View>
-                                <DateTimePicker mode="datetime" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={tomorrow} />
+                                <DateTimePicker mode="datetime" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={new Date(gd.group.startdate)} />
                                 <View style={styles.centeredRow}>
                                     <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
                                         <Text style={styles.buttonText}>Done</Text>
@@ -340,7 +340,7 @@ const GroupEditScreen = () => {
                             />
                         </View>
 
-                        <View style={styles.inputContainer}>
+                        {/* <View style={styles.inputContainer}>
                             <Text style={styles.label}>Buy In</Text>
                             <TextInput
                                 style={styles.input}
@@ -350,7 +350,7 @@ const GroupEditScreen = () => {
                                 placeholder="202"
                                 keyboardType="numeric"
                             />
-                        </View>
+                        </View> */}
 
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Tasks Per Week</Text>

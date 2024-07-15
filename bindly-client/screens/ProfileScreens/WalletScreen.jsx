@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from '../../UserContext';
 import backArrow from '../../assets/backArrow.png';
@@ -12,13 +12,16 @@ const WalletScreen = () => {
     const [cards, setCards] = useState([]);
     const { user } = useUserContext();
     const navigation = useNavigation();
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         if (user && user.stripeid) {
-            fetch(`${BASEROOT_URL}/bindly/stripe/getSavedCards/${user.stripeid}`)
+            setLoading(true)
+            fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/getSavedCards/${user.stripeid}`)
                 .then(response => response.json())
                 .then(data => setCards(data.data))
-                .catch(error => console.error('Error fetching cards:', error));
+                .catch(error => console.error('Error fetching cards:', error))
+                .finally(() => setLoading(false));
         }
     }, [user]);
 
@@ -32,22 +35,25 @@ const WalletScreen = () => {
                 <Image style={styles.backArrowImage} source={backArrow} />
             </Pressable>
             <Text style={styles.title}>Wallet</Text>
-            <View style={{paddingHorizontal:20}}>
-                <View style={{borderColor:'black', borderBottomWidth:0.5}}>
-                <Text style={{fontSize:20,fontWeight:'600'}}>Balance</Text>
-                </View>
-                <Text style={styles.balance}>${user.balance}</Text>
-            </View>
-            <AddCard setCards={setCards} />
-            <View style={{paddingHorizontal:20}}>
-                <View style={{borderColor:'black', borderBottomWidth:0.5}}>
-                <Text style={{fontSize:20,fontWeight:'600'}}>Balance</Text>
-                </View>
-                </View>
+            {loading ? <ActivityIndicator></ActivityIndicator>
+                : <>
+                    <View style={{ paddingHorizontal: 20 }}>
+                        <View style={{ borderColor: 'black', borderBottomWidth: 0.5 }}>
+                            <Text style={{ fontSize: 20, fontWeight: '600' }}>Balance</Text>
+                        </View>
+                        <Text style={styles.balance}>${user.balance.toFixed(2)}</Text>
+                    </View>
+                    <AddCard setCards={setCards} cards={cards}/>
+                    <View style={{ paddingHorizontal: 20 }}>
+                        <View style={{ borderColor: 'black', borderBottomWidth: 0.5 }}>
+                            <Text style={{ fontSize: 20, fontWeight: '600' }}>Balance</Text>
+                        </View>
+                    </View>
 
-                <DepositMoney cards={cards} />
-                <TransferMoney />
-           
+                    <DepositMoney cards={cards} />
+                    <TransferMoney />
+                </>
+            }
 
 
         </View>
@@ -64,7 +70,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 40,
         left: 30,
-        zIndex:10,
+        zIndex: 10,
     },
     backArrowImage: {
         height: 40,
@@ -74,10 +80,10 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginTop:60,
-        marginBottom:10
+        marginTop: 60,
+        marginBottom: 10
     },
-    balance:{
+    balance: {
         fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
