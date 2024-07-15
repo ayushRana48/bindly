@@ -4,7 +4,8 @@
 node_modules/
 
 .env.local
-.initStripe.js
+
+initStripe.js
 
 # Expo
 .expo/
