@@ -6,8 +6,9 @@ node_modules/
 .env.local
 
 initStripe.js
+transactions/tokenUtility.js
 
-# Expo
+
 .expo/
 dist/
 web-build/
