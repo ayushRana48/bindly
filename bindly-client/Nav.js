@@ -26,28 +26,28 @@ export default function Nav() {
                 setEmail(userEmail)
                 return
             }
-            try {
-                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/getUser`, {
-                    headers: { 'Content-Type': 'application/json' },
-                });
-                const data = await response.json();
+            setLoading(false)
+            // try {
+            //     const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/getUser`, {
+            //         headers: { 'Content-Type': 'application/json' },
+            //     });
+            //     const data = await response.json();
 
-                if (response.status === 200) {
-                    if(data.user){
-                        setEmail(data.user.email)
-                        await AsyncStorage.setItem('userEmail', `${data.user.email}`);
-                    }
-                    else{                
-                        setLoading(false)
-                    }
-                } else if (data.error) {
-                    console.log('Error received:', data.error);
-                }
+            //     if (response.status === 200) {
+            //         if(data.user){
+            //             setEmail(data.user.email)
+            //         }
+            //         else{                
+            //             setLoading(false)
+            //         }
+            //     } else if (data.error) {
+            //         console.log('Error received:', data.error);
+            //     }
 
-            } catch (error) {
-                setLoading(false)
-                console.error('Network or server error:', error);
-            }
+            // } catch (error) {
+            //     setLoading(false)
+            //     console.error('Network or server error:', error);
+            // }
         }
 
         getUser();

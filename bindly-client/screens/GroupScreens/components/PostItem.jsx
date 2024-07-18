@@ -38,10 +38,15 @@ const PostComponent = ({ postid, imageLink, videoLink, username, caption, users,
 
     useEffect(() => {
         for (let i = 0; i < users?.length; i++) {
-            const user = users[i];
-            if (user.username == username) {
-                if (user.users.pfp) {
-                    setPfpLink({ uri: user.users.pfp });
+            const user1 = users[i];
+            if (user1.username == username) {
+                console.log('user kook', username)
+                if (user1.users.pfp) {
+                    console.log('pfp', user1.users.pfp)
+                    setPfpLink({ uri: user1.users.pfp });
+                }
+                else{
+                    setPfpLink(placeholder)
                 }
             }
         }
@@ -334,13 +339,14 @@ const styles = StyleSheet.create({
         marginVertical: 10,
     },
     header: {
-        paddingLeft: 28,
-        paddingRight: 28,
+        paddingLeft: 14,
+        paddingRight: 2,
         paddingTop: 10,
         paddingBottom: 10,
         flexDirection: 'row',
-        justifyContent: 'center',
         alignItems: 'center',
+        width:width,
+        margin:'auto'
     },
     username: {
         fontWeight: 'bold',
@@ -363,13 +369,17 @@ const styles = StyleSheet.create({
         margin: 'auto',
     },
     captionContainer: {
-        paddingLeft: 28,
-        paddingRight: 28,
+        paddingLeft: 14,
+        paddingRight: 14,
         paddingTop: 10,
         paddingBottom: 10,
+        width: width,
+        margin:'auto'
+
     },
     caption: {
         fontSize: 14,
+
     },
     date: {
         color: '#757575',

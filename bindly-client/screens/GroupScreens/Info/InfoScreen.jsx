@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Alert } from "react-native";
+import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Alert, Modal } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 import placeholder from '../../../assets/GroupIcon.png';
@@ -18,21 +18,19 @@ const InfoScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useUserContext();
   const [posts, setPosts] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([])
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     if (groupData?.leaderboard) {
       setLeaderboard(groupData?.leaderboard)
     }
-    if(groupData?.group?.pfp){
+    if (groupData?.group?.pfp) {
       setImageUrl(groupData.group.pfp)
     }
   }, [groupData]);
 
-
-
   const getLeaderBoard = async () => {
-
     try {
       const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/getLeaderboard/${groupData.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
@@ -44,16 +42,13 @@ const InfoScreen = () => {
       }
 
       const res = await response.json();
-
       setLeaderboard(res)
-
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
-
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -62,7 +57,7 @@ const InfoScreen = () => {
 
   useEffect(() => {
     getLeaderBoard()
-  }, [groupData?.group?.groupid])
+  }, [groupData?.group?.groupid]);
 
   const back = () => {
     navigation.goBack();
@@ -74,7 +69,6 @@ const InfoScreen = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-       
         style={{ padding: 24 }}
       >
         <Pressable style={styles.backArrow} onPress={back}>
@@ -85,27 +79,61 @@ const InfoScreen = () => {
 
           <View style={{ flexDirection: 'row' }}>
             <View>
-              <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading ? { uri: imageUrl } : placeholder} />
+              <Image
+                style={{ width: 100, height: 100, borderRadius: 8 }}
+                source={imageUrl.length > 0 && !loading ? { uri: imageUrl } : placeholder}
+              />
             </View>
-            <View style={{ flexDirection: 'row', width: 160, justifyContent: 'space-between', marginTop: 20, marginLeft: 40 }}>
-              <Text>{groupData.group.description}</Text>
+            <View style={{ flex: 1, marginTop: 10, marginLeft: 20 }}>
+              <View style={{ flexDirection: 'row', marginBottom: 5, flexWrap: 'wrap' }}>
+                <Text style={{ fontWeight: '700' }}>Task Per Week:</Text>
+                <Text>{groupData.group.tasksperweek}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', marginBottom: 5, flexWrap: 'wrap', paddingRight:10 }}>
+                <Text numberOfLines={5} ellipsizeMode="tail" onPress={() => setModalVisible(true)}>
+                <Text style={{ fontWeight: '700' }}>Description: </Text>
+                  {groupData.group.description}
+                </Text>
+              </View>
             </View>
           </View>
-
         </View>
 
-        <Text style={{textAlign:'center', fontSize:18}}>Leaderboard</Text>
+        <Text style={{ textAlign: 'center', fontSize: 18 }}>Leaderboard</Text>
 
         {loading && <ActivityIndicator size="large" color="#0000ff" />}
 
-        {!loading &&
-          (< ScrollView style={{paddingBottom:32}}>
+        {!loading && (
+          <ScrollView style={{ paddingBottom: 32 }}>
             {leaderboard.map((l) => <LeaderboardItem key={l.username} memberData={l}></LeaderboardItem>)}
           </ScrollView>
-          )}
+        )}
+      </ScrollView>
 
-      </ScrollView >
-    </View >
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Description</Text>
+            <ScrollView>
+              <Text>{groupData.group.description}</Text>
+            </ScrollView>
+            <Pressable
+              style={[styles.button, styles.buttonClose]}
+              onPress={() => setModalVisible(!modalVisible)}
+            >
+              <Text style={styles.textStyle}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
@@ -173,6 +201,48 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: 'center',
     marginTop: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '80%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  button: {
+    borderRadius: 8,
+    padding: 10,
+    elevation: 2,
+  },
+  buttonClose: {
+    backgroundColor: '#2196F3',
+    marginTop: 15,
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 
