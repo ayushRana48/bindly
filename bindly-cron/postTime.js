@@ -3,6 +3,7 @@ const { Expo } = require('expo-server-sdk');
 const expo = new Expo();
 
 const notifyPost = async () => {
+    console.log('call')
     const currTime = new Date();
     const allNotifications = [];
 
@@ -28,6 +29,7 @@ const notifyPost = async () => {
         if (currTime < groupStartDate || currTime > groupEndDate) {
             continue;
         }
+        
 
         // Calculate cycle start time based on the group's start date
         const cycleStartTime = new Date(
@@ -46,6 +48,8 @@ const notifyPost = async () => {
         const twelveHoursLeftTime = new Date(cycleStartTime.getTime() + 12 * 60 * 60 * 1000);
         const fourHoursLeftTime = new Date(cycleStartTime.getTime() + 20 * 60 * 60 * 1000);
 
+        const cycleEndTime = new Date(cycleStartTime.getTime() + 24 * 60 * 60 * 1000);
+
         // Fetch users in the group along with their tokens from the users table
         const { data: userGroups, error: userGroupError } = await supabase
             .from('usergroup')
@@ -60,6 +64,7 @@ const notifyPost = async () => {
             console.error("Error fetching user groups:", userGroupError);
             continue;
         }
+
 
         for (const userGroup of userGroups) {
             const { username, post_notification_time, users: { tokens } } = userGroup;
@@ -76,8 +81,11 @@ const notifyPost = async () => {
 
             const timepost = postData ? new Date(postData.timepost) : null;
 
-            const shouldNotify12Hours = (!timepost || (timepost && (new Date(cycleStartTime).getTime()-timepost) >= 24 * 60 * 60 * 1000)) && (currTime >= twelveHoursLeftTime);
-            const shouldNotify4Hours = (!timepost || (timepost && (new Date(cycleStartTime).getTime()-timepost) >= 24 * 60 * 60 * 1000)) && (currTime >= fourHoursLeftTime);
+ 
+            const shouldNotify12Hours = (!timepost || (timepost && (new Date(cycleEndTime).getTime()-timepost) >= 24 * 60 * 60 * 1000)) && (currTime >= twelveHoursLeftTime);
+            const shouldNotify4Hours = (!timepost || (timepost && (new Date(cycleEndTime).getTime()-timepost) >= 24 * 60 * 60 * 1000)) && (currTime >= fourHoursLeftTime);
+ 
+
 
             if (shouldNotify12Hours && (!userNotificationTime || userNotificationTime < twelveHoursLeftTime)) {
                 allNotifications.push(...createNotifications(tokens, group.groupname, `You have 12 hours left to post in ${group.groupname}`));
@@ -90,6 +98,7 @@ const notifyPost = async () => {
     }
 
     // Send all collected notifications in batches
+    console.log(allNotifications)
     await sendBatchNotifications(allNotifications);
 };
 
@@ -128,5 +137,6 @@ async function updateUserNotificationTime(username, groupid, time) {
         console.error("Error updating notification time:", error);
     }
 }
+
 
 module.exports = { notifyPost };

@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
+    "scheme": "com.airborm.bindly",
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
@@ -14,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.airborm.bindly",
-      "buildNumber": "22"
+      "buildNumber": "23"
     },
     "android": {
       "adaptiveIcon": {

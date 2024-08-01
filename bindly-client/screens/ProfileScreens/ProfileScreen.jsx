@@ -9,6 +9,7 @@ import galleryIcon from "../../assets/galleryIcon.png";
 import trashIcon from "../../assets/trashIcon.png";
 import rules from "../../assets/rules.png";
 import wallet from "../../assets/wallet.png";
+import connect from "../../assets/connect.png";
 
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../utils/compressImage";
@@ -16,6 +17,25 @@ import blobToBase64 from "../../utils/blobToBase64";
 import { BASEROOT_URL } from "@env";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { removePushTokenAsync } from "../../notificationUtils";
+
+
+const LOGGING_URL = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/log';
+
+async function logToServer(message) {
+  console.log(`message:  ${message}`);
+  try {
+    await fetch(LOGGING_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ logData: message }),
+    });
+  } catch (error) {
+    console.error('Error logging to server:', error);
+  }
+}
+
 
 
 const ProfileScreen = () => {
@@ -42,6 +62,11 @@ const ProfileScreen = () => {
 
     const toRules = () => {
         navigation.navigate("Rules");
+    
+    };
+
+    const toConnection = () => {
+        navigation.navigate("Connection");
     
     };
 
@@ -91,6 +116,13 @@ const ProfileScreen = () => {
 
     const submitPicture = async (uri) => {
         let imgBase64 = "";
+
+
+        console.log(uri)
+        logToServer('submitting pic in profile screen')
+        logToServer(`uri here: ${uri}`)
+
+
         if (uri) {
             const response = await fetch(uri);
             const blob = await response.blob();
@@ -196,22 +228,25 @@ const ProfileScreen = () => {
                 </View>
             </View>
 
-            <View style={{flexDirection:'row',width:'100%',justifyContent:'space-around', marginTop:50}}>
-                <Pressable style={styles.wallet} onPress={toWallet}>
-                    <View style={{margin:'auto'}}>
-                    <Image resizeMode="contain"  style={{width:100, height:100, marginBottom:5}} source={wallet} />
-                    <Text style={{fontSize:18, textAlign:'center', fontWeight:400}}>Wallet</Text>
-                    </View>
+            <View style={{width:'100%', marginTop:50, borderColor:'black'}}>
+                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15, textAlign:'center'}} onPress={toWallet}>
+                    <Image resizeMode="contain"  style={{width:30, height:30}} source={wallet} />
+                    <Text style={{fontSize:18, marginLeft:20,textAlign:'center',marginVertical:'auto', fontWeight:400}}>Wallet</Text>
+                    <Text style={{fontSize:20,textAlign:'center',marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
                 </Pressable>
 
-                <Pressable style={styles.wallet} onPress={toRules}>
-                    <View style={{margin:'auto'}}>
-                    <Image resizeMode="contain"  style={{width:120, height:100, marginBottom:5}} source={rules} />
-                    <Text style={{fontSize:18, textAlign:'center', fontWeight:400}}>Rules</Text>
-                    </View>
+                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15, textAlign:'center'}} onPress={toRules}>
+                    <Image resizeMode="contain"  style={{width:30, height:30}} source={rules} />
+                    <Text style={{fontSize:18, marginLeft:20,textAlign:'center',marginVertical:'auto', fontWeight:400}}>Rules</Text>
+                    <Text style={{fontSize:20,textAlign:'center',marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
                 </Pressable>
 
-               
+                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15, textAlign:'center'}} onPress={toConnection}>
+                    <Image resizeMode="contain"  style={{width:30, height:30}} source={connect} />
+                    <Text style={{fontSize:18, marginLeft:20,textAlign:'center',marginVertical:'auto', fontWeight:400}}>Connections</Text>
+                    <Text style={{fontSize:20,textAlign:'center',marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
+                </Pressable>
+
             </View>
             
 

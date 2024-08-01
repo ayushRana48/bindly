@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ProfileScreen from './ProfileScreen';
 import WalletScreen from './WalletScreen';
 import RulesScreen from './RulesScreen';
+import ConnectionScreen from './ConnectionScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +16,7 @@ export default function ProfileNav() {
                 <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
                 <Stack.Screen name="Wallet" component={WalletScreen} />
                 <Stack.Screen name="Rules" component={RulesScreen} />
+                <Stack.Screen name="Connection" component={ConnectionScreen} />
 
             </Stack.Navigator>
     );

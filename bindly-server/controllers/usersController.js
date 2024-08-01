@@ -70,6 +70,9 @@ async function updateUserController(req, res) {
 
   const updateParams = req.body;
 
+  console.log('updateUserController is being called: ', username)
+
+
 
 
   try {

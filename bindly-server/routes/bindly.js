@@ -11,6 +11,7 @@ const inviteController =  require('../controllers/inviteController.js');
 const notifyvetoController =  require('../controllers/notifyVetoController.js');
 const stripeController = require('../controllers/stripeController');
 const paypalController = require('../controllers/paypalController.js')
+const stravaController = require('../controllers/stravaController.js')
 const notificationController = require('../controllers/notificationController.js')
 
 router.post('/users/createUser',userController.createUserController)
@@ -82,6 +83,8 @@ router.get('/auth/getUser',authController.getUserController)
 
 router.get('/notifyveto/:username',notifyvetoController.getNotifyVetoByGroupController)
 
+router.post('/notification/registerToken', notificationController.registerTokenController);
+router.post('/notification/removeToken', notificationController.removeTokenController);
 
 
 router.post('/stripe/saveCard', stripeController.saveCardController);
@@ -92,7 +95,10 @@ router.get('/stripe/getSavedCards/:customerId', stripeController.getSavedCardsCo
 
 router.post('/paypal/payout', paypalController.createPayoutController);
 
-router.post('/notification/registerToken', notificationController.registerTokenController);
-router.post('/notification/removeToken', notificationController.removeTokenController);
+
+router.post('/strava/addRefresh', stravaController.addStravaRefreshController);
+router.post('/strava/reauthorize', stravaController.reauthorizeStravaController);
+router.post('/strava/revoke', stravaController.revokeStravaController);
+router.get('/strava/getActivities', stravaController.getActivitiesController);
 
 module.exports = router;

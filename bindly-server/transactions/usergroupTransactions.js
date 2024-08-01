@@ -1,5 +1,5 @@
 const { supabase } = require('../initSupabase');
-const { processGroups }= require('./groupTransactions');
+const { processGroups } = require('./groupTransactions');
 
 // Function to create a new group
 async function createUserGroup(usergroupid, username, groupid) {
@@ -28,8 +28,8 @@ async function createUserGroup(usergroupid, username, groupid) {
 
   const newBalance = userData.balance - groupData.buyin;
 
-  if(newBalance<0){
-    return {error: 'Insufficient Funds'}
+  if (newBalance < 0) {
+    return { error: 'Insufficient Funds' }
   }
 
   const { data: balanceUpdate, error: balanceUpdateError } = await supabase
@@ -47,7 +47,7 @@ async function createUserGroup(usergroupid, username, groupid) {
     .select()
     .single();
 
-  return { data,newBalance, error };
+  return { data, newBalance, error };
 }
 
 
@@ -100,7 +100,7 @@ async function getUserGroupsByGroupId(groupid) {
 
   // Structure the final result
   const result = {
-    members:userGroupData,
+    members: userGroupData,
     group: groupData,
   };
 
@@ -115,17 +115,34 @@ async function getUserGroupsByGroupId(groupid) {
 async function getUserGroupsByUsername(username) {
 
   const { data: allGroups, error: error } = await supabase
-  .from('usergroup')
-  .select(`
+    .from('usergroup')
+    .select(`
     groupid,
     groups:groups!inner(groupid,archive,enddate)  -- Perform an inner join with the groups table
   `)
-  .eq('username', username)
-  .eq('groups.archive', false);  // Check the archive attribute on the groups table
+    .eq('username', username)
+    .eq('groups.archive', false);  // Check the archive attribute on the groups table
 
   console.log(allGroups)
 
-  const groups = allGroups.map(g=>g.groups)
+  const currentDate = new Date();
+
+  // Get the user's timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Store both the date and the timezone in the database
+  const { data: userUpdate, error: userError } = await supabase
+    .from('users')
+    .update({
+      lastlogin: currentDate.toISOString(),
+      timezone: timezone
+    })
+    .eq('username', username);
+
+  
+
+
+  const groups = allGroups.map(g => g.groups)
 
   console.log(groups)
 
@@ -241,22 +258,22 @@ async function deleteUserGroup(username, groupId) {
   }
 }
 
-async function getUserGroupByUsernameGroup(username,groupId){
+async function getUserGroupByUsernameGroup(username, groupId) {
   const { data, error } = await supabase
-  .from('usergroup')
-  .select()
-  .eq('username', username)
-  .eq('groupid', groupId)
-  .single();
+    .from('usergroup')
+    .select()
+    .eq('username', username)
+    .eq('groupid', groupId)
+    .single();
 
 
   if (error) {
     return { error };
   }
-  else{
-    return{data}
+  else {
+    return { data }
   }
 }
 
 
-module.exports = { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername,updateUserGroup, deleteUserGroup,getUserGroupByUsernameGroup };
+module.exports = { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername, updateUserGroup, deleteUserGroup, getUserGroupByUsernameGroup };

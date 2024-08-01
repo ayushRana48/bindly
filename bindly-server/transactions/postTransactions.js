@@ -16,7 +16,6 @@ async function createPost(username, groupid, photolink, videolink, caption, time
 
   const postid = uuidv4()
 
-
   const { data, error } = await supabase
     .from('post')
     .insert([
@@ -449,6 +448,10 @@ async function postStatus(username, groupid) {
       startdate.getSeconds()
     );
 
+    if (currentTime < cycleStartTime) {
+      cycleStartTime.setDate(cycleStartTime.getDate() - 1);
+    }
+
     if (postError) {
       console.error('Error fetching post data:', postError);
       if (postError.message == 'JSON object requested, multiple (or no) rows returned') {
@@ -462,9 +465,7 @@ async function postStatus(username, groupid) {
     console.log('timepost', timepost);
 
     // If the current time is before today's cycle start time, use the previous day's cycle start time
-    if (currentTime < cycleStartTime) {
-      cycleStartTime.setDate(cycleStartTime.getDate() - 1);
-    }
+
 
     const cycleEndTime = new Date(cycleStartTime.getTime() + 24 * 60 * 60 * 1000);
     const isInSame24HourCycle = timepost >= cycleStartTime && timepost < cycleEndTime;

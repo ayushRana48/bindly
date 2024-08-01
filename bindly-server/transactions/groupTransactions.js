@@ -81,17 +81,7 @@ async function getAllGroups() {
 
 
 function distributeMoney(leaderboard, buyin) {
-
-  // const leaderboard=[
-  //   {'user':'user1',place:1},
-  //   {'user':'user2',place:1},
-  //   {'user':'user3',place:1},
-  //   {'user':'user4',place:4}
-  // ]
-
-
-
-  let rankDict = new Array(leaderboard.length);  // Creates an array of length 5
+  let rankDict = new Array(leaderboard.length);
 
   for (let i = 0; i < rankDict.length; i++) {
     rankDict[i] = [];
@@ -99,132 +89,97 @@ function distributeMoney(leaderboard, buyin) {
 
   const ranks = new Set();
 
-
   for (let i = 0; i < leaderboard.length; i++) {
-    const currUser = leaderboard[i]
-    const currPlace = currUser.place
-    let currArr = rankDict[currPlace - 1]
-    currArr.push(currUser)
-    ranks.add(currPlace)
+    const currUser = leaderboard[i];
+    const currPlace = currUser.place;
+    let currArr = rankDict[currPlace - 1];
+    currArr.push(currUser);
+    ranks.add(currPlace);
   }
 
   let ranksArr = Array.from(ranks);
 
-  const arr = []
+  const arr = [];
 
   for (let i = 0; i < ranksArr.length; i++) {
-    const currRank = ranksArr[i]
-    const currList = rankDict[currRank - 1]
-    const currentObj = { rank: currRank, members: currList, quantity: currList.length }
-    arr.push(currentObj)
+    const currRank = ranksArr[i];
+    const currList = rankDict[currRank - 1];
+    const currentObj = { rank: currRank, members: currList, quantity: currList.length };
+    arr.push(currentObj);
   }
 
+  // const middleIndex = Math.floor(arr.length / 2);
+  // const isOdd = arr.length % 2 !== 0;
 
-
-
-  const middleIndex = Math.floor(arr.length / 2);
-  const isOdd = arr.length % 2 !== 0;
-
-  // Divide into top half and bottom half
-  let topHalf, bottomHalf;
-  if (isOdd) {
-    topHalf = arr.slice(0, middleIndex);
-    bottomHalf = arr.slice(middleIndex + 1);
-  } else {
-    topHalf = arr.slice(0, middleIndex);
-    bottomHalf = arr.slice(middleIndex);
-  }
-
-
-  let bottomTotalMoney = 0;
-
-  console.log(bottomHalf)
-  for (let i = 0; i < bottomHalf.length; i++) {
-    const currGroup = bottomHalf[i]
-    bottomTotalMoney += currGroup.members.length * buyin
-  }
-
-
-  console.log('money')
-  console.log(bottomTotalMoney)
-
-
-  const totalGain = bottomTotalMoney;
-  const totalLoss = bottomTotalMoney;
-
-  // Calculate percentage increment for top and bottom halves
-  const incrementPercentage = 1.2; // 20% increment
-  let sumTop = 0, sumBottom = 0;
-
-
-  for (let i = topHalf.length - 1; i >= 0; i--) {
-    console.log(i, 'i')
-    console.log(topHalf[i].members.length + '*' + incrementPercentage, " **", (topHalf.length - 1 - i))
-    sumTop += topHalf[i].members.length * Math.pow(incrementPercentage, topHalf.length - 1 - i);
-    // console.log(topHalf[i].members.length+'*'+Math.pow(incrementPercentage,topHalf.length-1 - i))
-  }
-
-
-  for (let i = 0; i < bottomHalf.length; i++) {
-    sumBottom += bottomHalf[i].members.length * Math.pow(incrementPercentage, i);
-  }
-
-
-  // Distribute money in the top half (reverse order for geometric progression)
-  const baseGain = totalGain / sumTop
-  const baseLoss = totalLoss / sumBottom
-
-  console.log(baseLoss)
-
-  for (let i = topHalf.length - 1; i >= 0; i--) {
-    const rankGain = baseGain * (Math.pow(incrementPercentage, ((topHalf.length - 1) - i)));
-    topHalf[i].members.forEach(user => user.netMoney = buyin + rankGain);
-
-  }
-
-  console.log(bottomHalf)
-
-  // Distribute money in the bottom half
-  for (let i = 0; i < bottomHalf.length; i++) {
-    const rankLoss = baseLoss * (Math.pow(incrementPercentage, i));
-    bottomHalf[i].members.forEach(user => user.netMoney = buyin - rankLoss);
-  }
-
-
-  console.log(bottomHalf)
-
+  // let topHalf, bottomHalf;
   // if (isOdd) {
-  //   leaderboard[middleIndex].netMoney = 0;
+  //   topHalf = arr.slice(0, middleIndex);
+  //   bottomHalf = arr.slice(middleIndex + 1);
+  // } else {
+  //   topHalf = arr.slice(0, middleIndex);
+  //   bottomHalf = arr.slice(middleIndex);
   // }
 
-  // Combine the halves back together
-  let newLeader = []
-  for (let i = 0; i < topHalf.length; i++) {
-    const currMembers = topHalf[i].members
+  // // Calculate losses for the bottom half
+  // let remainingLoss = 0;
+  // for (let i = bottomHalf.length - 1; i >= 0; i--) {
+  //   const currGroup = bottomHalf[i];
+  //   const lossPerMember = buyin * Math.pow(1/1.2, bottomHalf.length - 1 - i);
+  //   currGroup.members.forEach(user => user.netMoney = buyin - lossPerMember);
+  //   remainingLoss += lossPerMember * currGroup.members.length;
+  // }
+
+  const totalGain = buyin *leaderboard.length; // Total gain is the same as the total loss
+
+  console.log(totalGain,'totalgain')
+  const incrementPercentage =0.5;
+  let sumTop = 0;
+
+  for (let i = arr.length - 1; i >= 0; i--) {
+    sumTop += arr[i].members.length * incrementPercentage* (arr.length - 1 - i);
+    console.log(arr[i].members.length, '*', incrementPercentage, ' * ', (arr.length - 1 - i))
+    console.log(sumTop)
+  }
+
+  const baseGain = totalGain / sumTop;
+
+  console.log('baseGain', baseGain)
+
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const rankGain = baseGain * incrementPercentage * (arr.length - 1 - i);
+    console.log(baseGain, '*', incrementPercentage, ' * ', (arr.length - 1 - i))
+    console.log(rankGain)
+
+    arr[i].members.forEach(user => user.netMoney = rankGain);
+  }
+
+
+
+  let newLeader = [];
+  for (let i = 0; i < arr.length; i++) {
+    const currMembers = arr[i].members;
     for (let j = 0; j < currMembers.length; j++) {
-      newLeader.push(currMembers[j])
+      newLeader.push(currMembers[j]);
     }
   }
 
-  if (isOdd) {
+  // if (isOdd) {
+  //   const middleGroup = arr[middleIndex];
+  //   for (let i = 0; i < middleGroup.members.length; i++) {
+  //     newLeader.push({ ...middleGroup.members[i], netMoney: buyin });
+  //   }
+  // }
 
-    const middleGroup = arr[middleIndex]
-    for (let i = 0; i < middleGroup.members.length; i++) {
-      newLeader.push({ ...middleGroup.members[i], netMoney: buyin })
-    }
-  }
-
-
-  for (let i = 0; i < bottomHalf.length; i++) {
-    const currMembers = bottomHalf[i].members
-    console.log(currMembers)
-    for (let j = 0; j < currMembers.length; j++) {
-      newLeader.push(currMembers[j])
-    }
-  }
+  // for (let i = 0; i < bottomHalf.length; i++) {
+  //   const currMembers = bottomHalf[i].members;
+  //   for (let j = 0; j < currMembers.length; j++) {
+  //     newLeader.push(currMembers[j]);
+  //   }
+  // }
 
   return newLeader;
 }
+
 
 
 // Example of how the distributeMoney function is called within the getLeaderBoard function

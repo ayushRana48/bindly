@@ -1,6 +1,6 @@
 const { supabase } = require('../initSupabase');
 const { uploadFile } = require('./uploadFile')
-
+const {reauthorizeStrava}= require('./stravaTransactions')
 
 // Create a new user
 async function createUser(username, email, firstName,lastName, pfp) {
@@ -40,7 +40,17 @@ async function getUser(username) {
     .eq('username', username)
     .single();
 
-  return { data, error };
+  let res = data;
+
+  if (data?.stravarefresh) {
+    const { data: reauthData, error: reauthError } = await reauthorizeStrava(data.stravarefresh, username);
+
+    if (reauthError || !reauthData?.access_token) {
+      res.stravarefresh = null;
+    }
+  }
+
+  return { data: res, error };
 }
 
 async function getUserByEmail(email) {
@@ -67,6 +77,13 @@ async function updateUser(username, updateParams) {
   const newTimeStamp = new Date(Date.now()).toISOString();
   let fileUrl = updateParams.pfp;
 
+
+  console.log('updating User', username)
+  console.log(updateParams, 'updateParams')
+  console.log('time', newTimeStamp)
+  console.log('fileUrl', fileUrl)
+
+  
   if (updateParams.pfp) {
     const { fileUrl: newFileUrl, error: uploadError } = await uploadFile(updateParams.pfp, 'userProfiles', username, updateParams.lastpfpupdate, newTimeStamp);
 

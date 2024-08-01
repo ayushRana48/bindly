@@ -14,6 +14,13 @@ const uploadFile = async (fileData, bucketName, fileName, timestamp, newTimeStam
     let fileExt = "jpg"; // Default to jpg, but we will detect the type
     let contentType = "image/jpeg"; // Default content type
 
+    console.log('in uploadFile')
+    console.log('currentTime', new Date(Date.now()).toISOString() )
+    console.log(fileData,'fileData')
+    console.log(fileName, 'fileName')
+    console.log('timestamp',timestamp)
+    console.log('newTimestamp', newTimeStamp)
+    
     try {
         if (fileData) {
             // Extract the MIME type from the Base64 data
