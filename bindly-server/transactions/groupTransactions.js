@@ -108,27 +108,6 @@ function distributeMoney(leaderboard, buyin) {
     arr.push(currentObj);
   }
 
-  // const middleIndex = Math.floor(arr.length / 2);
-  // const isOdd = arr.length % 2 !== 0;
-
-  // let topHalf, bottomHalf;
-  // if (isOdd) {
-  //   topHalf = arr.slice(0, middleIndex);
-  //   bottomHalf = arr.slice(middleIndex + 1);
-  // } else {
-  //   topHalf = arr.slice(0, middleIndex);
-  //   bottomHalf = arr.slice(middleIndex);
-  // }
-
-  // // Calculate losses for the bottom half
-  // let remainingLoss = 0;
-  // for (let i = bottomHalf.length - 1; i >= 0; i--) {
-  //   const currGroup = bottomHalf[i];
-  //   const lossPerMember = buyin * Math.pow(1/1.2, bottomHalf.length - 1 - i);
-  //   currGroup.members.forEach(user => user.netMoney = buyin - lossPerMember);
-  //   remainingLoss += lossPerMember * currGroup.members.length;
-  // }
-
   const totalGain = buyin *leaderboard.length; // Total gain is the same as the total loss
 
   console.log(totalGain,'totalgain')
@@ -289,6 +268,11 @@ async function getLeaderBoard(groupid) {
 
     // Distribute money based on leaderboard
     const updatedLeaderboard = distributeMoney(leaderboard, buyin);
+
+    if(postsData.length==0){
+      updatedLeaderboard.forEach(u=>{u.netMoney=buyin})
+    }
+    console.log(postsData)
 
 
     return { leaderboard: updatedLeaderboard };

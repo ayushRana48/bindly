@@ -17,12 +17,13 @@ const GroupListItem = ({ groupData,activeTab }) => {
 
 
   const toGroup = () => {
-    if(activeTab==='current'){
+    console.log('yoo we are going to the grrooop')
+    // if(activeTab==='current'){
       navigation.navigate("Group", { groupData: groupData });
-    }
-    else{
-      navigation.navigate("ArchiveGroup", { groupData: groupData });
-    }
+    // }
+    // else{
+    //   navigation.navigate("ArchiveGroup", { groupData: groupData });
+    // }
   }
 
 

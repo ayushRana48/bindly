@@ -24,6 +24,10 @@ const LeaderboardItem = ({ memberData }) => {
         }
     },[groupData?.usergroup])
 
+    useEffect(()=>{
+        console.log(memberData)
+    })
+
 
 
     return (

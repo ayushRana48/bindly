@@ -167,7 +167,7 @@ const StravaConnect = () => {
 
 
       {user.stravarefresh && (
-        <View style={{ width: '100%', backgroundColor: 'green', flexDirection: 'row', alignItems: 'center', }}>
+        <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', }}>
           <View style={{ justifyContent: 'center', }}>
             <Image style={styles.stravaImage} source={strava} />
             <Text style={{ marginHorizontal: 'auto' }}>Strava</Text>
