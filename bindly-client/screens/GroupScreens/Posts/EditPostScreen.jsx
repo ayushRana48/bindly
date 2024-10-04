@@ -319,10 +319,7 @@ const EditPostScreen = () => {
 
             if (status === 200) {
                 let newPostList = [...groupData.post]
-                console.log(postId)
                 newPostList = newPostList.filter(p => p.postid !== postId);
-                console.log(newPostList,'new post list heree')
-                console.log('should be empty')
                 newPostList=[body,...newPostList]
                 setGroupData(g=>{return{...g,post:newPostList}})
 
@@ -332,7 +329,6 @@ const EditPostScreen = () => {
                 // Call compressVideo API after navigation
                 if (video) {
 
-                    console.log(`${user.username}-${groupData.group.groupid}-${time1}v`)
 
                     fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/compressVideo`, {
                         method: 'POST',

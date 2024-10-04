@@ -26,6 +26,7 @@ const GroupScreen = () => {
   const [page, setPage] = useState(1);
   const [groupUsers, setGroupUsers] = useState([])
   const [createStatus,setCreateStatus]=useState('post')
+
   const postsPerPage = 5; // Number of posts to load at a time
 
   useEffect(() => {
@@ -37,21 +38,34 @@ const GroupScreen = () => {
     }
   }, [gd]);
 
+
   const started = new Date(groupData.startdate) < new Date();
 
   const ended= new Date(groupData.enddate) < new Date();
+  const totalUsers = groupUsers.length;
+  const groupId= groupData.groupid
 
 
 
 
 
+  const updatePostVeto = (updatedPost) => {
+    setGroupData(g => {
+      const newPosts = g.post.map(p => (p.postid === updatedPost.postid ? updatedPost : p));
+      return { ...g, post: newPosts };
+    });
+  };
 
 
   
-
+  const removePost = (deletedPostId) => {
+    setGroupData(g => {
+      const newPosts = g.post.filter(p => p.postid !== deletedPostId);
+      return { ...g, post: newPosts };
+    });
+  };
 
   useEffect(()=>{
-    console.log('init postStajjjhjtusCheck')
     const postStatusCheck = async () =>{
       const response2 = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/postStatus`, {
         headers: { 'Content-Type': 'application/json' },
@@ -80,7 +94,6 @@ const GroupScreen = () => {
         setCreateStatus(res2.data)
         if(res2.data!=gd?.createStatus){
           setGroupData(g =>{ return {...g, 'createStatus': res2.data,timecycle:res2.startdate}})
-          console.log('new create status',res2.data)
         }
     }
     }
@@ -89,7 +102,10 @@ const GroupScreen = () => {
   },[gd?.post,gd?.createStatus])
 
 
-
+  const getUserPfp = (username) => {
+    const userObj = groupUsers.find(u => u.username === username);
+    return userObj?.users?.pfp || null;
+  };
 
   const getGroup = async () => {
     try {
@@ -145,7 +161,6 @@ const GroupScreen = () => {
 
       const res2 = await response2.json();
 
-      console.log(res2,'looka t mee')
 
 
 
@@ -310,17 +325,22 @@ return (
       <View style={{marginBottom:60}}>
       {!loading && visiblePosts.map((post, index) => (
         <PostItem
-          key={index}
+          key={post.postid}
           postid={post.postid}
           imageLink={post.photolink}
           videoLink={post.videolink}
           username={post.username}
           caption={post.caption}
-          users={groupUsers}
+          pfpLink={getUserPfp(post.username)}
           time={post.timepost}
           valid={post.valid}
           veto={post.veto}
-        />
+          totalUsers={totalUsers}
+          removePost={removePost}
+          updatePostVeto={updatePostVeto}
+          groupId={groupId}
+          userHasVeto={post.veto.includes(user.username)}
+          />
       ))}
       </View>
 
