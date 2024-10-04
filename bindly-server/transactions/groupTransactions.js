@@ -108,9 +108,21 @@ function distributeMoney(leaderboard, buyin) {
     arr.push(currentObj);
   }
 
+
+  if(arr.length==1){
+    arr[0].members.forEach(user => user.netMoney = buyin);
+    let newLeader = [];
+    for (let i = 0; i < arr.length; i++) {
+      const currMembers = arr[i].members;
+      for (let j = 0; j < currMembers.length; j++) {
+        newLeader.push(currMembers[j]);
+      }
+    }
+    return newLeader
+  }
+
   const totalGain = buyin *leaderboard.length; // Total gain is the same as the total loss
 
-  console.log(totalGain,'totalgain')
   const incrementPercentage =0.5;
   let sumTop = 0;
 
@@ -122,7 +134,7 @@ function distributeMoney(leaderboard, buyin) {
 
   const baseGain = totalGain / sumTop;
 
-  console.log('baseGain', baseGain)
+
 
   for (let i = arr.length - 1; i >= 0; i--) {
     const rankGain = baseGain * incrementPercentage * (arr.length - 1 - i);
@@ -141,20 +153,6 @@ function distributeMoney(leaderboard, buyin) {
       newLeader.push(currMembers[j]);
     }
   }
-
-  // if (isOdd) {
-  //   const middleGroup = arr[middleIndex];
-  //   for (let i = 0; i < middleGroup.members.length; i++) {
-  //     newLeader.push({ ...middleGroup.members[i], netMoney: buyin });
-  //   }
-  // }
-
-  // for (let i = 0; i < bottomHalf.length; i++) {
-  //   const currMembers = bottomHalf[i].members;
-  //   for (let j = 0; j < currMembers.length; j++) {
-  //     newLeader.push(currMembers[j]);
-  //   }
-  // }
 
   return newLeader;
 }
@@ -269,10 +267,7 @@ async function getLeaderBoard(groupid) {
     // Distribute money based on leaderboard
     const updatedLeaderboard = distributeMoney(leaderboard, buyin);
 
-    if(postsData.length==0){
-      updatedLeaderboard.forEach(u=>{u.netMoney=buyin})
-    }
-    console.log(postsData)
+    // console.log(postsData)
 
 
     return { leaderboard: updatedLeaderboard };

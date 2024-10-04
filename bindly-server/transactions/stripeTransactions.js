@@ -53,6 +53,7 @@ async function saveCard(email) {
 
 
 const addMoney = async (customerId, amount, cardId, username) => {
+  console.log('add Money HEEREEE')
   try {
     console.log('inTransactions')
 

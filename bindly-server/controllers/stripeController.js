@@ -47,8 +47,6 @@ async function saveCardController(req, res) {
 async function addMoneyController(req, res) {
   const { customerId, amount, cardId, username } = req.body;
 
-  console.log('addMoney')
-
   try {
     const { data, error } = await addMoney(customerId, amount, cardId, username);
 
