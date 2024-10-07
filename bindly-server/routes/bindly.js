@@ -13,6 +13,7 @@ const stripeController = require('../controllers/stripeController');
 const paypalController = require('../controllers/paypalController.js')
 const stravaController = require('../controllers/stravaController.js')
 const notificationController = require('../controllers/notificationController.js')
+const commentController = require('../controllers/commentController.js')
 
 router.post('/users/createUser',userController.createUserController)
 router.get('/users/',userController.getAllUsersController)
@@ -73,6 +74,9 @@ router.post('/post/postStatus',postController.postStatusController)
 router.put('/post/addVeto',postController.addVetoController)
 router.put('/post/removeVeto',postController.removeVetoController)
 router.get('/post/getInvalid/:username',postController.getInvalidPostsController)
+
+router.post('/controller/addComment', commentController.addCommentController);
+router.get('/controller/getComment/:postid', commentController.getCommentByPostController);
 
 
 router.post('/auth/signIn',authController.signInController)

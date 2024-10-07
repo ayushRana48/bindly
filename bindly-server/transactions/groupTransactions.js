@@ -319,27 +319,33 @@ async function getGroup(groupid) {
       return { data: null, error: processError };
     }
 
-    // Fetch post data
-    const { data: postData, error: postError } = await supabase
-      .from('post')
-      .select('*')
-      .eq('groupid', groupid)
-      .or('valid.is.null,valid.eq.true');
-
-
-    if (postError) {
-      return { data: null, error: postError };
-    }
-
-    // Sort post data by timepost, with later dates first
-    const sortedPost = postData ? postData.sort((a, b) => new Date(b.timepost) - new Date(a.timepost)) : [];
+    const { data: postWithComments, error: postError } = await supabase
+    .from('post')
+    .select(`
+      postid, username, timepost, message,
+      comment(commentid, username, message, created)
+    `)
+    .eq('groupid', groupid)
+    .or('valid.is.null,valid.eq.true')
+    .order('timepost', { ascending: false });
+  
+  if (postError) {
+    return { data: null, error: postError };
+  }
+  
+  // Manually sort the comments for each post by 'created' in ascending order (oldest first)
+  const sortedPostWithComments = postWithComments.map(post => ({
+    ...post,
+    comment: post.comment ? post.comment.sort((a, b) => new Date(a.created) - new Date(b.created)) : []
+  }));
+  
 
     // Combine data into a single response
     const data = {
       group: groupResponse.data,
       usergroup: usergroupResponse.data,
       invite: inviteResponse.data,
-      post: sortedPost,
+      post: sortedPostWithComments,
     };
 
     return { data, error: null };
