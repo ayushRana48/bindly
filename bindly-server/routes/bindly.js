@@ -75,8 +75,8 @@ router.put('/post/addVeto',postController.addVetoController)
 router.put('/post/removeVeto',postController.removeVetoController)
 router.get('/post/getInvalid/:username',postController.getInvalidPostsController)
 
-router.post('/controller/addComment', commentController.addCommentController);
-router.get('/controller/getComment/:postid', commentController.getCommentByPostController);
+router.post('/comment/addComment', commentController.addCommentController);
+router.get('/comment/getComment/:postid', commentController.getCommentByPostController);
 
 
 router.post('/auth/signIn',authController.signInController)

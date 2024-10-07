@@ -2,15 +2,15 @@ const { addComment, getCommentByPost } = require('../transactions/commentTransac
 
 // Controller for adding a new comment
 async function addCommentController(req, res) {
-  const { postid, username, message } = req.body;
+  const { postid, groupid, username, message } = req.body;
 
   try {
-    const { data, error } = await addComment(postid, username, message);
+    const { data, error } = await addComment(postid,groupid, username, message);
 
     if (error) throw error;
     res.status(200).json(data);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error });
   }
 }
 
