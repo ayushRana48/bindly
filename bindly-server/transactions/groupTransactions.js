@@ -322,8 +322,8 @@ async function getGroup(groupid) {
     const { data: postWithComments, error: postError } = await supabase
     .from('post')
     .select(`
-      postid, username, timepost, message,
-      comment(commentid, username, message, created)
+      *,
+      comment(commentid, username, message, created, users(pfp))
     `)
     .eq('groupid', groupid)
     .or('valid.is.null,valid.eq.true')

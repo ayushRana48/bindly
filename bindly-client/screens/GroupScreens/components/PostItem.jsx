@@ -17,7 +17,7 @@ import { useUserContext } from '../../../UserContext';
 
 const screenWidth = Dimensions.get('window').width;
 const width = screenWidth - 48; // Adjusted for padding/margins
-const height = width * (16 / 9); // Assuming a 16:9 aspect ratio
+const height = width ; // Assuming a 16:9 aspect ratio
 
 const PostComponent = ({
   postid,
@@ -207,7 +207,7 @@ const PostComponent = ({
                   isLooping
                 />
               )}
-              {valid == null && totalUsers > 2 && (
+              {valid == null  && (
                 <Pressable
                   onPress={() => setModalVisible(true)}
                   style={{
@@ -248,12 +248,12 @@ const PostComponent = ({
 
       <View style={styles.captionContainer}>
         <View style={{ flexDirection: 'row' }}>
-          {valid == null && totalUsers>2 && (
+          {valid == null  && (
             <Text style={{ marginLeft: 'auto' }}>{`${veto.length}/${Math.ceil(totalUsers / 2)} vetos`}</Text>
           )}
         </View>
         <Text style={styles.caption}>
-          <Text style={styles.username}>{username}</Text> {caption}
+          <Text style={styles.username}>{username}</Text> {caption}sffs
         </Text>
       </View>
 
