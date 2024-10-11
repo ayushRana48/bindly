@@ -18,7 +18,7 @@ const Stack = createNativeStackNavigator();
 
 export default function GroupsNav() {
     const { user, setEmail } = useUserContext();
-
+    
 
 
     return (

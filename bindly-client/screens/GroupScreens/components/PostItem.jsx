@@ -1,3 +1,4 @@
+// PostComponent.js
 import React, { useState, memo } from 'react';
 import {
   View,
@@ -5,19 +6,20 @@ import {
   StyleSheet,
   Dimensions,
   Image,
-  Pressable,
-  Modal,
   ActivityIndicator,
   Alert,
   ScrollView,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
+import Modal from 'react-native-modal';
 import { Video } from 'expo-av';
 import placeholder from '../../../assets/profile.png';
 import { useUserContext } from '../../../UserContext';
+import commentIcon from '../../../assets/comment.png';
 
 const screenWidth = Dimensions.get('window').width;
 const width = screenWidth - 48; // Adjusted for padding/margins
-const height = width ; // Assuming a 16:9 aspect ratio
+const height = width; // Assuming a 1:1 aspect ratio
 
 const PostComponent = ({
   postid,
@@ -34,6 +36,9 @@ const PostComponent = ({
   updatePostVeto,
   groupId,
   userHasVeto,
+  comments,
+  addComment,
+  onOpenCommentsModal, // New prop added
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,23 +81,30 @@ const PostComponent = ({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Functions: addVeto, removeVeto, deletePost
   const addVeto = async () => {
     if (loading) {
       return;
     }
     setLoading(true);
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addVeto`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          postid: postid,
-          username: user.username,
-          groupid: groupId,
-        }),
-      });
+      const response = await fetch(
+        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addVeto`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postid: postid,
+            username: user.username,
+            groupid: groupId,
+          }),
+        }
+      );
 
-      const { status, body } = await response.json().then((data) => ({ status: response.status, body: data }));
+      const { status, body } = await response.json().then((data) => ({
+        status: response.status,
+        body: data,
+      }));
 
       if (status === 200) {
         updatePostVeto(body);
@@ -112,17 +124,23 @@ const PostComponent = ({
     }
     setLoading(true);
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeVeto`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          postid: postid,
-          username: user.username,
-          groupid: groupId,
-        }),
-      });
+      const response = await fetch(
+        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeVeto`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postid: postid,
+            username: user.username,
+            groupid: groupId,
+          }),
+        }
+      );
 
-      const { status, body } = await response.json().then((data) => ({ status: response.status, body: data }));
+      const { status, body } = await response.json().then((data) => ({
+        status: response.status,
+        body: data,
+      }));
 
       if (status === 200) {
         updatePostVeto(body);
@@ -144,12 +162,18 @@ const PostComponent = ({
     setDeleteLoading(true);
 
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/deletePost/${postid}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await fetch(
+        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/deletePost/${postid}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
-      const { status, body } = await response.json().then((data) => ({ status: response.status, body: data }));
+      const { status, body } = await response.json().then((data) => ({
+        status: response.status,
+        body: data,
+      }));
 
       if (status === 200) {
         removePost(postid);
@@ -165,26 +189,28 @@ const PostComponent = ({
 
   return (
     <View style={styles.container}>
+      {/* Post Header */}
       <View style={styles.header}>
-        <Image style={{ width: 45, height: 45, borderRadius: 4 }} source={profilePicture}></Image>
-        <View>
-          <Text style={{ ...styles.username, marginLeft: 10, marginRight: 'auto' }}>{username}</Text>
-          <View style={{ flexDirection: 'row', marginLeft: 10 }}>
+        <Image style={styles.profileImage} source={profilePicture} />
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.username}>{username}</Text>
+          <View style={styles.dateContainer}>
             <Text style={styles.date}>{displayDate(time)}</Text>
-            <Text style={{ ...styles.date, marginLeft: 2 }}>{displayTime(time)}</Text>
+            <Text style={[styles.date, { marginLeft: 2 }]}>{displayTime(time)}</Text>
           </View>
         </View>
 
         {username === user.username && (
-          <Pressable
-            style={{ width: 30, height: 30, alignItems: 'center', marginLeft: 'auto', marginRight: 10, justifyContent: 'center' }}
+          <TouchableOpacity
+            style={styles.optionsButton}
             onPress={() => setExtraModalVisible(true)}
           >
-            <Text style={{ fontSize: 18, marginBottom: 8 }}>...</Text>
-          </Pressable>
+            <Text style={styles.optionsButtonText}>...</Text>
+          </TouchableOpacity>
         )}
       </View>
 
+      {/* Media Content */}
       <View style={styles.wrapper}>
         <ScrollView
           horizontal
@@ -192,12 +218,12 @@ const PostComponent = ({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ alignItems: 'center' }}
           onMomentumScrollEnd={handleScroll}
-          scrollEnabled={mediaItems.length>1}
+          scrollEnabled={mediaItems.length > 1}
         >
           {mediaItems.map((item, index) => (
             <View key={index} style={styles.mediaContainer}>
               {item.type === 'image' ? (
-                <Image key="image" style={{ width: width, height: width, margin: 'auto' }} source={{ uri: imageLink }} /> 
+                <Image style={styles.mediaImage} source={{ uri: imageLink }} />
               ) : (
                 <Video
                   style={styles.media}
@@ -206,25 +232,6 @@ const PostComponent = ({
                   resizeMode="contain"
                   isLooping
                 />
-              )}
-              {valid == null  && (
-                <Pressable
-                  onPress={() => setModalVisible(true)}
-                  style={{
-                    backgroundColor: 'red',
-                    position: 'absolute',
-                    bottom: 20,
-                    right: 20,
-                    width: 40,
-                    height: 40,
-                    padding: 2,
-                    borderRadius: 20,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: 'white', fontWeight: 'bold' }}>X</Text>
-                </Pressable>
               )}
             </View>
           ))}
@@ -246,113 +253,146 @@ const PostComponent = ({
         )}
       </View>
 
+      {/* Caption and Actions */}
       <View style={styles.captionContainer}>
-        <View style={{ flexDirection: 'row' }}>
-          {valid == null  && (
-            <Text style={{ marginLeft: 'auto' }}>{`${veto.length}/${Math.ceil(totalUsers / 2)} vetos`}</Text>
+        <View style={styles.actionsRow}>
+          {valid == null && (
+            <>
+              <TouchableOpacity
+                style={styles.commentButton}
+                onPress={() => onOpenCommentsModal(postid)} // Updated onPress
+              >
+                <Image style={styles.commentIcon} source={commentIcon} />
+                <Text style={styles.commentCount}>{comments.length}</Text>
+              </TouchableOpacity>
+              <Text style={styles.vetoCount}>{`${veto.length}/${Math.ceil(totalUsers / 2)}`}</Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(true)}
+                style={styles.deleteButton}
+              >
+                <Text style={styles.deleteButtonText}>X</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
         <Text style={styles.caption}>
-          <Text style={styles.username}>{username}</Text> {caption}sffs
+          <Text style={styles.username}>{username}</Text> {caption}
         </Text>
       </View>
 
       {/* Veto Modal */}
       <Modal
-        transparent={true}
-        visible={modalVisible}
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        isVisible={modalVisible}
+        onSwipeComplete={() => setModalVisible(false)}
+        swipeDirection={['down']}
+        onBackdropPress={() => setModalVisible(false)}
+        onBackButtonPress={() => setModalVisible(false)}
+        style={styles.modal}
+        backdropTransitionOutTiming={0}
       >
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Veto</Text>
-            <View style={styles.modalText}>
-              <View style={styles.modalItem}>
-                {!userHasVeto ? (
-                  <Text style={styles.boldText}>Are you sure you want to veto this post?</Text>
-                ) : (
-                  <Text style={styles.boldText}>Are you sure you want to remove your veto?</Text>
-                )}
-              </View>
-
-              {!userHasVeto && <Text>Only veto if you think this post does not demonstrate the group task</Text>}
-            </View>
-            <View style={styles.modalButtons}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Veto</Text>
+          <View style={styles.modalText}>
+            <View style={styles.modalItem}>
               {!userHasVeto ? (
-                <Pressable style={styles.confirmButton} onPress={addVeto}>
-                  {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Veto</Text>}
-                </Pressable>
+                <Text style={styles.boldText}>Are you sure you want to veto this post?</Text>
               ) : (
-                <Pressable style={styles.confirmButton} onPress={removeVeto}>
-                  {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Remove Veto</Text>}
-                </Pressable>
+                <Text style={styles.boldText}>Are you sure you want to remove your veto?</Text>
               )}
-
-              <Pressable style={styles.cancelButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.buttonText}>Cancel</Text>
-              </Pressable>
             </View>
+
+            {!userHasVeto && (
+              <Text style={styles.modalSubtitle}>
+                Only veto if you think this post does not demonstrate the group task
+              </Text>
+            )}
+          </View>
+          <View style={styles.modalButtons}>
+            {!userHasVeto ? (
+              <TouchableOpacity style={styles.confirmButton} onPress={addVeto}>
+                {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Veto</Text>}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.confirmButton} onPress={removeVeto}>
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.buttonText}>Remove Veto</Text>
+                )}
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
       {/* Delete Modal */}
       <Modal
-        transparent={true}
-        visible={extraModalVisible}
-        animationType="slide"
-        onRequestClose={() => setExtraModalVisible(false)}
+        isVisible={extraModalVisible}
+        onSwipeComplete={() => setExtraModalVisible(false)}
+        swipeDirection={['down']}
+        onBackdropPress={() => setExtraModalVisible(false)}
+        onBackButtonPress={() => setExtraModalVisible(false)}
+        style={styles.modal}
+        backdropTransitionOutTiming={0}
       >
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContainer}>
-            <View style={{ width: '100%', alignItems: 'center' }}>
-              <Pressable
-                style={styles.cancelButton}
-                onPress={() => {
-                  setExtraModalVisible(false);
-                  setDeleteConfirmationVisible(true);
-                }}
-              >
-                <Text style={styles.buttonText}>Delete</Text>
-              </Pressable>
-              <Pressable style={{ ...styles.confirmButton, marginTop: 20 }} onPress={() => setExtraModalVisible(false)}>
-                <Text style={styles.buttonText}>Cancel</Text>
-              </Pressable>
-            </View>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalOptions}>
+            <TouchableOpacity
+              style={styles.deleteOptionButton}
+              onPress={() => {
+                setExtraModalVisible(false);
+                setDeleteConfirmationVisible(true);
+              }}
+            >
+              <Text style={styles.buttonText}>Delete</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.confirmButton, { marginTop: 20 }]}
+              onPress={() => setExtraModalVisible(false)}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
-        transparent={true}
-        visible={deleteConfirmationVisible}
-        animationType="slide"
-        onRequestClose={() => setDeleteConfirmationVisible(false)}
+        isVisible={deleteConfirmationVisible}
+        onSwipeComplete={() => setDeleteConfirmationVisible(false)}
+        swipeDirection={['down']}
+        onBackdropPress={() => setDeleteConfirmationVisible(false)}
+        onBackButtonPress={() => setDeleteConfirmationVisible(false)}
+        style={styles.modal}
+        backdropTransitionOutTiming={0}
       >
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Confirm Deletion</Text>
-            <View style={styles.modalText}>
-              <View style={styles.modalItem}>
-                <Text style={styles.boldText}>
-                  This action cannot be undone. Are you sure you want to delete this post?
-                </Text>
-              </View>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Confirm Deletion</Text>
+          <View style={styles.modalText}>
+            <View style={styles.modalItem}>
+              <Text style={styles.boldText}>
+                This action cannot be undone. Are you sure you want to delete this post?
+              </Text>
             </View>
-            <View style={styles.modalButtons}>
-              <Pressable style={styles.confirmButton} onPress={deletePost}>
-                {deleteLoading ? (
-                  <ActivityIndicator color={'white'} />
-                ) : (
-                  <Text style={styles.buttonText}>Confirm</Text>
-                )}
-              </Pressable>
-              <Pressable style={styles.cancelButton} onPress={() => setDeleteConfirmationVisible(false)}>
-                <Text style={styles.buttonText}>Cancel</Text>
-              </Pressable>
-            </View>
+          </View>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity style={styles.confirmButton} onPress={deletePost}>
+              {deleteLoading ? (
+                <ActivityIndicator color={'white'} />
+              ) : (
+                <Text style={styles.buttonText}>Confirm</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setDeleteConfirmationVisible(false)}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -373,28 +413,61 @@ const styles = StyleSheet.create({
     width: width,
     margin: 'auto',
   },
+  profileImage: {
+    width: 45,
+    height: 45,
+    borderRadius: 4,
+  },
+  headerTextContainer: {
+    marginLeft: 10,
+    marginRight: 'auto',
+  },
   username: {
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    marginTop: 2,
+  },
+  date: {
+    color: '#757575',
+    fontSize: 12,
+  },
+  optionsButton: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    marginLeft: 'auto',
+    marginRight: 10,
+    justifyContent: 'center',
+  },
+  optionsButtonText: {
+    fontSize: 18,
+    marginBottom: 8,
   },
   wrapper: {
     height: height + 20, // Adjusted to include dots
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 4,
-    width:width-24,
-    marginHorizontal:'auto'
+    width: width,
+    marginHorizontal: 'auto',
   },
   mediaContainer: {
-    width: width-24,
+    width: width,
     height: height,
     backgroundColor: '#e3e3e3',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
+  mediaImage: {
+    width: width,
+    height: width,
+  },
   media: {
-    width: width-24,
+    width: width,
     height: height,
   },
   dotContainer: {
@@ -416,16 +489,53 @@ const styles = StyleSheet.create({
     width: width,
     margin: 'auto',
   },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  commentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  commentIcon: {
+    width: 25,
+    height: 25,
+    borderRadius: 4,
+  },
+  commentCount: {
+    marginLeft: 5,
+    fontSize: 14,
+    color: '#333',
+  },
+  vetoCount: {
+    marginLeft: 'auto',
+    marginRight: 2,
+    fontSize: 14,
+    color: '#333',
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    width: 25,
+    height: 25,
+    padding: 2,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
   caption: {
     fontSize: 14,
+    color: '#333',
   },
-  date: {
-    color: '#757575',
-  },
-  modalBackground: {
-    flex: 1,
+  // Modal Styles
+  modal: {
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    margin: 0,
   },
   modalContainer: {
     backgroundColor: 'white',
@@ -440,7 +550,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   modalText: {
-    fontSize: 20,
+    fontSize: 16,
     textAlign: 'center',
     marginBottom: 20,
     marginTop: 20,
@@ -448,6 +558,12 @@ const styles = StyleSheet.create({
   boldText: {
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 5,
     textAlign: 'center',
   },
   modalButtons: {
@@ -474,10 +590,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
   },
-  modalItem: {
-    marginBottom: 0,
-    flexDirection: 'row',
-    fontSize: 24,
+  // Extra Modal Options
+  modalOptions: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  deleteOptionButton: {
+    backgroundColor: 'red',
+    width: '100%',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
   },
 });
 
@@ -486,6 +609,16 @@ export default memo(PostComponent, (prevProps, nextProps) => {
   const areVetoEqual =
     prevProps.veto.length === nextProps.veto.length &&
     prevProps.veto.every((value, index) => value === nextProps.veto[index]);
+
+  const areCommentsEqual =
+    prevProps.comments.length === nextProps.comments.length &&
+    prevProps.comments.every(
+      (comment, index) =>
+        comment.id === nextProps.comments[index].id &&
+        comment.message === nextProps.comments[index].message &&
+        comment.username === nextProps.comments[index].username &&
+        comment.users?.pfp === nextProps.comments[index].users?.pfp
+    );
 
   const result =
     prevProps.postid === nextProps.postid &&
@@ -496,7 +629,8 @@ export default memo(PostComponent, (prevProps, nextProps) => {
     prevProps.valid === nextProps.valid &&
     areVetoEqual &&
     prevProps.totalUsers === nextProps.totalUsers &&
-    prevProps.userHasVeto === nextProps.userHasVeto;
+    prevProps.userHasVeto === nextProps.userHasVeto &&
+    areCommentsEqual; // Include comments comparison
 
   return result;
 });
