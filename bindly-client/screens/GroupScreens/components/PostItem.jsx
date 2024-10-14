@@ -1,5 +1,5 @@
 // PostComponent.js
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,18 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  TouchableOpacity
 } from 'react-native';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { Pressable,TapGestureHandler } from 'react-native-gesture-handler';
 import Modal from 'react-native-modal';
 import { Video } from 'expo-av';
 import placeholder from '../../../assets/profile.png';
 import { useUserContext } from '../../../UserContext';
 import commentIcon from '../../../assets/comment.png';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'; // Reanimated imports
+import * as Haptics from 'expo-haptics';
+
 
 const screenWidth = Dimensions.get('window').width;
 const width = screenWidth - 48; // Adjusted for padding/margins
@@ -51,6 +55,18 @@ const PostComponent = ({
 
   const [extraModalVisible, setExtraModalVisible] = useState(false);
   const [deleteConfirmationVisible, setDeleteConfirmationVisible] = useState(false);
+  const [modalStep, setModalStep] = useState('delete'); // Track modal state
+
+  let doubleTapRef = React.useRef();
+
+  const scale = useSharedValue(0);
+  
+  const heartStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: scale.value,
+  }));
+
+
 
   const { user } = useUserContext();
 
@@ -75,6 +91,18 @@ const PostComponent = ({
     const index = Math.round(contentOffsetX / width);
     setCurrentIndex(index);
   };
+
+  const handleDeletePress = () => {
+    // Switch to the confirmation step
+    setModalStep('confirm');
+  };
+
+  const closeModal = () => {
+    // Reset modal to initial step and close
+    setModalStep('delete');
+    setExtraModalVisible(false);
+  };
+
 
   const displayDate = (time) => {
     const date = new Date(time);
@@ -164,10 +192,15 @@ const PostComponent = ({
     if (loading) {
       return;
     }
-    let route='https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addLike'
-    if(userHasLiked){
-      route='https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeLike'
+    let route = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addLike'
+    if (userHasLiked) {
+      route = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeLike'
     }
+    else{
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    updatePostLikes(postid,user.username);
+
     setLoading(true);
     try {
       const response = await fetch(
@@ -188,11 +221,59 @@ const PostComponent = ({
         body: data,
       }));
 
-      console.log('status', status)
-      console.log('body', body)
+
+    } catch (error) {
+      console.log('Fetch error: ', error);
+      Alert.alert('Network Error', 'Unable to connect to the server. Please try again later.');
+    } finally {
+      setModalVisible(false);
+      setLoading(false);
+    }
+  };
+
+  const doubleTapLike = async () => {
+
+
+    if (loading) {
+      return;
+    }
+
+    scale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) }, () => {
+      scale.value = withTiming(0, { duration: 300, delay: 500 }); // Heart fades out after some time
+    });
+
+    if (userHasLiked){
+      return
+    }
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+
+    updatePostLikes(postid,user.username);
+
+    let route = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addLike'
+    setLoading(true);
+    try {
+      const response = await fetch(
+        route,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postid: postid,
+            username: user.username,
+            groupid: groupId,
+          }),
+        }
+      );
+
+      const { status, body } = await response.json().then((data) => ({
+        status: response.status,
+        body: data,
+      }));
+
+
 
       if (status === 200) {
-        updatePostLikes(body);
       }
     } catch (error) {
       console.log('Fetch error: ', error);
@@ -204,7 +285,7 @@ const PostComponent = ({
   };
 
 
-  
+
 
   const deletePost = async () => {
     if (deleteLoading) {
@@ -253,17 +334,31 @@ const PostComponent = ({
         </View>
 
         {username === user.username && (
-          <TouchableOpacity
-            style={styles.optionsButton}
-            onPress={() => setExtraModalVisible(true)}
+          <Pressable
+            style={{ ...styles.optionsButton }}
+            onPress={() => {
+              setExtraModalVisible(true)
+              console.log('presseddddd')
+            }}
+
           >
             <Text style={styles.optionsButtonText}>...</Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 
       {/* Media Content */}
+      <TapGestureHandler
+      ref={doubleTapRef}
+      numberOfTaps={2}  // Detect double tap
+      maxDelayMs={300} // Set max delay between taps
+      onActivated={doubleTapLike}  // Call doubleTapLike on double tap
+    >
       <View style={styles.wrapper}>
+          {/* Heart animation overlay */}
+          <Animated.View style={[styles.heartContainer, heartStyle]}>
+            <Icon name="heart" size={100} color="red" />
+          </Animated.View>
         <ScrollView
           horizontal
           pagingEnabled
@@ -304,6 +399,7 @@ const PostComponent = ({
           </View>
         )}
       </View>
+      </TapGestureHandler>
 
       {/* Caption and Actions */}
       <View style={styles.captionContainer}>
@@ -311,10 +407,10 @@ const PostComponent = ({
           {valid == null && (
             <>
               <TouchableOpacity
-                style={{...styles.commentButton}}
+                style={{ ...styles.commentButton, padding:5, paddingHorizontal:8 }}
                 onPress={() => toggleLike()} // Updated onPress
               >
-                 <Icon
+                <Icon
                   name={userHasLiked ? 'heart' : 'heart-o'}
                   size={22}
                   color={userHasLiked ? 'red' : 'black'}
@@ -354,6 +450,7 @@ const PostComponent = ({
         onBackButtonPress={() => setModalVisible(false)}
         style={styles.modal}
         backdropTransitionOutTiming={0}
+        propagateSwipe={true}
       >
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>Veto</Text>
@@ -372,13 +469,13 @@ const PostComponent = ({
               </Text>
             )}
           </View>
-          <View style={{...styles.modalButtons}}>
+          <View style={{ ...styles.modalButtons }}>
             {!userHasVeto ? (
-              <TouchableOpacity style={{width:240, height:40, padding:'auto', backgroundColor:'dodgerblue',alignItems: 'center',borderRadius:5, marginHorizontal:'auto'}} onPress={addVeto}>
-                {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Veto</Text>}
+              <TouchableOpacity style={{ width: 240, height: 40, padding: 'auto', backgroundColor: 'dodgerblue', alignItems: 'center', borderRadius: 5, marginHorizontal: 'auto' }} onPress={addVeto}>
+                {loading ? <ActivityIndicator style={{ margin: 'auto' }} color="white" /> : <Text style={styles.buttonText}>Veto</Text>}
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity  style={{width:240, height:60, padding:'auto', backgroundColor:'dodgerblue',alignItems: 'center',borderRadius:5, marginHorizontal:'auto',}} onPress={removeVeto}>
+              <TouchableOpacity style={{ width: 240, height: 40, padding: 'auto', backgroundColor: 'dodgerblue', alignItems: 'center', borderRadius: 5, marginHorizontal: 'auto', }} onPress={removeVeto}>
                 {loading ? (
                   <ActivityIndicator color="white" />
                 ) : (
@@ -387,7 +484,7 @@ const PostComponent = ({
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity  style={{width:240, height:40, padding:'auto', backgroundColor:'red',alignItems: 'center',borderRadius:5, paddingVertical:'auto', marginHorizontal:'auto', marginTop:4}} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity style={{ width: 240, height: 40, padding: 'auto', backgroundColor: 'red', alignItems: 'center', borderRadius: 5, paddingVertical: 'auto', marginHorizontal: 'auto', marginTop: 4 }} onPress={() => setModalVisible(false)}>
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -395,75 +492,43 @@ const PostComponent = ({
       </Modal>
 
       {/* Delete Modal */}
+
+      {/* Delete Modal */}
       <Modal
         isVisible={extraModalVisible}
-        onSwipeComplete={() => setExtraModalVisible(false)}
+        onSwipeComplete={closeModal}
         swipeDirection={['down']}
-        onBackdropPress={() => setExtraModalVisible(false)}
-        onBackButtonPress={() => setExtraModalVisible(false)}
+        onBackdropPress={closeModal}
         style={styles.modal}
         backdropTransitionOutTiming={0}
+        propagateSwipe={true}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalOptions}>
-            <TouchableOpacity
-              style={styles.deleteOptionButton}
-              onPress={() => {
-                console.log('clossseee thissss1')
-
-                setExtraModalVisible(false);
-                setDeleteConfirmationVisible(true);
-                console.log('clossseee thissss')
-              }}
-            >
-              <Text style={styles.buttonText}>Delete</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.confirmButton, { marginTop: 20 }]}
-              onPress={() => setExtraModalVisible(false)}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+          {modalStep === 'delete' ? (
+            <>
+              <Text style={styles.modalTitle}>Delete Post?</Text>
+              <TouchableOpacity style={styles.deleteOptionButton} onPress={handleDeletePress}>
+                <Text style={styles.buttonText}>Delete</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.modalTitle}>Confirm Deletion</Text>
+              <Text style={styles.modalText}>This action cannot be undone. Are you sure you want to delete this post?</Text>
+              <TouchableOpacity style={styles.confirmButton} onPress={deletePost}>
+                {deleteLoading ? <ActivityIndicator color={'white'} /> : <Text style={styles.buttonText}>Confirm</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isVisible={deleteConfirmationVisible}
-        onSwipeComplete={() => setDeleteConfirmationVisible(false)}
-        swipeDirection={['down']}
-        onBackdropPress={() => setDeleteConfirmationVisible(false)}
-        onBackButtonPress={() => setDeleteConfirmationVisible(false)}
-        style={styles.modal}
-        backdropTransitionOutTiming={0}
-      >
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Confirm Deletion</Text>
-          <View style={styles.modalText}>
-            <View style={styles.modalItem}>
-              <Text style={styles.boldText}>
-                This action cannot be undone. Are you sure you want to delete this post?
-              </Text>
-            </View>
-          </View>
-          <View style={styles.modalButtons}>
-            <TouchableOpacity style={styles.confirmButton} onPress={deletePost}>
-              {deleteLoading ? (
-                <ActivityIndicator color={'white'} />
-              ) : (
-                <Text style={styles.buttonText}>Confirm</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setDeleteConfirmationVisible(false)}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
@@ -515,12 +580,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   wrapper: {
-    height: height + 20, // Adjusted to include dots
+    height: height, // Adjusted to include dots
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 4,
     width: width,
     marginHorizontal: 'auto',
+    backgroundColor:'red'
   },
   mediaContainer: {
     width: width,
@@ -573,7 +639,7 @@ const styles = StyleSheet.create({
   },
   commentCount: {
     marginLeft: 8,
-    marginRight:24,
+    marginRight: 24,
     fontSize: 14,
     color: '#333',
   },
@@ -612,6 +678,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
     alignItems: 'center',
+    height:'30%'
   },
   modalTitle: {
     fontSize: 20,
@@ -621,8 +688,7 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 20,
-    marginTop: 20,
+    marginBottom: 15,
   },
   boldText: {
     fontWeight: 'bold',
@@ -641,23 +707,27 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   confirmButton: {
+    backgroundColor: 'red',
+    padding: 15,
+    borderRadius: 5,
+    width: '45%',
+    alignItems: 'center',
+    marginBottom:15,
+    height:50
+  },
+  cancelButton: {
     backgroundColor: 'dodgerblue',
     padding: 15,
     borderRadius: 5,
     width: '45%',
     alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#ff7e75',
-    padding: 15,
-    borderRadius: 5,
-    width: '45%',
-    alignItems: 'center',
+    height:50
+
   },
   buttonText: {
     color: 'white',
     fontSize: 16,
-    marginVertical:'auto'
+    marginVertical: 'auto'
   },
   // Extra Modal Options
   modalOptions: {
@@ -666,10 +736,20 @@ const styles = StyleSheet.create({
   },
   deleteOptionButton: {
     backgroundColor: 'red',
-    width: '100%',
+    width: '45%',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
+    marginBottom:15,
+    height:50,
+    marginTop:25
+
+  },
+    heartContainer: {
+    position: 'absolute',
+    top: '40%',
+    left: '40%',
+    zIndex: 1,
   },
 });
 
@@ -688,7 +768,7 @@ export default memo(PostComponent, (prevProps, nextProps) => {
         comment.username === nextProps.comments[index].username &&
         comment.users?.pfp === nextProps.comments[index].users?.pfp
     );
-    const areLikesEqual =
+  const areLikesEqual =
     prevProps.likes.length === nextProps.likes.length &&
     prevProps.likes.every((value, index) => value === nextProps.likes[index]);
 

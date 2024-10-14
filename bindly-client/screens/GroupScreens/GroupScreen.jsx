@@ -5,7 +5,6 @@ import {
   Text,
   Pressable,
   Image,
-  Animated,
   StyleSheet,
   ActivityIndicator,
   ScrollView,
@@ -47,6 +46,7 @@ const GroupScreen = () => {
   const [groupUsers, setGroupUsers] = useState([]);
   const [createStatus, setCreateStatus] = useState('post');
   const [commentsHash, setCommentsHash] = useState({});
+  const [viewHeight, setViewHeight] = useState(0);
 
   const postsPerPage = 5; // Number of posts to load at a time
 
@@ -59,45 +59,24 @@ const GroupScreen = () => {
   const bottomSheetRef = useRef(null);
   const bottomSheetRef2 = useRef(null);
 
-  // Import Keyboard module
-
-  // Inside your GroupScreen component
-
-  const keyboardHeight = useRef(new Animated.Value(0)).current;
-
-  console.log('keyboardHeight', keyboardHeight)
-
   useEffect(() => {
-    const keyboardWillShowSub = Keyboard.addListener('keyboardWillShow', (event) => {
-      Animated.timing(keyboardHeight, {
-        duration: event.duration,
-        toValue: event.endCoordinates.height,
-        useNativeDriver: false,
-      }).start();
-    });
-    const keyboardWillHideSub = Keyboard.addListener('keyboardWillHide', (event) => {
-      Animated.timing(keyboardHeight, {
-        duration: event.duration,
-        toValue: 0,
-        useNativeDriver: false,
-      }).start();
-    });
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      (e) => {
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+      }
+    );
   
     return () => {
-      keyboardWillShowSub.remove();
-      keyboardWillHideSub.remove();
+      keyboardDidShowListener.remove();  // Cleanup listeners on unmount
+      keyboardDidHideListener.remove();
     };
   }, []);
 
-  useEffect(() => {
-    const listenerId = keyboardHeight.addListener(({ value }) => {
-      console.log('keyboardHeight updated to:', value);
-    });
-  
-    return () => {
-      keyboardHeight.removeListener(listenerId);
-    };
-  }, []);
   
 
 
@@ -131,13 +110,35 @@ const GroupScreen = () => {
       return { ...g, post: newPosts };
     });
   };
+  const updatePostLikes = (updatedPostId, username) => {
 
-  const updatePostLikes = (updatedPost) => {
-    setGroupData(g => {
-      const newPosts = g.post.map(p => (p.postid === updatedPost.postid ? updatedPost : p));
+    console.log('heeereee',username)
+    setGroupData((g) => {
+      const newPosts = g.post.map((p) => {
+        if (p.postid === updatedPostId) {
+          // Check if the username is already in the likes array
+          const isLiked = p.likes.includes(username);
+  
+          // Update likes array by adding or removing the username
+          const updatedLikes = isLiked
+            ? p.likes.filter((like) => like !== username) // Remove the username if it's already liked
+            : [...p.likes, username]; // Add the username if not already liked
+  
+          // Return the updated post with the modified likes
+          console.log('updatedLikes', updatedLikes)
+          return { ...p, likes: updatedLikes };
+        }
+  
+        // Return the post unchanged if it's not the target post
+        
+        return p;
+      });
+  
+      // Return the updated group data with the modified posts array
       return { ...g, post: newPosts };
     });
   };
+  
 
   const removePost = (deletedPostId) => {
     setGroupData(g => {
@@ -355,14 +356,12 @@ const GroupScreen = () => {
   };
 
   const onOpenLikesModal = (postid) => {
-    console.log('callllthisss', postid)
     const post = posts.find(p => p.postid === postid);
     if (post) {
       setSelectedPostLikes(post.likes || []);
       setSelectedPostId(postid);
       setLikesModalVisible(true);
       bottomSheetRef2.current?.expand();
-      console.log('postLikes', post.likes)
     }
   };
 
@@ -371,6 +370,9 @@ const GroupScreen = () => {
     setSelectedPostComments([]);
     setSelectedPostId(null);
     setCommentText('');
+    if (Keyboard.isVisible) {
+      Keyboard.dismiss();
+    }
   };
 
   const closeLikesModal = () => {
@@ -513,51 +515,48 @@ const GroupScreen = () => {
       </ScrollView>
 
       {/* Comments Modal */}
+   
 
+        <BottomSheetScrollView
+          ref={bottomSheetRef}
+          snapTo="66%"
+          backgroundColor="white"
+          backDropColor="rgba(0,0,0,0.5)"
+          closeFunc={closeCommentsModal}
 
-      <BottomSheetScrollView
-        ref={bottomSheetRef}
-        snapTo="66%"
-        backgroundColor="white"
-        backDropColor="rgba(0,0,0,0.5)"
-        closeFunc={closeCommentsModal}
-
-      >
-        <View style={{ ...styles.commentsModalContainer }}>
-          <View style={styles.commentsHeader}>
-            <Text style={styles.commentsTitle}>Comments</Text>
-          </View>
-          <ScrollView style={styles.commentsContent}>
-            {selectedPostComments.length === 0 ? (
-              <Text style={styles.noCommentsText}>No comments yet.</Text>
-            ) : (
-              selectedPostComments.map((comment) => (
-                <View key={comment.id} style={styles.commentItem}>
-                  <View style={styles.commentRow}>
-                    <Image
-                      style={styles.commentProfileImage}
-                      source={comment.users.pfp ? { uri: comment.users.pfp } : placeholder}
-                    />
-                    <View style={styles.commentTextContainer}>
-                      <Text style={styles.commentUsername}>{comment.username}</Text>
-                      <Text style={styles.commentText}>{comment.message}</Text>
+        >
+          <View style={{ ...styles.commentsModalContainer }}>
+            <View style={styles.commentsHeader}>
+              <Text style={styles.commentsTitle}>Comments</Text>
+            </View>
+            <ScrollView style={styles.commentsContent}>
+              {selectedPostComments.length === 0 ? (
+                <Text style={styles.noCommentsText}>No comments yet.</Text>
+              ) : (
+                selectedPostComments.map((comment) => (
+                  <View key={comment.id} style={styles.commentItem}>
+                    <View style={styles.commentRow}>
+                      <Image
+                        style={styles.commentProfileImage}
+                        source={comment.users.pfp ? { uri: comment.users.pfp } : placeholder}
+                      />
+                      <View style={styles.commentTextContainer}>
+                        <Text style={styles.commentUsername}>{comment.username}</Text>
+                        <Text style={styles.commentText}>{comment.message}</Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))
-            )}
-          </ScrollView>
+                ))
+              )}
+            </ScrollView>
 
-   
-          <Animated.View style={{
-  ...styles.commentInputContainer,
-  paddingBottom: keyboardHeight.interpolate({
-    inputRange: [0, 80, Number.MAX_VALUE],
-    outputRange: [0, 0, keyboardHeight.__getValue() - 80], // This line will be adjusted
-    extrapolate: 'clamp',
-  }),
-}}>
-          <TextInput
+            <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={320} // Use the dynamically set height
+      style={styles.commentInputKeyboardAvoiding}
+    >
+            <View style={styles.commentInputContainer}>
+              <TextInput
                 style={styles.commentInput}
                 placeholder="Add a comment..."
                 multiline
@@ -574,9 +573,10 @@ const GroupScreen = () => {
               >
                 <Text style={styles.sendButtonText}>Send</Text>
               </TouchableOpacity>
-            </Animated.View>
-        </View>
-      </BottomSheetScrollView>
+            </View>
+            </KeyboardAvoidingView>
+          </View>
+        </BottomSheetScrollView>
 
 
       {/*likes Modal*/}
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
   // Comments Modal Styles
   commentsModalContainer: {
     height: '100%', // 2/3 of the screen
-    backgroundColor: 'blue',
+    backgroundColor: 'white',
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
     paddingTop: 10,
@@ -754,15 +754,13 @@ const styles = StyleSheet.create({
     // Optional: additional styling if needed
   },
   commentInputContainer: {
-    // bottom will be controlled by Animated.Value 'keyboardHeight'
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 0 : 10, // Adjust for iOS bottom padding
     borderTopColor: '#ccc',
     borderTopWidth: 1,
     paddingHorizontal: 5,
-    backgroundColor: 'green',
-  
 
   },
   commentInput: {
