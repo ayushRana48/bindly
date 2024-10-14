@@ -1,6 +1,6 @@
 
 
-const { createPost,postStatus, getInvalidPosts,addVeto,removeVeto, compressVideo, getAllPosts, getPost, getPostsByGroupId, getPresignedUrl, getPostsByUsername, updatePost, deletePost } = require('../transactions/postTransactions');
+const { createPost,postStatus, getInvalidPosts,addVeto,removeVeto, compressVideo, getAllPosts, getPost, getPostsByGroupId, getPresignedUrl, getPostsByUsername, updatePost, deletePost, addLike,removeLike } = require('../transactions/postTransactions');
 const path = require('path');
 
 const { supabase } = require('../initSupabase');
@@ -186,7 +186,35 @@ async function removeVetoController(req, res) {
     res.status(400).json({ error: error.message });
   }
 }
+async function addLikeController(req, res) {
 
+  const{ postid,username,groupid} = req.body;
+
+  try {
+    const { data, error } = await addLike(postid, username,groupid);
+    console.log('errorfromcont',error)
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
+
+
+async function removeLikeController(req, res) {
+
+  const{ postid,username,groupid} = req.body;
+
+  try {
+    const { data, error } = await removeLike(postid, username,groupid);
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
 
 // Controller for deleting a user
 async function deletePostController(req, res) {
@@ -203,5 +231,5 @@ async function deletePostController(req, res) {
 }
 
 
-module.exports = { createPostController, deletePostController, getAllPostsController, updatePostController, getPostController, getPostsByGroupIdController, getPostsByUsernameController, getPresignedUrlController, compressVideoController,postStatusController,addVetoController,removeVetoController,getInvalidPostsController };
+module.exports = { createPostController, deletePostController, getAllPostsController, updatePostController, getPostController, getPostsByGroupIdController, getPostsByUsernameController, getPresignedUrlController, compressVideoController,postStatusController,addVetoController,removeVetoController,addLikeController,removeLikeController,getInvalidPostsController };
 

@@ -73,6 +73,8 @@ router.post('/post/compressVideo',postController.compressVideoController)
 router.post('/post/postStatus',postController.postStatusController)
 router.put('/post/addVeto',postController.addVetoController)
 router.put('/post/removeVeto',postController.removeVetoController)
+router.put('/post/addLike',postController.addLikeController)
+router.put('/post/removeLike',postController.removeLikeController)
 router.get('/post/getInvalid/:username',postController.getInvalidPostsController)
 
 router.post('/comment/addComment', commentController.addCommentController);

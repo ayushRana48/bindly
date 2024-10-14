@@ -237,7 +237,7 @@ async function updatePost(postid, updateParams) {
     // Update post
     const { data, error } = await supabase
       .from('post')
-      .update({ postid, username, groupid: groupId, photolink, videolink, caption, timepost: time, timecycle,veto:[] })
+      .update({ postid, username, groupid: groupId, photolink, videolink, caption, timepost: time, timecycle,veto:[],likes:[] })
       .eq('postid', postid)
       .select()
       .single();
@@ -292,6 +292,11 @@ async function deletePost(postid) {
 }
 
 
+function getOrdinalSuffix(n) {
+  const s = ["th", "st", "nd", "rd"],
+        v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
 
 async function addVeto(postid, username, groupid) {
   const { data: userData, error: userError } = await supabase
@@ -335,11 +340,14 @@ async function addVeto(postid, username, groupid) {
   }
 
   const { data: updateData, error: updateError } = await supabase
-    .from('post')
-    .update({ veto: newVetoList })
-    .eq('postid', postid)
-    .select()
-    .single();
+  .from('post')
+  .update({ veto: newVetoList })
+  .eq('postid', postid)
+  .select(`
+    *,
+    comment(commentid, username, message, created, users(pfp))
+  `)
+  .single();
 
   if (updateError) {
     return { data: updateData, error: updateError };
@@ -362,11 +370,7 @@ async function addVeto(postid, username, groupid) {
   return { data: updateData, error: null };
 }
 
-function getOrdinalSuffix(n) {
-  const s = ["th", "st", "nd", "rd"],
-        v = n % 100;
-  return n + (s[(v-20)%10] || s[v] || s[0]);
-}
+
 
 async function removeVeto(postid, username, groupid) {
   const { data: userData, error: userError } = await supabase
@@ -400,12 +404,133 @@ async function removeVeto(postid, username, groupid) {
   }
 
   const { data: updateData, error: updateError } = await supabase
-    .from('post')
-    .update({ veto: newVetoList })
-    .eq('postid', postid)
-    .select()
+  .from('post')
+  .update({ veto: newVetoList })
+  .eq('postid', postid)
+  .select(`
+    *,
+    comment(commentid, username, message, created, users(pfp))
+  `)
+  .single();
+
+  return { data: updateData, error: updateError };
+}
+
+
+async function addLike(postid, username, groupid) {
+  const { data: userData, error: userError } = await supabase
+    .from('usergroup')
+    .select(`
+      *,
+      user:username!inner(
+        tokens
+      ),
+      group:groupid!inner(
+        groupname
+      )
+    `)
+    .eq('groupid', groupid)
+    .eq('username', username)
     .single();
 
+  if (userError) {
+    console.log('user', userError);
+    if (userError.message === 'JSON object requested, multiple (or no) rows returned') {
+      return { error: { message: 'user not in group' } };
+    }
+    return { error: userError };
+  }
+
+  const { data: postData, error: postError } = await supabase
+    .from('post')
+    .select('likes')
+    .eq('postid', postid)
+    .single();
+
+  if (postError) {
+    console.log(postid);
+    console.log('post', postError);
+    return { error: postError };
+  }
+
+  const newLikeList = postData.likes || [];
+  if (!newLikeList.includes(username)) {
+    newLikeList.push(username);
+  }
+
+  const { data: updateData, error: updateError } = await supabase
+  .from('post')
+  .update({ likes: newLikeList })
+  .eq('postid', postid)
+  .select(`
+    *,
+    comment(commentid, username, message, created, users(pfp))
+  `)
+  .single();
+
+  if (updateError) {
+    return { data: updateData, error: updateError };
+  }
+
+  const vetoCount = newLikeList.length;
+  // const ordinalVetoCount = getOrdinalSuffix(vetoCount);
+
+  // // Notify the user who received the veto
+  // const tokens = userData.user.tokens.filter(token => Expo.isExpoPushToken(token));
+  // const notifications = tokens.map(token => ({
+  //   to: token,
+  //   sound: 'default',
+  //   title: `Bindly`,
+  //   body: `You received your ${ordinalVetoCount} veto for group ${userData.group.groupname}`,
+  // }));
+
+  // await sendBatchNotifications(notifications);
+
+  return { data: updateData, error: null };
+}
+
+
+
+async function removeLike(postid, username, groupid) {
+  const { data: userData, error: userError } = await supabase
+    .from('usergroup')
+    .select('*')
+    .eq('groupid', groupid)
+    .eq('username', username)
+    .single();
+
+  if (userError) {
+    if (userError.message == 'JSON object requested, multiple (or no) rows returned') {
+      return { error: { message: 'user not in group' } }
+    }
+    return { error: userError };
+  }
+
+  const { data: postData, error: postError } = await supabase
+    .from('post')
+    .select('likes')
+    .eq('postid', postid)
+    .single();
+
+  if (postError) {
+    return { error: postError };
+  }
+
+  const newLikeList = postData.likes || [];
+  const index = newLikeList.indexOf(username);
+  if (index > -1) {
+    newLikeList.splice(index, 1);
+  }
+
+  const { data: updateData, error: updateError } = await supabase
+  .from('post')
+  .update({ likes: newLikeList })
+  .eq('postid', postid)
+  .select(`
+    *,
+    comment(commentid, username, message, created, users(pfp))
+  `)
+  .single();
   return { data: updateData, error: updateError };
 }
 
@@ -510,4 +635,4 @@ async function sendBatchNotifications(notifications) {
 
 
 
-module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, compressVideo, postStatus, addVeto, removeVeto, getInvalidPosts };
+module.exports = { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, compressVideo, postStatus, addVeto, removeVeto,addLike,removeLike, getInvalidPosts };

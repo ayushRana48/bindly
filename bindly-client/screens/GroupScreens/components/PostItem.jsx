@@ -16,6 +16,7 @@ import { Video } from 'expo-av';
 import placeholder from '../../../assets/profile.png';
 import { useUserContext } from '../../../UserContext';
 import commentIcon from '../../../assets/comment.png';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const screenWidth = Dimensions.get('window').width;
 const width = screenWidth - 48; // Adjusted for padding/margins
@@ -36,9 +37,13 @@ const PostComponent = ({
   updatePostVeto,
   groupId,
   userHasVeto,
+  userHasLiked,
+  likes,
+  updatePostLikes,
   comments,
   addComment,
   onOpenCommentsModal, // New prop added
+  onOpenLikesModal
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -118,6 +123,7 @@ const PostComponent = ({
     }
   };
 
+
   const removeVeto = async () => {
     if (loading) {
       return;
@@ -153,6 +159,52 @@ const PostComponent = ({
       setLoading(false);
     }
   };
+
+  const toggleLike = async () => {
+    if (loading) {
+      return;
+    }
+    let route='https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addLike'
+    if(userHasLiked){
+      route='https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeLike'
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(
+        route,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postid: postid,
+            username: user.username,
+            groupid: groupId,
+          }),
+        }
+      );
+
+      const { status, body } = await response.json().then((data) => ({
+        status: response.status,
+        body: data,
+      }));
+
+      console.log('status', status)
+      console.log('body', body)
+
+      if (status === 200) {
+        updatePostLikes(body);
+      }
+    } catch (error) {
+      console.log('Fetch error: ', error);
+      Alert.alert('Network Error', 'Unable to connect to the server. Please try again later.');
+    } finally {
+      setModalVisible(false);
+      setLoading(false);
+    }
+  };
+
+
+  
 
   const deletePost = async () => {
     if (deleteLoading) {
@@ -259,6 +311,19 @@ const PostComponent = ({
           {valid == null && (
             <>
               <TouchableOpacity
+                style={{...styles.commentButton}}
+                onPress={() => toggleLike()} // Updated onPress
+              >
+                 <Icon
+                  name={userHasLiked ? 'heart' : 'heart-o'}
+                  size={22}
+                  color={userHasLiked ? 'red' : 'black'}
+                  style={userHasLiked ? styles.filledHeart : styles.unfilledHeart}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => onOpenLikesModal(postid)}><Text style={styles.commentCount}>{likes.length}</Text></TouchableOpacity>
+
+              <TouchableOpacity
                 style={styles.commentButton}
                 onPress={() => onOpenCommentsModal(postid)} // Updated onPress
               >
@@ -307,13 +372,13 @@ const PostComponent = ({
               </Text>
             )}
           </View>
-          <View style={styles.modalButtons}>
+          <View style={{...styles.modalButtons}}>
             {!userHasVeto ? (
-              <TouchableOpacity style={styles.confirmButton} onPress={addVeto}>
+              <TouchableOpacity style={{width:240, height:40, padding:'auto', backgroundColor:'dodgerblue',alignItems: 'center',borderRadius:5, marginHorizontal:'auto'}} onPress={addVeto}>
                 {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Veto</Text>}
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={styles.confirmButton} onPress={removeVeto}>
+              <TouchableOpacity  style={{width:240, height:60, padding:'auto', backgroundColor:'dodgerblue',alignItems: 'center',borderRadius:5, marginHorizontal:'auto',}} onPress={removeVeto}>
                 {loading ? (
                   <ActivityIndicator color="white" />
                 ) : (
@@ -322,7 +387,7 @@ const PostComponent = ({
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity  style={{width:240, height:40, padding:'auto', backgroundColor:'red',alignItems: 'center',borderRadius:5, paddingVertical:'auto', marginHorizontal:'auto', marginTop:4}} onPress={() => setModalVisible(false)}>
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -344,8 +409,11 @@ const PostComponent = ({
             <TouchableOpacity
               style={styles.deleteOptionButton}
               onPress={() => {
+                console.log('clossseee thissss1')
+
                 setExtraModalVisible(false);
                 setDeleteConfirmationVisible(true);
+                console.log('clossseee thissss')
               }}
             >
               <Text style={styles.buttonText}>Delete</Text>
@@ -504,20 +572,21 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   commentCount: {
-    marginLeft: 5,
+    marginLeft: 8,
+    marginRight:24,
     fontSize: 14,
     color: '#333',
   },
   vetoCount: {
     marginLeft: 'auto',
-    marginRight: 2,
+    marginRight: 8,
     fontSize: 14,
     color: '#333',
   },
   deleteButton: {
     backgroundColor: 'red',
-    width: 25,
-    height: 25,
+    width: 26,
+    height: 26,
     padding: 2,
     borderRadius: 20,
     justifyContent: 'center',
@@ -567,7 +636,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalButtons: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
     marginBottom: 20,
@@ -589,6 +657,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
+    marginVertical:'auto'
   },
   // Extra Modal Options
   modalOptions: {
@@ -619,6 +688,10 @@ export default memo(PostComponent, (prevProps, nextProps) => {
         comment.username === nextProps.comments[index].username &&
         comment.users?.pfp === nextProps.comments[index].users?.pfp
     );
+    const areLikesEqual =
+    prevProps.likes.length === nextProps.likes.length &&
+    prevProps.likes.every((value, index) => value === nextProps.likes[index]);
+
 
   const result =
     prevProps.postid === nextProps.postid &&
@@ -628,6 +701,7 @@ export default memo(PostComponent, (prevProps, nextProps) => {
     prevProps.time === nextProps.time &&
     prevProps.valid === nextProps.valid &&
     areVetoEqual &&
+    areLikesEqual &&
     prevProps.totalUsers === nextProps.totalUsers &&
     prevProps.userHasVeto === nextProps.userHasVeto &&
     areCommentsEqual; // Include comments comparison
