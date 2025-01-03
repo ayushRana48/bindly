@@ -100,6 +100,7 @@ router.get('/stripe/getSavedCards/:customerId', stripeController.getSavedCardsCo
 
 
 router.post('/paypal/payout', paypalController.createPayoutController);
+router.post('/paypal/checkPayout', paypalController.checkPayoutStatusController);
 
 
 router.post('/strava/addRefresh', stravaController.addStravaRefreshController);

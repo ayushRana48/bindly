@@ -55,7 +55,7 @@ const TransferMoney = () => {
         }
 
         setError('');
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/paypal/payout`, {
+        fetch(`http://localhost:3000/bindly/paypal/payout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -67,6 +67,13 @@ const TransferMoney = () => {
         })
             .then(response => response.json())
             .then(data => {
+
+                console.log({
+                    user_id: user.username,
+                    recipient_email: isVenmo ? phone : email,
+                    is_venmo: isVenmo,
+                    amount: amountNumber,
+                })
                 if (data.error) {
                     throw new Error(data.error.message || 'Error processing payout');
                 }

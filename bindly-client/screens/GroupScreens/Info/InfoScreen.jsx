@@ -89,6 +89,10 @@ const InfoScreen = () => {
                 <Text style={{ fontWeight: '700' }}>Task Per Week:</Text>
                 <Text>{groupData.group.tasksperweek}</Text>
               </View>
+              <View style={{ flexDirection: 'row', marginBottom: 5, flexWrap: 'wrap' }}>
+                <Text style={{ fontWeight: '700' }}>Buy in:</Text>
+                <Text>$8.00</Text>
+              </View>
               <View style={{ flexDirection: 'row', marginBottom: 5, flexWrap: 'wrap', paddingRight:10 }}>
                 <Text numberOfLines={5} ellipsizeMode="tail" onPress={() => setModalVisible(true)}>
                 <Text style={{ fontWeight: '700' }}>Description: </Text>

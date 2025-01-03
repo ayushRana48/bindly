@@ -106,8 +106,10 @@ const PostComponent = ({
 
   const displayDate = (time) => {
     const date = new Date(time);
+    date.setMonth(date.getMonth() + 3); // Add 4 months
     return date.toLocaleDateString();
   };
+  
 
   const displayTime = (time) => {
     const date = new Date(time);
@@ -404,7 +406,7 @@ const PostComponent = ({
       {/* Caption and Actions */}
       <View style={styles.captionContainer}>
         <View style={styles.actionsRow}>
-          {valid == null && (
+          {valid == null || valid && (
             <>
               <TouchableOpacity
                 style={{ ...styles.commentButton, padding:5, paddingHorizontal:8 }}

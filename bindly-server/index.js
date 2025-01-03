@@ -30,6 +30,23 @@ app.post('/log', (req, res) => {
   res.status(200).json({ message: 'Log received' });
 });
 
+app.post('/paypal-webhook', (req, res) => {
+  const event = req.body;
+
+  console.log('Received PayPal Webhook Event:', event);
+
+  if (event.event_type === 'PAYMENT.PAYOUTS-ITEM.SUCCEEDED') {
+    // Handle success case
+    console.log('Payout succeeded:', event.resource);
+  } else if (event.event_type === 'PAYMENT.PAYOUTS-ITEM.FAILED') {
+    // Handle failure case
+    console.log('Payout failed:', event.resource);
+  }
+
+  res.sendStatus(200); // Acknowledge receipt of the webhook
+});
+
+
 
 
 app.use('/bindly', require('./routes/bindly'));

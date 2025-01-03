@@ -600,7 +600,7 @@ async function postStatus(username, groupid) {
     console.log(cycleEndTime);
     console.log(isInSame24HourCycle);
 
-    const fourHoursAfterLastPost = new Date(timepost.getTime() + 4 * 60 * 60 * 1000);
+    const fourHoursAfterLastPost = new Date(timepost.getTime() + 2 * 60 * 60 * 1000);
 
     let status;
     if (isInSame24HourCycle) {
