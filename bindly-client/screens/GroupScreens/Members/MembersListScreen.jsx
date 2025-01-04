@@ -47,7 +47,7 @@ const MembersListScreen = () => {
   const getAllMembers = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByGroup/${g2.group.groupid}`, {
+      const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByGroup/${g2.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const res = await response.json();
@@ -67,7 +67,7 @@ const MembersListScreen = () => {
   const getGroup = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${g2.group.groupid}`, {
+      const response = await fetch(`http://localhost:3000/bindly/group/${g2.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 

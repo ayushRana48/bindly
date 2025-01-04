@@ -35,7 +35,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
         setAccepting(true);
 
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/acceptInvite`, {
+            const response = await fetch(`http://localhost:3000/bindly/invite/acceptInvite`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -81,7 +81,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
         setRejecting(true);
 
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/deleteInvite/${inviteId}`, {
+            const response = await fetch(`http://localhost:3000/bindly/invite/deleteInvite/${inviteId}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
             });

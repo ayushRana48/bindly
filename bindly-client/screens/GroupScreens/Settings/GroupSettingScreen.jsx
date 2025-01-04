@@ -55,7 +55,7 @@ const GroupSetting = () => {
 
     const getGroup = async () => {
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${gd.group.groupid}`, {
+            const response = await fetch(`http://localhost:3000/bindly/group/${gd.group.groupid}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
@@ -130,7 +130,7 @@ const GroupSetting = () => {
         }
 
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/leaveGroup`, {
+            const response = await fetch(`http://localhost:3000/bindly/usergroup/leaveGroup`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -168,7 +168,7 @@ const GroupSetting = () => {
         }
 
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/deleteGroup`, {
+            const response = await fetch(`http://localhost:3000/bindly/group/deleteGroup`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

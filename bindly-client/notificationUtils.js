@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 
-const LOGGING_URL = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/log';
+const LOGGING_URL = 'http://localhost:3000/log';
 
 async function logToServer(message) {
     try {
@@ -80,7 +80,7 @@ export async function registerForPushNotificationsAsync(username) {
 
 
 
-        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/notification/registerToken`, {
+        const response = await fetch(`http://localhost:3000/bindly/notification/registerToken`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -130,7 +130,7 @@ export async function removePushTokenAsync(username) {
 
             await  logToServer(`we have a token so lets remove,${token}`)
 
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/notification/removeToken`, {
+            const response = await fetch(`http://localhost:3000/bindly/notification/removeToken`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

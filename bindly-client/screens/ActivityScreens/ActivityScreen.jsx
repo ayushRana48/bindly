@@ -18,7 +18,7 @@ const ActivityScreen = () => {
 
   const getAllInvites = async () => {
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getInviteByReciever/${user.username}`, {
+      const response = await fetch(`http://localhost:3000/bindly/invite/getInviteByReciever/${user.username}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const res = await response.json();
@@ -30,7 +30,7 @@ const ActivityScreen = () => {
 
   const getNotifyVeto = async () => {
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/notifyveto/${user.username}`, {
+      const response = await fetch(`http://localhost:3000/bindly/notifyveto/${user.username}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 

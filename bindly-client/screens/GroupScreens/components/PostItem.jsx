@@ -124,7 +124,7 @@ const PostComponent = ({
     setLoading(true);
     try {
       const response = await fetch(
-        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addVeto`,
+        `http://localhost:3000/bindly/post/addVeto`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -161,7 +161,7 @@ const PostComponent = ({
     setLoading(true);
     try {
       const response = await fetch(
-        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeVeto`,
+        `http://localhost:3000/bindly/post/removeVeto`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -194,9 +194,9 @@ const PostComponent = ({
     if (loading) {
       return;
     }
-    let route = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addLike'
+    let route = 'http://localhost:3000/bindly/post/addLike'
     if (userHasLiked) {
-      route = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeLike'
+      route = 'http://localhost:3000/bindly/post/removeLike'
     }
     else{
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -252,7 +252,7 @@ const PostComponent = ({
 
     updatePostLikes(postid,user.username);
 
-    let route = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addLike'
+    let route = 'http://localhost:3000/bindly/post/addLike'
     setLoading(true);
     try {
       const response = await fetch(
@@ -298,7 +298,7 @@ const PostComponent = ({
 
     try {
       const response = await fetch(
-        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/deletePost/${postid}`,
+        `http://localhost:3000/bindly/post/deletePost/${postid}`,
         {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },

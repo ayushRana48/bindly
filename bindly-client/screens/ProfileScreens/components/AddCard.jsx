@@ -53,7 +53,7 @@ const AddCard = ({ setCards: setCards2,cards:cards2 }) => {
     };
 
     const fetchPaymentSheetParams = async () => {
-        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/saveCard`, {
+        const response = await fetch(`http://localhost:3000/bindly/stripe/saveCard`, {
             method: 'POST',
             body: JSON.stringify({ email: user.email }),
             headers: { 'Content-Type': 'application/json' },
@@ -79,7 +79,7 @@ const AddCard = ({ setCards: setCards2,cards:cards2 }) => {
             await confirmPaymentSheetPayment();
             try {
                 console.log('customer in buy press',customer)
-                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/getSavedCards/${customer}`);
+                const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${customer}`);
                 const data = await response.json();
                 
     
@@ -110,7 +110,7 @@ const AddCard = ({ setCards: setCards2,cards:cards2 }) => {
         }
         setLoadingRemove(true);
 
-        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/detachOldPaymentMethods`, {
+        const response = await fetch(`http://localhost:3000/bindly/stripe/detachOldPaymentMethods`, {
             method: 'POST',
             body: JSON.stringify({ customerId: user.stripeid, cardId: cardToDelete }),
             headers: { 'Content-Type': 'application/json' },

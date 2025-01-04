@@ -19,7 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { removePushTokenAsync } from "../../notificationUtils";
 
 
-const LOGGING_URL = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/log';
+const LOGGING_URL = 'http://localhost:3000/log';
 
 async function logToServer(message) {
   console.log(`message:  ${message}`);
@@ -129,7 +129,7 @@ const ProfileScreen = () => {
             imgBase64 = await blobToBase64(blob);
         }
 
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users/updateUser/${user.username}`, {
+        fetch(`http://localhost:3000/bindly/users/updateUser/${user.username}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -153,7 +153,7 @@ const ProfileScreen = () => {
 
     const getUser = async () => {
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users/email/${email}`, {
+            const response = await fetch(`http://localhost:3000/bindly/users/email/${email}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
             const data = await response.json();
@@ -176,7 +176,7 @@ const ProfileScreen = () => {
         }
         setLoading(true)
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signOut`, {
+            const response = await fetch(`http://localhost:3000/bindly/auth/signOut`, {
                 headers: { 'Content-Type': 'application/json' },
                 method: "POST",
             });

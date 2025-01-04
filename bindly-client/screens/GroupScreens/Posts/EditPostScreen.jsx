@@ -179,7 +179,7 @@ const EditPostScreen = () => {
 
         if (image) {
             try {
-                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/getPresignedUrl`, {
+                const response = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -221,7 +221,7 @@ const EditPostScreen = () => {
 
         if (video) {
             try {
-                const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/getPresignedUrl`, {
+                const response = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -265,7 +265,7 @@ const EditPostScreen = () => {
         try {
             const time = new Date(time1); // Record the start time
 
-            const response2 = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/postStatus`, {
+            const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
                 headers: { 'Content-Type': 'application/json' },
                 method: 'POST',
                 body: JSON.stringify({
@@ -299,7 +299,7 @@ const EditPostScreen = () => {
                 }
                     
 
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/updatePost/${postId}`, {
+            const response = await fetch(`http://localhost:3000/bindly/post/updatePost/${postId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -330,7 +330,7 @@ const EditPostScreen = () => {
                 if (video) {
 
 
-                    fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/compressVideo`, {
+                    fetch(`http://localhost:3000/bindly/post/compressVideo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ videolink: `${user.username}-${groupData.group.groupid}-${time1}v` }),

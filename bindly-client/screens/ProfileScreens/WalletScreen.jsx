@@ -17,7 +17,7 @@ const WalletScreen = () => {
     useEffect(() => {
         if (user && user.stripeid) {
             setLoading(true)
-            fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/getSavedCards/${user.stripeid}`)
+            fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${user.stripeid}`)
                 .then(response => response.json())
                 .then(data => setCards(data.data))
                 .catch(error => console.error('Error fetching cards:', error))

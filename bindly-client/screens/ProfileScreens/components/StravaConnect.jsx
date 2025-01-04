@@ -5,7 +5,7 @@ import { useUserContext } from '../../../UserContext';
 import strava from '../../../assets/strava.png';
 import { BASEROOT_URL } from "@env";
 
-const LOGGING_URL = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/log';
+const LOGGING_URL = 'http://localhost:3000/log';
 
 async function logToServer(message) {
   console.log(`message:  ${message}`);

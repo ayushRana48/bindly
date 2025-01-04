@@ -32,7 +32,7 @@ const DepositMoney = ({ cards }) => {
         }
 
         setError('');
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/addMoney`, {
+        fetch(`http://localhost:3000/bindly/stripe/addMoney`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

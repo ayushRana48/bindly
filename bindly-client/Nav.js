@@ -28,7 +28,7 @@ export default function Nav() {
             }
             setLoading(false)
             // try {
-            //     const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/getUser`, {
+            //     const response = await fetch(`http://localhost:3000/bindly/auth/getUser`, {
             //         headers: { 'Content-Type': 'application/json' },
             //     });
             //     const data = await response.json();

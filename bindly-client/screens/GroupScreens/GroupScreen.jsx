@@ -163,7 +163,7 @@ const GroupScreen = () => {
 
   useEffect(() => {
     const postStatusCheck = async () => {
-      const response2 = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/postStatus`, {
+      const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
         body: JSON.stringify({
@@ -226,7 +226,7 @@ const GroupScreen = () => {
     }
 
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${groupData.groupid}`, {
+      const response = await fetch(`http://localhost:3000/bindly/group/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -242,7 +242,7 @@ const GroupScreen = () => {
 
       setVisiblePosts((res.post || []).slice(0, postsPerPage));
 
-      const response2 = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/postStatus`, {
+      const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
         body: JSON.stringify({
@@ -279,7 +279,7 @@ const GroupScreen = () => {
 
   const inGroup = async () => {
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/inGroup`, {
+      const response = await fetch(`http://localhost:3000/bindly/usergroup/inGroup`, {
         headers: { 'Content-Type': 'application/json' },
         method: 'PUT',
         body: JSON.stringify({
@@ -387,7 +387,7 @@ const GroupScreen = () => {
     }
     try {
       const response = await fetch(
-        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/comment/addComment`,
+        `http://localhost:3000/bindly/comment/addComment`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
