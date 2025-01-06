@@ -1,30 +1,30 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, Pressable, Image, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useGroupsContext } from "../GroupsContext";
 import { useUserContext } from "../../UserContext";
 import GroupListItem from "./components/GroupListItem";
-import { BASEROOT_URL } from "@env";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerForPushNotificationsAsync } from "../../notificationUtils";
+import { RootStackParamList, Group } from "../../types";
 
+type GroupListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'GroupsList'>;
 
-const GroupListScreen = () => {
-    const navigation = useNavigation();
+const GroupListScreen: React.FC = () => {
+    const navigation = useNavigation<GroupListScreenNavigationProp>();
     const { groups, setGroups } = useGroupsContext();
     const { user } = useUserContext();
-    const [refreshing, setRefreshing] = useState(false);
-    const [activeTab, setActiveTab] = useState("current");
-    const [archiveGroup, setArchiveGroup] = useState([]);
-    const [filteredGroups, setFilteredGroups] = useState([]);
-
-    const [loading, setLoading] = useState(false)
+    const [refreshing, setRefreshing] = useState<boolean>(false);
+    const [activeTab, setActiveTab] = useState<"current" | "archive">("current");
+    const [archiveGroup, setArchiveGroup] = useState<Group[]>([]);
+    const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
 
 
 
     useEffect(() => {
         const checkToken = async () => {
-            await registerForPushNotificationsAsync(user.username);
+            await registerForPushNotificationsAsync(user?.username || '');
         };
 
         checkToken();
@@ -44,14 +44,15 @@ const GroupListScreen = () => {
     const getAllGroups = async () => {
         try {
             setLoading(true)
-            const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByUsername/${user.username}`, {
+            const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByUsername/${user?.username}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
             const res = await response.json();
-            const groupList = res.current.map(r => r.groups)
+            console.log(res, 'the ress List')
+            const groupList = res.current.map((r: any) => r.groups)
             setGroups(groupList);
-            const groupList2 = res.archive.map(r => r.groups)
+            const groupList2 = res.archive.map((r: any) => r.groups)
             setArchiveGroup(groupList2);
         } catch (error) {
             console.log(error);

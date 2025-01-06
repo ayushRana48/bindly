@@ -21,7 +21,7 @@ export const GroupsProvider = ({ children }: GroupsProviderProps) => {
     }, [groups]);
 
     useEffect(() => {
-        // console.log(groupData,'from groupData context')
+        console.log(groupData,'from groupData context')
     }, [groupData]);
 
     return (

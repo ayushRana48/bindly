@@ -17,7 +17,7 @@ export interface User {
   stravarefresh?: string;
 }
 
-// Group related types
+// Group related types 
 export interface Group {
   groupid: string;
   groupname: string;
@@ -33,32 +33,68 @@ export interface Group {
   lastpfpupdate?: Date;
   archive: boolean;
   notification_time?: Date;
+  post?: Post[];
+  usergroup?: UserGroup[];
+  invite?: any[];
+  timecycle?: Date;
 }
+
+
+export interface UserGroup {
+  groupid: string;
+  username: string;
+  usergroupid: string;
+  moneyowed?: number;
+  moneypaid?: number;
+  strikes?: number;
+  tokens?: string[];
+  post_notification_time?: Date;
+  users?: {
+    pfp?: string;
+  };
+}
+
 
 // Post related types
 export interface Post {
   postid: string;
-  photolink?: string;
-  videolink?: string;
   caption?: string;
-  valid?: boolean;
-  username: string;
+  comment: Comment[];
   groupid: string;
-  startdate?: Date;
-  timepost: Date;
-  timecycle?: Date;
+  likes: string[];
+  photolink?: string;
+  startdate?: Date | null;
+  timecycle: string;
+  timepost: string;
+  username: string;
+  valid?: boolean | null;
   veto: string[];
-  likes?: string[];
+  videolink?: string;
 }
 
 // Comment related types
 export interface Comment {
-  commentid: string;
+  id: string;
   created: Date;
   postid: string;
   username: string;
   message: string;
+  users: {
+    pfp?: string;
+  };
 }
+
+
+
+//component types
+export interface LeaderboardMember {
+  username: string;
+  place: number;
+  netMoney: number;
+  totalCountedPosts: number;
+  totalUnCountedPosts: number;
+}
+
 
 // Context Types
 export interface UserContextType {
@@ -94,15 +130,15 @@ export type RootStackParamList = {
   // Groups Stack
   GroupsList: undefined;
   NewGroup: undefined;
-  Group: { groupId: string };
-  GroupEdit: { groupId: string };
-  MembersList: { groupId: string };
-  InviteMembers: { groupId: string };
-  CreatePost: { groupId: string };
-  EditPost: { postId: string };
-  Info: { groupId: string };
-  ArchiveGroup: { groupId: string };
-  GroupSetting: { groupId: string };
+  Group: { groupData: any };
+  GroupEdit: undefined;
+  MembersList: undefined;
+  InviteMembers: undefined;
+  CreatePost: undefined;
+  EditPost: undefined;
+  Info: undefined;
+  ArchiveGroup: { groupData: any };;
+  GroupSetting: undefined;
 
   // Activity Stack
   Activity: undefined;
