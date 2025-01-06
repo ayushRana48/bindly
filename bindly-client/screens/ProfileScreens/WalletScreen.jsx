@@ -34,7 +34,7 @@ const WalletScreen = () => {
             <Pressable style={styles.backArrow} onPress={back}>
                 <Image style={styles.backArrowImage} source={backArrow} />
             </Pressable>
-            <Text style={styles.title}>Wallet</Text>
+            <Text style={styles.title}>Wallekt</Text>
             {loading ? <ActivityIndicator></ActivityIndicator>
                 : <>
                     <View style={{ paddingHorizontal: 20 }}>

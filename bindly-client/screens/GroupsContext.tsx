@@ -1,28 +1,47 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { Group, GroupsContextType } from '../types';
 
-const GroupsContext = createContext(null);
+export const GroupsContext = createContext<GroupsContextType>({
+  groups: [],
+  setGroups: () => {},
+  groupData: null,
+  setGroupData: () => {}
+});
 
-export const GroupsProvider = ({ children }) => {
-    const [groups, setGroups] = useState([]);
-    const [groupData,setGroupData]=useState()
+interface GroupsProviderProps {
+  children: ReactNode;
+}
 
-    useEffect(()=>{
-        console.log(groups,'from groups context')
-    },[groups])
+export const GroupsProvider = ({ children }: GroupsProviderProps) => {
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [groupData, setGroupData] = useState<any>(null); // TODO: Define specific type for groupData
 
+    useEffect(() => {
+        console.log(groups, 'from groups context');
+    }, [groups]);
 
-
-    useEffect(()=>{
+    useEffect(() => {
         // console.log(groupData,'from groupData context')
-    },[groupData])
-
-
+    }, [groupData]);
 
     return (
-        <GroupsContext.Provider value={{ groups, setGroups,groupData,setGroupData }}>
+        <GroupsContext.Provider 
+            value={{ 
+                groups, 
+                setGroups, 
+                groupData, 
+                setGroupData 
+            }}
+        >
             {children}
         </GroupsContext.Provider>
     );
 };
 
-export const useGroupsContext = () => useContext(GroupsContext);
+export const useGroupsContext = (): GroupsContextType => {
+    const context = useContext(GroupsContext);
+    if (!context) {
+        throw new Error('useGroupsContext must be used within a GroupsProvider');
+    }
+    return context;
+};

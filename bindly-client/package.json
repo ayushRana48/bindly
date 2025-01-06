@@ -17,14 +17,15 @@
     "@react-navigation/bottom-tabs": "^6.5.20",
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
+    "@react-navigation/stack": "^6.3.20",
     "@stripe/stripe-react-native": "^0.38.0",
-    "@types/react": "^18.3.2",
     "expo": "~51.0.5",
     "expo-auth-session": "~5.5.2",
     "expo-av": "~14.0.5",
     "expo-crypto": "~13.0.2",
     "expo-dev-client": "~4.0.21",
     "expo-device": "~6.0.2",
+    "expo-haptics": "~13.0.1",
     "expo-image-manipulator": "^12.0.5",
     "expo-image-picker": "~15.0.5",
     "expo-notifications": "~0.28.9",
@@ -45,13 +46,17 @@
     "react-native-screens": "^3.31.1",
     "react-native-swiper": "^1.6.0",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-webview": "^13.10.4",
-    "typescript": "^5.4.5",
-    "expo-haptics": "~13.0.1"
+    "react-native-webview": "^13.10.4"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "@types/react-native": "^0.73.0"
+    "@types/jest": "^29.5.14",
+    "@types/react": "^18.3.18",
+    "@types/react-native": "^0.73.0",
+    "@types/react-navigation": "^3.0.8",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/parser": "^8.19.0",
+    "typescript": "^5.7.2"
   },
   "private": true
 }
