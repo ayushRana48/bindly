@@ -3,13 +3,27 @@ import { View, Text, Pressable, Image, StyleSheet, Modal, Alert, TouchableWithou
 import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
+// @ts-ignore
 import placeholder from '../../../assets/profile.png';
-import { BASEROOT_URL } from "@env";
-
-const LeaderboardItem = ({ memberData }) => {
-    const navigation = useNavigation();
-    const [imageUrl, setImageUrl] = useState(placeholder);
-    const { groups, groupData, setGroupData } = useGroupsContext();
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from "../../../types";
+interface LeaderboardItemProps {
+    memberData: {
+      username: string;
+      place: number;
+      netMoney: number;
+      totalCountedPosts: number;
+      totalUnCountedPosts: number;
+      users?: {
+        pfp?: string;
+      };
+    };
+  }
+  
+  const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ memberData }) => {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const [imageUrl, setImageUrl] = useState<any>(placeholder);
+    const { groupData } = useGroupsContext();
     const { user:u } = useUserContext();
 
 

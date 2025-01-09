@@ -7,8 +7,15 @@ import Animated, {
 } from 'react-native-reanimated';
 
 
+interface BackDropProps {
+  topAnimation: any;
+  openHeight: any;
+  closeHeight: any;
+  backDropColor: any;
+  close: any;
+}
 
-const BackDrop = ({
+const BackDrop: React.FC<BackDropProps> = ({
   topAnimation,
   openHeight,
   closeHeight,

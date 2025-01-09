@@ -7,10 +7,10 @@ import { useGroupsContext } from "../../GroupsContext";
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import compressPostImage from "../../../utils/compressPostImage";
-import { BASEROOT_URL } from "@env";
+import { GroupData, Post } from "../../../types";
 
 const CreatePostScreen = () => {
-    const { setGroups, setGroupData, groupData } = useGroupsContext();
+    const { setGroupData, groupData } = useGroupsContext();
     const { user } = useUserContext();
 
     const [caption, setCaption] = useState("");
@@ -56,7 +56,7 @@ const CreatePostScreen = () => {
             if (!result.canceled) {
                 const compressedUri = await compressVideo(result.assets[0].uri);
                 setVideo(result.assets[0].uri);
-                setThumbnail(compressedUri);
+                setThumbnail(compressedUri || '');
             }
         } catch (error) {
             console.log(error);
@@ -93,14 +93,14 @@ const CreatePostScreen = () => {
             if (!result.canceled) {
                 const compressedUri = await compressVideo(result.assets[0].uri);
                 setVideo(result.assets[0].uri);
-                setThumbnail(compressedUri);
+                setThumbnail(compressedUri || '');
             }
         } catch (error) {
             console.log(error);
         }
     };
 
-    const compressVideo = async (uri) => {
+    const compressVideo = async (uri: string) => {
         try {
             const { uri: compressedUri } = await VideoThumbnails.getThumbnailAsync(
                 uri,
@@ -155,7 +155,7 @@ const CreatePostScreen = () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        fileName: `${user.username}-${groupData.group.groupid}`,
+                        fileName: `${user?.username}-${groupData.group.groupid}`,
                         date: time1,
                         isImage: true,
                     }),
@@ -197,7 +197,7 @@ const CreatePostScreen = () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        fileName: `${user.username}-${groupData.group.groupid}`,
+                        fileName: `${user?.username}-${groupData.group.groupid}`,
                         date: time1,
                         isImage: false,
                     }),
@@ -241,7 +241,7 @@ const CreatePostScreen = () => {
             headers: { 'Content-Type': 'application/json' },
             method: 'POST',
             body: JSON.stringify({
-                "username": user.username,
+                "username": user?.username,
                 "groupId": groupData.group.groupid
             }),
             });
@@ -263,7 +263,7 @@ const CreatePostScreen = () => {
     
             if (res2) {
                 if(res2.data!=='post'){
-                    setGroupData(g =>{ return {...g, 'createStatus': res2.data,timecycle:res2.startdate}})
+                    setGroupData((g:GroupData) =>{ return {...g, 'createStatus': res2.data,timecycle:res2.startdate}})
                     Alert.alert('something went wrong')
                     navigation.goBack()
                     return
@@ -278,7 +278,7 @@ const CreatePostScreen = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: user.username,
+                    username: user?.username,
                     groupId: groupData.group.groupid,
                     photolink: imgPermanentUrl,
                     videolink: vidPermanentUrl,
@@ -292,10 +292,10 @@ const CreatePostScreen = () => {
     
             if (status === 200) {
                 console.log(res2.data,'in the creations')
-                setGroupData(g => {
+                setGroupData((g: GroupData) => {
                     return {
                         ...g,
-                        post: [body,...g.post],
+                        post: [body as Post, ...g.post],
                         'createStatus': res2.data
                     };
                 });
@@ -306,7 +306,7 @@ const CreatePostScreen = () => {
     
                 // Call compressVideo API after navigation
                 if (video) {
-                    const link = `${user.username}-${groupData.group.groupid}-${time1}v`
+                    const link = `${user?.username}-${groupData.group.groupid}-${time1}v`
                     fetch(`http://localhost:3000/bindly/post/compressVideo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -332,7 +332,7 @@ const CreatePostScreen = () => {
     };
     
 
-    const openModal = (content, isImage) => {
+    const openModal = (content: string, isImage: boolean) => {
         setIsModalImage(isImage);
         setModalContent(content);
         setModalVisible(true);
@@ -359,7 +359,7 @@ const CreatePostScreen = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 }}>
                             <View>
                                 <Text>Select Picture</Text>
-                                <Pressable style={styles.selectMedia} onPress={takeImage}>
+                                <Pressable style={styles.selectMedia} onPress={pickImage}>
                                     {image ? (
                                         <Pressable onPress={() => openModal(image, true)}>
                                             <Image source={{ uri: image }} style={{ width: 140, height: 140, borderRadius: 10 }} />
@@ -429,6 +429,7 @@ const CreatePostScreen = () => {
                                             source={{ uri: modalContent }}
                                             style={styles.modalImage}
                                             useNativeControls
+                                            //@ts-ignore
                                             resizeMode="contain"
                                             shouldPlay
                                             isLooping

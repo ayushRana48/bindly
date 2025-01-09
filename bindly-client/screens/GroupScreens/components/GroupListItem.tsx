@@ -1,29 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import { useNavigation } from '@react-navigation/native';
-import placeholder from '../../../assets/GroupIcon.png';
 import { useGroupsContext } from "../../GroupsContext";
 
-const GroupListItem = ({ groupData,activeTab }) => {
-  const navigation = useNavigation();
-  const [imageUrl, setImageUrl] = useState("");
+// @ts-ignore
+import placeholder from '../../../assets/GroupIcon.png';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList, Group } from "../../../types";
+
+interface GroupListItemProps {
+  groupData: Group;
+  activeTab: 'current' | 'archive';
+}
+
+const GroupListItem: React.FC<GroupListItemProps> = ({ groupData, activeTab }) => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [imageUrl, setImageUrl] = useState<string>("");
   const {groups}= useGroupsContext()
 
   useEffect(() => {
     // Append a timestamp to force image refresh
-    setImageUrl(groupData?.pfp);
+    setImageUrl(groupData?.pfp || "");  
   }, [groupData?.pfp,groups]);
 
 
 
   const toGroup = () => {
     console.log('yoo we are going to the grrooop')
-    // if(activeTab==='current'){
       navigation.navigate("Group", { groupData: groupData });
-    // }
-    // else{
-    //   navigation.navigate("ArchiveGroup", { groupData: groupData });
-    // }
   }
 
 

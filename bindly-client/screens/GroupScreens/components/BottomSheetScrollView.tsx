@@ -19,9 +19,16 @@ import BackDrop from './BackDrop';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 
+interface BottomSheetScrollViewProps {
+  snapTo: any;
+  children: any;
+  backgroundColor: any;
+  closeFunc: any;
+  backDropColor: any;
+}
 
-const BottomSheetScrollView = forwardRef(
-  ({snapTo, children, backgroundColor,closeFunc, backDropColor, ...rest}, ref) => {
+const BottomSheetScrollView = forwardRef<any, BottomSheetScrollViewProps>(
+  ({snapTo, children, backgroundColor, closeFunc, backDropColor, ...rest}, ref) => {
     const inset = useSafeAreaInsets();
     const {height} = Dimensions.get('screen');
     const percentage = parseFloat(snapTo.replace('%', '')) / 100;
@@ -168,6 +175,7 @@ const BottomSheetScrollView = forwardRef(
               gesture={Gesture.Simultaneous(scrollViewGesture, panScroll)}>
               <Animated.View
                 {...rest}
+                // @ts-ignore
                 scrollEnabled={enableScroll}
                 bounces={false}
                 scrollEventThrottle={16}

@@ -1,46 +1,47 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, ScrollView, Pressable, Image, StyleSheet, Alert, RefreshControl, ActivityIndicator, Modal } from "react-native";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useUserContext } from "../../../UserContext";
 import { useGroupsContext } from "../../GroupsContext";
-import { useRoute } from '@react-navigation/native';
+// @ts-ignore
 import placeholder from "../../../assets/GroupIcon.png";
+// @ts-ignore
 import backArrow from '../../../assets/backArrow.png';
-import { BASEROOT_URL } from "@env";
-
-const GroupSetting = () => {
+import { GroupData, RootStackParamList } from "../../../types"; // Import necessary types
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+const GroupSetting: React.FC = () => {
     const route = useRoute();
 
-    const [groupName, setGroupName] = useState("");
-    const [description, setDescription] = useState("");
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
-    const [buyIn, setBuyIn] = useState(0);
-    const [taskPerWeek, setTaskPerWeek] = useState(0);
-    const [imageSrc, setImageSrc] = useState(placeholder);
-    const [refreshing, setRefreshing] = useState(false);
-    const [leaving, setLeaving] = useState(false);
-    const [deleting, setDeleting] = useState(false);
-    const [showLeaveModal, setShowLeaveModal] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [ending, setEnding] = useState(false);
-    const [vetoing, setVetoing] = useState(false);
+    const [groupName, setGroupName] = useState<string>("");
+    const [description, setDescription] = useState<string>("");
+    const [startDate, setStartDate] = useState<string>("");
+    const [endDate, setEndDate] = useState<string>("");
+    const [buyIn, setBuyIn] = useState<number>(0);
+    const [taskPerWeek, setTaskPerWeek] = useState<number>(0);
+    const [imageSrc, setImageSrc] = useState<{ uri: string } | typeof placeholder>(placeholder);
+    const [refreshing, setRefreshing] = useState<boolean>(false);
+    const [leaving, setLeaving] = useState<boolean>(false);
+    const [deleting, setDeleting] = useState<boolean>(false);
+    const [showLeaveModal, setShowLeaveModal] = useState<boolean>(false);
+    const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+    const [ending, setEnding] = useState<boolean>(false);
+    const [vetoing, setVetoing] = useState<boolean>(false);
 
-    const navigation = useNavigation();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { user, setUser } = useUserContext();
     const { setGroups, setGroupData, groupData: gd } = useGroupsContext();
 
     useEffect(() => {
         if (gd?.group) {
-            setGroupName(gd?.group.groupname);
-            setDescription(gd?.group.description);
-            setStartDate(gd?.group.startdate);
-            setEndDate(gd?.group.enddate);
-            if (gd?.group.pfp) {
-                setImageSrc({ uri: gd?.group.pfp });
+            setGroupName(gd.group.groupname);
+            setDescription(gd.group.description || '');
+            setStartDate(gd.group.startdate.toString());
+            setEndDate(gd.group.enddate.toString());
+            if (gd.group.pfp) {
+                setImageSrc({ uri: gd.group.pfp });
             }
-            setBuyIn(gd?.group.buyin);
-            setTaskPerWeek(gd?.group.tasksperweek);
+            setBuyIn(gd.group.buyin);
+            setTaskPerWeek(gd.group.tasksperweek);
         }
     }, [gd]);
 
@@ -48,7 +49,7 @@ const GroupSetting = () => {
         navigation.goBack();
     };
 
-    const formatLocalDateTime = (date) => {
+    const formatLocalDateTime = (date: string): string => {
         const date2 = new Date(date);
         return date2.toLocaleTimeString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
@@ -59,7 +60,7 @@ const GroupSetting = () => {
                 headers: { 'Content-Type': 'application/json' },
             });
 
-            const res = await response.json();
+            const res: GroupData = await response.json();
             setGroupData(res);
         } catch (error) {
             console.log(error);
@@ -102,7 +103,7 @@ const GroupSetting = () => {
             return;
         }
 
-        if (user.username === gd?.group.hostid) {
+        if (user?.username === gd?.group.hostid) {
             Alert.alert('Can not leave, you are the host');
             setLeaving(false);
             return;
@@ -110,8 +111,6 @@ const GroupSetting = () => {
 
         setShowLeaveModal(true);
     };
-
-
 
     const leaveGroup = async () => {
         if (leaving) return;
@@ -123,7 +122,7 @@ const GroupSetting = () => {
             return;
         }
 
-        if (user.username === gd?.group.hostid) {
+        if (user?.username === gd?.group.hostid) {
             Alert.alert('Can not leave, you are the host');
             setLeaving(false);
             return;
@@ -134,7 +133,7 @@ const GroupSetting = () => {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: user.username,
+                    username: user?.username || '',
                     groupId: gd.group.groupid,
                 }),
             });
@@ -144,7 +143,6 @@ const GroupSetting = () => {
             if (status === 200) {
                 setGroups(g => g.filter(h => h.groupid !== gd.group.groupid));
                 navigation.navigate("GroupsList");
-                setGroupData(null);
             } else {
                 console.error(body.error || "An error occurred. Please try again.");
             }
@@ -172,7 +170,7 @@ const GroupSetting = () => {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: user.username,
+                    username: user?.username || '',
                     groupId: gd.group.groupid,
                 }),
             });
@@ -182,7 +180,6 @@ const GroupSetting = () => {
             if (status === 200) {
                 setGroups(g => g.filter(h => h.groupid !== gd.group.groupid));
                 navigation.navigate("GroupsList");
-                setGroupData(null);
             } else {
                 console.error(body.error || "An error occurred. Please try again.");
             }
@@ -194,8 +191,6 @@ const GroupSetting = () => {
             setShowDeleteModal(false);
         }
     };
-
-  
 
     return (
         <ScrollView
@@ -209,9 +204,9 @@ const GroupSetting = () => {
                 <Image style={{ height: 40, width: 40 }} source={backArrow} />
             </Pressable>
 
-            {user.username === gd.group.hostid  && !isPastDate && (
+            {user?.username === gd.group.hostid && !isPastDate && (
                 <Pressable style={styles.edit} onPress={toEdit}>
-                    <Text style={{ color: isPastDate ? "gray" : "black", fontSize:16 }}>Edit</Text>
+                    <Text style={{ color: isPastDate ? "gray" : "black", fontSize: 16 }}>Edit</Text>
                 </Pressable>
             )}
 
@@ -249,7 +244,7 @@ const GroupSetting = () => {
                 </Pressable>
             </View>
 
-            {user.username === gd.group.hostid && (
+            {user?.username === gd.group.hostid && (
                 <View style={{ alignItems: 'center' }}>
                     <Pressable
                         style={[styles.deleteGroup, { backgroundColor: isPastDate ? 'gray' : '#f04343' }]}
@@ -260,8 +255,6 @@ const GroupSetting = () => {
                     </Pressable>
                 </View>
             )}
-
-           
 
             <Modal
                 animationType="slide"

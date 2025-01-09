@@ -1,8 +1,36 @@
 import { ReactNode } from 'react';
 
+
+
+//High Level Group Types
+export interface GroupData {
+  group: Group;
+  invite: any[];
+  post: Post[];
+  usergroup: UserGroup[];
+  createStatus?: 'post' | 'edit';
+  timecycle?: Date;
+}
+
+//this is just used for context initialization since we need to set the groupData to null
+export interface InternalGroupsContextType {
+  groups: Group[];
+  setGroups: React.Dispatch<React.SetStateAction<Group[]>>;
+  groupData: GroupData | null;
+  setGroupData: React.Dispatch<React.SetStateAction<GroupData | null>>;
+}
+
+//this is the actual context type that is used in the app
+export interface GroupsContextType {
+  groups: Group[];
+  setGroups: React.Dispatch<React.SetStateAction<Group[]>>;
+  groupData: GroupData;
+  setGroupData: React.Dispatch<React.SetStateAction<GroupData>>;
+}
+
+
 // User related types
 export interface User {
-  id: string;
   username: string;
   email: string;
   firstName: string;
@@ -17,41 +45,53 @@ export interface User {
   stravarefresh?: string;
 }
 
+export interface InviteMember {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName?: string;
+  pfp?: string;
+  lastpfpupdate?: Date;
+  balance: number;
+  stripeid?: string;
+  tokens?: string[];
+  lastlogin?: Date;
+  timezone?: string;
+  stravarefresh?: string;
+  invited?: boolean;
+  isMember?: boolean;
+}
+
+
 // Group related types 
 export interface Group {
   groupid: string;
   groupname: string;
   description?: string;
-  buyin?: number;
+  buyin: number;
   week?: Date;
-  startdate?: Date;
+  startdate: Date;
   timeleft?: string;
   hostid: string;
-  enddate?: Date;
+  enddate: Date;
   pfp?: string;
-  tasksperweek?: number;
+  tasksperweek: number;
   lastpfpupdate?: Date;
   archive: boolean;
   notification_time?: Date;
-  post?: Post[];
-  usergroup?: UserGroup[];
-  invite?: any[];
-  timecycle?: Date;
 }
 
 
 export interface UserGroup {
   groupid: string;
   username: string;
-  usergroupid: string;
+  usergroupid?: string;
   moneyowed?: number;
   moneypaid?: number;
   strikes?: number;
   tokens?: string[];
   post_notification_time?: Date;
-  users?: {
-    pfp?: string;
-  };
+  users?: User;
 }
 
 
@@ -87,12 +127,20 @@ export interface Comment {
 
 
 //component types
+export interface WeekData {
+  countedPosts: number;
+  unCountedPosts: number;
+  weekNum: number;
+  weekRange: string;
+}
+
 export interface LeaderboardMember {
   username: string;
   place: number;
   netMoney: number;
   totalCountedPosts: number;
   totalUnCountedPosts: number;
+  weeks: WeekData[];
 }
 
 
@@ -106,12 +154,8 @@ export interface UserContextType {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export interface GroupsContextType {
-  groups: Group[];
-  setGroups: React.Dispatch<React.SetStateAction<Group[]>>;
-  groupData: any; // TODO: Define specific type
-  setGroupData: React.Dispatch<React.SetStateAction<any>>;
-}
+
+
 
 // Navigation Types
 export type RootStackParamList = {
@@ -137,7 +181,7 @@ export type RootStackParamList = {
   CreatePost: undefined;
   EditPost: undefined;
   Info: undefined;
-  ArchiveGroup: { groupData: any };;
+  ArchiveGroup: { groupData: any };
   GroupSetting: undefined;
 
   // Activity Stack

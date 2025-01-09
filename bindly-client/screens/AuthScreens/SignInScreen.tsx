@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { 
   View, 
   Text, 
@@ -13,30 +13,21 @@ import {
   ActivityIndicator 
 } from "react-native";
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useUserContext } from "../../UserContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RootStackParamList } from "../../types";
+// @ts-ignore
+import logo from "../../assets/logo.png";
 
-// Define navigation types
-type RootStackParamList = {
-  SignIn: undefined;
-  SignUp: undefined;
-};
-
-type SignInScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignIn'>;
-
-// Define component props if needed
-interface SignInScreenProps {}
-
-const SignInScreen: React.FC<SignInScreenProps> = () => {
-    const [username, setUsername] = useState<string>("");
-    const [password, setPassword] = useState<string>("");
-    const [loading, setLoading] = useState<boolean>(false);
-    const [errorMessage, setErrorMessage] = useState<string>("");
+const SignInScreen: React.FC = () => {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     const { email, setEmail, loading: l2 } = useUserContext();
-    const navigation = useNavigation<SignInScreenNavigationProp>();
-
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const submit = async (): Promise<void> => {
         if (loading) return;
@@ -52,12 +43,9 @@ const SignInScreen: React.FC<SignInScreenProps> = () => {
             });
 
             const data = await response.json();
-            console.log(data);
 
             if (response.status === 200) {
-                console.log('set email here');
                 setEmail(username.toLowerCase());
-                console.log('set email here 2', username.toLowerCase());
                 await AsyncStorage.setItem('userEmail', username.toLowerCase());
             } else {
                 if (data.error) {
@@ -81,6 +69,7 @@ const SignInScreen: React.FC<SignInScreenProps> = () => {
     const toSignUp = (): void => {
         navigation.navigate('SignUp');
     };
+
 
     return (
         <KeyboardAvoidingView

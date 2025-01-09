@@ -14,19 +14,46 @@ import {
 import { Pressable,TapGestureHandler } from 'react-native-gesture-handler';
 import Modal from 'react-native-modal';
 import { Video } from 'expo-av';
+//@ts-ignore
 import placeholder from '../../../assets/profile.png';
 import { useUserContext } from '../../../UserContext';
+//@ts-ignore
 import commentIcon from '../../../assets/comment.png';
+//@ts-ignore
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'; // Reanimated imports
 import * as Haptics from 'expo-haptics';
-
+import { Comment, Post } from '../../../types';
 
 const screenWidth = Dimensions.get('window').width;
 const width = screenWidth - 48; // Adjusted for padding/margins
 const height = width; // Assuming a 1:1 aspect ratio
 
-const PostComponent = ({
+interface PostItemProps {
+  postid: string;
+  imageLink: string;
+  videoLink: string;
+  username: string;
+  pfpLink: string;
+  caption: string;
+  time: Date | string;
+  valid: boolean;
+  veto: string[];
+  totalUsers: number;
+  removePost: (postId: string) => void;
+  updatePostVeto: (updatedPost: Post) => void;
+  groupId: string;
+  userHasVeto: boolean;
+  userHasLiked: boolean;
+  likes: string[];
+  updatePostLikes: (postId: string, username: string) => void;
+  comments: Comment[];
+  onOpenCommentsModal: (postId: string) => void;
+  onOpenLikesModal: (postId: string) => void;
+}
+
+
+const PostComponent: React.FC<PostItemProps> = ({
   postid,
   imageLink,
   videoLink,
@@ -45,8 +72,7 @@ const PostComponent = ({
   likes,
   updatePostLikes,
   comments,
-  addComment,
-  onOpenCommentsModal, // New prop added
+  onOpenCommentsModal,
   onOpenLikesModal
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -86,7 +112,7 @@ const PostComponent = ({
   // State to track current index
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleScroll = (event) => {
+  const handleScroll = (event:any) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffsetX / width);
     setCurrentIndex(index);
@@ -104,14 +130,14 @@ const PostComponent = ({
   };
 
 
-  const displayDate = (time) => {
+  const displayDate = (time:Date | string) => {
     const date = new Date(time);
     date.setMonth(date.getMonth() + 3); // Add 4 months
     return date.toLocaleDateString();
   };
   
 
-  const displayTime = (time) => {
+  const displayTime = (time:Date | string) => {
     const date = new Date(time);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -130,7 +156,7 @@ const PostComponent = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             postid: postid,
-            username: user.username,
+            username: user?.username,
             groupid: groupId,
           }),
         }
@@ -167,7 +193,7 @@ const PostComponent = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             postid: postid,
-            username: user.username,
+            username: user?.username,
             groupid: groupId,
           }),
         }
@@ -201,7 +227,7 @@ const PostComponent = ({
     else{
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    updatePostLikes(postid,user.username);
+    updatePostLikes(postid,user?.username || "");
 
     setLoading(true);
     try {
@@ -212,7 +238,7 @@ const PostComponent = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             postid: postid,
-            username: user.username,
+            username: user?.username,
             groupid: groupId,
           }),
         }
@@ -241,6 +267,7 @@ const PostComponent = ({
     }
 
     scale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) }, () => {
+      //@ts-ignore
       scale.value = withTiming(0, { duration: 300, delay: 500 }); // Heart fades out after some time
     });
 
@@ -250,7 +277,7 @@ const PostComponent = ({
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
 
-    updatePostLikes(postid,user.username);
+    updatePostLikes(postid,user?.username || "");
 
     let route = 'http://localhost:3000/bindly/post/addLike'
     setLoading(true);
@@ -262,7 +289,7 @@ const PostComponent = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             postid: postid,
-            username: user.username,
+            username: user?.username || "",
             groupid: groupId,
           }),
         }
@@ -335,7 +362,7 @@ const PostComponent = ({
           </View>
         </View>
 
-        {username === user.username && (
+        {username === user?.username && (
           <Pressable
             style={{ ...styles.optionsButton }}
             onPress={() => {
@@ -378,6 +405,7 @@ const PostComponent = ({
                   style={styles.media}
                   source={{ uri: item.uri }}
                   useNativeControls
+                  //@ts-ignore
                   resizeMode="contain"
                   isLooping
                 />
@@ -406,7 +434,7 @@ const PostComponent = ({
       {/* Caption and Actions */}
       <View style={styles.captionContainer}>
         <View style={styles.actionsRow}>
-          {valid == null || valid && (
+          {valid == null && (
             <>
               <TouchableOpacity
                 style={{ ...styles.commentButton, padding:5, paddingHorizontal:8 }}
@@ -416,7 +444,6 @@ const PostComponent = ({
                   name={userHasLiked ? 'heart' : 'heart-o'}
                   size={22}
                   color={userHasLiked ? 'red' : 'black'}
-                  style={userHasLiked ? styles.filledHeart : styles.unfilledHeart}
                 />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => onOpenLikesModal(postid)}><Text style={styles.commentCount}>{likes.length}</Text></TouchableOpacity>
@@ -457,7 +484,7 @@ const PostComponent = ({
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>Veto</Text>
           <View style={styles.modalText}>
-            <View style={styles.modalItem}>
+            <View>
               {!userHasVeto ? (
                 <Text style={styles.boldText}>Are you sure you want to veto this post?</Text>
               ) : (

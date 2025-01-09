@@ -1,22 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, Image, StyleSheet, Modal, Alert, TouchableWithoutFeedback } from "react-native";
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
+import { RootStackParamList, UserGroup } from "../../../types";
+// @ts-ignore
 import placeholder from '../../../assets/profile.png';
-import { BASEROOT_URL } from "@env";
 
-const MemberListItem = ({ memberData, kickMember }) => {
-    const navigation = useNavigation();
-    const [imageUrl, setImageUrl] = useState("");
-    const [isModalVisible, setModalVisible] = useState(false);
-    const { groups, groupData, setGroupData } = useGroupsContext();
-    const { user } = useUserContext();
+interface MemberListItemProps {
+  memberData: UserGroup
+  kickMember: (username: string) => void;
+}
+
+const MemberListItem: React.FC<MemberListItemProps> = ({ memberData, kickMember }) => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [isModalVisible, setModalVisible] = useState<boolean>(false);
+  const { groupData, setGroupData } = useGroupsContext();
+  const { user } = useUserContext();
 
     const isPastDate = new Date(groupData.group.startdate) < new Date();
 
     useEffect(() => {
-        if (memberData.users.pfp) {
+        if (memberData.users?.pfp) {
             setImageUrl(memberData.users.pfp);
         }
     }, [memberData]);
@@ -37,7 +44,7 @@ const MemberListItem = ({ memberData, kickMember }) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    username: user.username,
+                    username: user?.username,
                     groupId: groupData.group.groupid,
                     newHost: memberData.username,
                 }),
@@ -45,7 +52,7 @@ const MemberListItem = ({ memberData, kickMember }) => {
             const data = await response.json();
             if (response.ok) {
                 Alert.alert("Success", "Host changed successfully");
-                setGroupData(g => ({
+                setGroupData((g: any) => ({
                     ...g,
                     group: {
                         ...g.group,
@@ -55,8 +62,12 @@ const MemberListItem = ({ memberData, kickMember }) => {
             } else {
                 Alert.alert("Error", data.error);
             }
-        } catch (error) {
-            Alert.alert("Error", error.message);
+        } catch (error: any) {
+            if (error instanceof Error) {
+                Alert.alert("Error", error.message);
+            } else {
+                Alert.alert("Error", "An unexpected error occurred");
+            }
         } finally {
             toggleModal();
         }
@@ -70,7 +81,7 @@ const MemberListItem = ({ memberData, kickMember }) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    username: user.username,
+                    username: user?.username,
                     groupId: groupData.group.groupid,
                     kickedUser: memberData.username,
                 }),
@@ -83,6 +94,7 @@ const MemberListItem = ({ memberData, kickMember }) => {
                 Alert.alert("Error", data.error);
             }
         } catch (error) {
+            //@ts-ignore
             Alert.alert("Error", error.message);
         } finally {
             toggleModal();
@@ -97,7 +109,7 @@ const MemberListItem = ({ memberData, kickMember }) => {
             />
             <Text style={styles.name}>{memberData.username}</Text>
             {memberData.username == groupData.group.hostid && <Text style={{ fontWeight: 'bold', marginLeft: 20 }}>H</Text>}
-            {user.username == groupData.group.hostid && user.username !== memberData.username && !isPastDate &&
+            {user?.username == groupData.group.hostid && user?.username !== memberData.username && !isPastDate &&
                 <Pressable style={styles.status} onPress={toggleModal}>
                     <Text>i</Text>
                 </Pressable>

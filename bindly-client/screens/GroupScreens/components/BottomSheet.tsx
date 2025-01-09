@@ -15,8 +15,14 @@ import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import BackDrop from './BackDrop';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
+interface BottomSheetProps {
+  snapTo: any;
+  children: any;
+  backgroundColor: any;
+  backDropColor: any;
+}
 
-const BottomSheet = forwardRef(
+const BottomSheet = forwardRef<any, BottomSheetProps>(
   ({snapTo, children, backgroundColor, backDropColor}, ref) => {
     const inset = useSafeAreaInsets();
     const {height} = Dimensions.get('screen');

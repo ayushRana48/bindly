@@ -1,7 +1,27 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Group, GroupsContextType } from '../types';
+import { Group, GroupData, GroupsContextType,InternalGroupsContextType} from '../types';
 
-export const GroupsContext = createContext<GroupsContextType>({
+
+function isValidGroupData(data: any): data is GroupData {
+
+    
+    return (
+      typeof data === 'object' &&
+      data !== null &&
+      'group' in data &&
+      'post' in data &&
+      'usergroup' in data &&
+      Array.isArray(data.post) &&
+      Array.isArray(data.usergroup) &&
+      typeof data.group === 'object' &&
+      data.group !== null &&
+      'groupid' in data.group &&
+      'groupname' in data.group
+    );
+  }
+
+
+export const GroupsContext = createContext<InternalGroupsContextType>({
   groups: [],
   setGroups: () => {},
   groupData: null,
@@ -16,14 +36,16 @@ export const GroupsProvider = ({ children }: GroupsProviderProps) => {
     const [groups, setGroups] = useState<Group[]>([]);
     const [groupData, setGroupData] = useState<any>(null); // TODO: Define specific type for groupData
 
+    
     useEffect(() => {
-        console.log(groups, 'from groups context');
-    }, [groups]);
-
-    useEffect(() => {
-        console.log(groupData,'from groupData context')
+        console.log(groupData, 'groupData\n\n')
+        if (groupData && !isValidGroupData(groupData)) {
+            console.error('Invalid group data:', groupData);
+            throw new Error('Invalid group data structure');
+        }
     }, [groupData]);
 
+    
     return (
         <GroupsContext.Provider 
             value={{ 
@@ -43,5 +65,5 @@ export const useGroupsContext = (): GroupsContextType => {
     if (!context) {
         throw new Error('useGroupsContext must be used within a GroupsProvider');
     }
-    return context;
+    return context as GroupsContextType;
 };

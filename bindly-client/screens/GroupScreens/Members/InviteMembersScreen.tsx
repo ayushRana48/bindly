@@ -1,31 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView, Pressable,Image,ActivityIndicator } from "react-native";
-import { useRoute } from '@react-navigation/native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator } from "react-native";
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../../UserContext";
 import { useGroupsContext } from "../../GroupsContext";
-import { useNavigation } from '@react-navigation/native';
-import backArrow from "../../../assets/backArrow.png"
+// @ts-ignore
+import backArrow from "../../../assets/backArrow.png";
 import InviteMemberItem from "../components/InviteMemberItem";
+import { InviteMember } from "../../../types"; // Import InviteMember type
 
-import { BASEROOT_URL } from "@env";
-
-
-const InviteMembersScreen = () => {
-  const [users, setUsers] = useState([]);
-  const [usersInGroup, setUsersInGroup] = useState([])
-  const [invites, setInvites] = useState([])
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const[loading,setLoading]=useState(false)
+const InviteMembersScreen: React.FC = () => {
+  const [users, setUsers] = useState<InviteMember[]>([]); // Use InviteMember type
+  const [filteredUsers, setFilteredUsers] = useState<InviteMember[]>([]); // Use InviteMember type
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   const route = useRoute();
+  const navigation = useNavigation();
+  const { user } = useUserContext();
+  const { groupData: gd, setGroupData } = useGroupsContext();
 
-  const navigation = useNavigation()
-
-  const { user } = useUserContext()
-  const { groupData: gd, setGroupData } = useGroupsContext()
-
-  const changeInviteStatus = (username) => {
+  const changeInviteStatus = (username: string) => {
     const updatedUsers = users.map(user => {
       if (user.username === username) {
         return {
@@ -36,30 +30,26 @@ const InviteMembersScreen = () => {
       return user;
     });
     setUsers(updatedUsers);
-  }
+  };
 
-
-  // Fetch all users when the component mounts
   useEffect(() => {
-
     const fetchAllAvailableUsers = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         const response = await fetch(`http://localhost:3000/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
           headers: { 'Content-Type': 'application/json' },
         });
-        const res = await response.json();
+        const res: InviteMember[] = await response.json(); // Ensure response is typed
         setUsers(res);
         setFilteredUsers(res);
       } catch (error) {
         console.error(error);
       }
-      setLoading(false)
+      setLoading(false);
     };
-    fetchAllAvailableUsers()
+    fetchAllAvailableUsers();
   }, []);
 
-  // Filter users based on the search term
   useEffect(() => {
     if (searchTerm === "") {
       setFilteredUsers(users);
@@ -69,12 +59,12 @@ const InviteMembersScreen = () => {
       );
       setFilteredUsers(filtered.slice(0, 10));
     }
-  }, [searchTerm, users, usersInGroup]);
+  }, [searchTerm, users]);
 
   return (
     <View style={styles.container}>
       <Pressable onPress={() => navigation.goBack()} style={styles.backArrow}>
-        <Image source={backArrow} style={{ height: 35, width: 35 }}></Image>
+        <Image source={backArrow} style={{ height: 35, width: 35 }} />
       </Pressable>
       <View style={{ marginTop: 80 }}>
         <TextInput
@@ -85,10 +75,12 @@ const InviteMembersScreen = () => {
         />
       </View>
       {filteredUsers.length === 0 ? 
-        loading?  <ActivityIndicator  size="large"  style={{width:80,marginTop:20,marginHorizontal:'auto'}} color={'dodgerblue'}></ActivityIndicator> : <Text style={styles.noMembers}>No members found</Text>
+        loading ? <ActivityIndicator size="large" style={{ width: 80, marginTop: 20, marginHorizontal: 'auto' }} color={'dodgerblue'} /> : <Text style={styles.noMembers}>No members found</Text>
        : (
         <ScrollView style={styles.groupList}>
-          {filteredUsers.map((m) => <InviteMemberItem key={m.username} memberData={m} groupData={gd.group} changeInviteStatus={changeInviteStatus}></InviteMemberItem>)}
+          {filteredUsers.map((m) => (
+            <InviteMemberItem key={m.username} memberData={m} changeInviteStatus={changeInviteStatus} />
+          ))}
         </ScrollView>
       )}
     </View>
@@ -113,16 +105,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
   },
-  memberItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  memberUsername: {
-    fontSize: 18,
-  },
   groupList: {
-    marginTop: 20
+    marginTop: 20,
   },
   backArrow: {
     position: 'absolute',

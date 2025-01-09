@@ -5,14 +5,22 @@ import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
 import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
+//@ts-ignore
 import placeholder from "../../assets/GroupIcon.png";
+//@ts-ignore
 import camera from "../../assets/Camera.png";
+//@ts-ignore
 import cameraIcon from "../../assets/cameraIcon.png";
+//@ts-ignore
 import galleryIcon from "../../assets/galleryIcon.png";
+//@ts-ignore
 import trashIcon from "../../assets/trashIcon.png";
 import * as ImagePicker from 'expo-image-picker';
-import { BASEROOT_URL } from "@env";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../types";
+import { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+
 
 const SignUpScreen = () => {
     const [email, setEmail] = useState("");
@@ -26,7 +34,7 @@ const SignUpScreen = () => {
     const [imageSrc, setImageSrc] = useState(placeholder);
     const [loading, setLoading] = useState(false);
 
-    const navigation = useNavigation();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { email: email2, setEmail: setEmail2 } = useUserContext();
     const [show, setShow] = useState(false);
     const [date, setDate] = useState(new Date());
@@ -175,10 +183,9 @@ const SignUpScreen = () => {
         navigation.navigate('SignIn');
     };
 
-    const onChange = ({ type }, selectedDate) => {
-        if (type == 'set') {
-            const currentDate = selectedDate;
-            setDate(currentDate);
+    const onChange = (event: DateTimePickerEvent, selectedDate?: Date): void => {
+        if (event.type === 'set' && selectedDate) {
+            setDate(selectedDate);
         } else {
             toggleDatepicker();
         }

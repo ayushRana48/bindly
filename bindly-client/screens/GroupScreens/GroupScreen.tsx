@@ -18,8 +18,9 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import {  Post, User, Comment, Group, UserGroup } from '../../types';
+import { Post, Comment, UserGroup, GroupData } from '../../types';
 import { RootStackParamList } from '../../types';
+
 // @ts-ignore
 import placeholder from '../../assets/GroupIcon.png';
 // @ts-ignore
@@ -39,10 +40,9 @@ interface GroupScreenProps {
   route: RouteProp<RootStackParamList, 'Group'>;
 }
 
-interface GroupScreenNavigationProp extends NativeStackNavigationProp<RootStackParamList, 'Group'> {}
+interface GroupScreenNavigationProp extends NativeStackNavigationProp<RootStackParamList, 'Group'> { }
 
 const screenWidth = Dimensions.get('window').width;
-const width = screenWidth - 48;
 
 const GroupScreen: React.FC<GroupScreenProps> = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'Group'>>();
@@ -56,7 +56,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [visiblePosts, setVisiblePosts] = useState<Post[]>([]);
   const [page, setPage] = useState<number>(1);
-  const [groupUsers, setGroupUsers] = useState<User[]>([]);
+  const [groupUsers, setGroupUsers] = useState<UserGroup[]>([]);
   const [createStatus, setCreateStatus] = useState<'post' | 'edit'>('post');
   const [commentsHash, setCommentsHash] = useState<Record<string, Comment[]>>({});
   const [viewHeight, setViewHeight] = useState<number>(0);
@@ -85,14 +85,14 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
         // Handle keyboard hide
       }
     );
-  
+
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
   }, []);
 
-  
+
 
   useEffect(() => {
     if (gd?.group) {
@@ -101,7 +101,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
       setVisiblePosts((gd.post || []).slice(0, page * postsPerPage));
       setGroupUsers(gd.usergroup || []);
     }
-  
+
     const dict: Record<string, Comment[]> = {};
     if (gd?.post) {
       gd.post.forEach((p: Post) => {
@@ -112,107 +112,109 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
   }, [gd, page, postsPerPage]);
 
 
-const started = new Date(groupData.startdate) < new Date();
-const ended = new Date(groupData.enddate) < new Date();
-const totalUsers = groupUsers.length;
-const groupId = groupData.groupid;
+  const started = new Date(groupData.startdate) < new Date();
+  const ended = new Date(groupData.enddate) < new Date();
+  const totalUsers = groupUsers.length;
+  const groupId = groupData.groupid;
 
-// Post update functions
-const updatePostVeto = (updatedPost: Post): void => {
-  setGroupData((g:Group) => {
-    const newPosts = g.post?.map((p:Post) => (p.postid === updatedPost.postid ? updatedPost : p));
-    return { ...g, post: newPosts };
-  });
-};
-
-const updatePostLikes = (updatedPostId: string, username: string): void => {
-  setGroupData((g:Group) => {
-    const newPosts = g.post?.map((p:Post) => {
-      if (p.postid === updatedPostId) {
-        const isLiked = p.likes?.includes(username);
-        const updatedLikes = isLiked
-          ? (p.likes || []).filter((like) => like !== username)
-          : [...(p.likes || []), username];
-        return { ...p, likes: updatedLikes };
-      }
-      return p;
+  // Post update functions
+  const updatePostVeto = (updatedPost: Post): void => {
+    setGroupData((g: GroupData) => {
+      const newPosts = g.post?.map((p: Post) => (p.postid === updatedPost.postid ? updatedPost : p));
+      return { ...g, post: newPosts };
     });
-    return { ...g, post: newPosts };
-  });
-};
-
-
-const removePost = (deletedPostId: string): void => {
-  setGroupData((g: Group )=> {
-    const newPosts = g.post?.filter((p:Post) => p.postid !== deletedPostId);
-    return { ...g, post: newPosts };
-  });
-};
-
-const addComment = (comment: Comment, postid: string): void => {
-  setGroupData((g:Group)=> {
-    const newPosts = g.post?.map((p:Post) => {
-      if (p.postid === postid) {
-        const commentList = [...(p.comment || []), { ...comment, users: { pfp: user?.pfp || '' } }];
-        return { ...p, comment: commentList };
-      }
-      return p;
-    });
-    return { ...g, post: newPosts };
-  });
-};
-
-// Post status check effect
-useEffect(() => {
-  const postStatusCheck = async (): Promise<void> => {
-    try {
-      const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-        body: JSON.stringify({
-          username: user?.username || '',
-          groupId: groupData.groupid
-        }),
-      });
-
-      if (!response2.ok) {
-        const errorResponse = await response2.json();
-        if (errorResponse.message === 'JSON object requested, multiple (or no) rows returned]') {
-          setCreateStatus('post');
-        }
-        return;
-      }
-
-      const res2 = await response2.json();
-
-      if (res2) {
-        setCreateStatus(res2.data);
-        if (res2.data !== gd?.createStatus) {
-          setGroupData((g:Group) => ({ 
-            ...g, 
-            createStatus: res2.data, 
-            timecycle: res2.startdate 
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Error checking post status:', error);
-    }
   };
 
-  postStatusCheck();
-}, [gd?.post, gd?.createStatus, user?.username, groupData.groupid]);
+  const updatePostLikes = (updatedPostId: string, username: string): void => {
+    setGroupData((g: GroupData) => {
+      const newPosts = g.post?.map((p: Post) => {
+        if (p.postid === updatedPostId) {
+          const isLiked = p.likes?.includes(username);
+          const updatedLikes = isLiked
+            ? (p.likes || []).filter((like) => like !== username)
+            : [...(p.likes || []), username];
+          return { ...p, likes: updatedLikes };
+        }
+        return p;
+      });
+      return { ...g, post: newPosts };
+    });
+  };
+
+
+  const removePost = (deletedPostId: string): void => {
+    setGroupData((g: GroupData) => {
+      const newPosts = g.post?.filter((p: Post) => p.postid !== deletedPostId);
+      return { ...g, post: newPosts };
+    });
+  };
+
+  const addComment = (comment: Comment, postid: string): void => {
+    setGroupData((g: GroupData) => {
+      const newPosts = g.post?.map((p: Post) => {
+        if (p.postid === postid) {
+          const commentList = [...(p.comment || []), { ...comment, users: { pfp: user?.pfp || '' } }];
+          return { ...p, comment: commentList };
+        }
+        return p;
+      });
+      return { ...g, post: newPosts };
+    });
+  };
+
+  // // Post status check effect
+  // useEffect(() => {
+  //   const postStatusCheck = async (): Promise<void> => {
+  //     try {
+  //       const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
+  //         headers: { 'Content-Type': 'application/json' },
+  //         method: 'POST',
+  //         body: JSON.stringify({
+  //           username: user?.username || '',
+  //           groupId: groupData.groupid
+  //         }),
+  //       });
+
+  //       if (!response2.ok) {
+  //         const errorResponse = await response2.json();
+  //         if (errorResponse.message === 'JSON object requested, multiple (or no) rows returned]') {
+  //           setCreateStatus('post');
+  //         }
+  //         return;
+  //       }
+
+  //       const res2 = await response2.json();
+
+  //       console.log('resss22', res2)
+
+  //       if (res2) {
+  //         setCreateStatus(res2.data);
+  //         if (res2.data !== gd?.createStatus) {
+  //           setGroupData((g: GroupData) => ({
+  //             ...g,
+  //             createStatus: res2.data,
+  //             timecycle: res2.startdate
+  //           }));
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error('Error checking post status:', error);
+  //     }
+  //   };
+
+  //   postStatusCheck();
+  // }, [gd?.post, gd?.createStatus, user?.username, groupData.groupid]);
 
 
   const getUserPfp = (username: string) => {
     return usersHashmap[username];
   };
 
-  
+
   const usersHash = (): any => {
     const dict: any = {};
     if (gd?.usergroup) {
-      gd.usergroup.forEach((p:UserGroup) => {
+      gd.usergroup.forEach((p: UserGroup) => {
         dict[p.username] = p.users?.pfp || '';
       });
     }
@@ -221,10 +223,12 @@ useEffect(() => {
 
   const usersHashmap = usersHash();
 
+
+
   const getGroup = async (): Promise<void> => {
     try {
       const isInGroup = await inGroup();
-  
+
       if (!isInGroup) {
         Alert.alert("Invalid Group", "Group has been deleted or not in group");
         navigation.navigate('GroupsList');
@@ -234,55 +238,62 @@ useEffect(() => {
     } catch (err) {
       console.error(err);
     }
-  
     try {
+      // 1. Fetch group data
       const response = await fetch(`http://localhost:3000/bindly/group/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
-  
+
       if (!response.ok) {
         const errorResponse = await response.json();
         throw new Error(errorResponse.error || 'Failed to fetch group data');
       }
-  
+
       const res = await response.json();
+
+  
+      // 3. Update group state
       setGroupData(res);
       setPosts(res.post || []);
-      setGroupUsers(res?.usergroup);
-  
+      setGroupUsers(res.usergroup);
       setVisiblePosts((res.post || []).slice(0, postsPerPage));
-  
-      const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
-        headers: { 'Content-Type': 'application/json' },
+
+      // 4. Fetch post status
+      const postStatusResponse = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: user?.username || '',
           groupId: groupData.groupid
         }),
       });
-  
-      if (!response2.ok) {
-        const errorResponse = await response2.json();
+
+      // 5. Handle post status response
+      if (!postStatusResponse.ok) {
+        const errorResponse = await postStatusResponse.json();
         if (errorResponse.message === 'JSON object requested, multiple (or no) rows returned]') {
           setCreateStatus('post');
+          return;
         }
+        throw new Error(errorResponse.error || 'Failed to fetch post status');
       }
-  
-      const res2 = await response2.json();
-  
-      if (res2) {
-        setGroupData((g:Group) => ({ 
-          ...g, 
-          createStatus: res2.data, 
-          timecycle: res2.startdate 
+
+      const postStatusData = await postStatusResponse.json();
+
+      // 6. Update post status state
+      if (postStatusData) {
+        setGroupData((g: GroupData) => ({
+          ...g,
+          createStatus: postStatusData.data,
+          timecycle: postStatusData.startdate
         }));
-        setCreateStatus(res2.data);
+        setCreateStatus(postStatusData.data);
       }
-  
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error);
-      if (error instanceof Error && 
-          error.message === 'JSON object requested, multiple (or no) rows returned') {
+      if (error instanceof Error &&
+        error.message === 'JSON object requested, multiple (or no) rows returned') {
         Alert.alert("Invalid Group", "Group has been deleted");
         navigation.navigate('GroupsList');
         setGroups(g => g.filter(h => h.groupid !== groupData.groupid));
@@ -303,12 +314,12 @@ useEffect(() => {
           groupId: groupData.groupid
         }),
       });
-  
+
       if (!response.ok) {
         const errorResponse = await response.json();
         throw new Error(errorResponse.error || 'Failed to fetch group data');
       }
-  
+
       const res = await response.json();
       return res.inGroup;
     } catch (error) {
@@ -318,142 +329,142 @@ useEffect(() => {
   };
 
 
-const onRefresh = useCallback((): void => {
-  setRefreshing(true);
-  getGroup().then(() => setRefreshing(false));
-}, []);
+  const onRefresh = useCallback((): void => {
+    setRefreshing(true);
+    getGroup().then(() => setRefreshing(false));
+  }, []);
 
 
-// Initial group fetch effect
-useEffect(() => {
-  getGroup();
-}, []);
+  // Initial group fetch effect
+  useEffect(() => {
+    getGroup();
+  }, []);
 
-// Navigation functions
-const back = (): void => {
-  navigation.navigate('GroupsList');
-};
+  // Navigation functions
+  const back = (): void => {
+    navigation.navigate('GroupsList');
+  };
 
-const setting = (): void => {
-  if (!loading) {
-    navigation.navigate('GroupSetting');
-  }
-};
-
-const toMembers = (): void => {
-  navigation.navigate('MembersList');
-};
-
-
-const toPost = (): void => {
-  if (createStatus === 'edit') {
-    navigation.navigate('EditPost');
-  } else if (createStatus === 'post') {
-    navigation.navigate('CreatePost');
-  } else {
-    Alert.alert('Wait 4 hours from previous post');
-  }
-};
-
-const toInfo = (): void => {
-  navigation.navigate('Info');
-};
-
-const loadMorePosts = (): void => {
-  const nextPage = page + 1;
-  const newVisiblePosts = posts.slice(0, nextPage * postsPerPage);
-  setVisiblePosts(newVisiblePosts);
-  setPage(nextPage);
-};
-
-const onOpenCommentsModal = (postid: string): void => {
-  const post = posts.find(p => p.postid === postid);
-  if (post) {
-    setSelectedPostComments(post.comment || []);
-    setSelectedPostId(postid);
-    setCommentsModalVisible(true);
-    bottomSheetRef.current?.expand();
-  }
-};
-
-const onOpenLikesModal = (postid: string): void => {
-  const post = posts.find(p => p.postid === postid);
-  if (post) {
-    setSelectedPostLikes(post.likes || []);
-    setSelectedPostId(postid);
-    setLikesModalVisible(true);
-    bottomSheetRef2.current?.expand();
-  }
-};
-
-const closeCommentsModal = (): void => {
-  setCommentsModalVisible(false);
-  setSelectedPostComments([]);
-  setSelectedPostId(null);
-  setCommentText('');
-  if (Keyboard.isVisible()) {  
-    Keyboard.dismiss();
-  }
-};
-
-const closeLikesModal = (): void => {
-  setLikesModalVisible(false);
-  setSelectedPostLikes([]);
-  setSelectedPostId(null);
-};
-
-const postComment = async (): Promise<void> => {
-  if (commentText.trim() === '') {
-    return;
-  }
-
-  if (!selectedPostId) {
-    console.error('No post selected for comment');
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `http://localhost:3000/bindly/comment/addComment`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          postid: selectedPostId,
-          groupid: groupId,
-          username: user?.username || '',
-          message: commentText.trim(),
-        }),
-      }
-    );
-
-    const { status, body } = await response.json().then((data: any) => ({
-      status: response.status,
-      body: data,
-    }));
-
-    if (status === 200) {
-      addComment(body, selectedPostId);
-      setSelectedPostComments(prevComments => [
-        ...prevComments, 
-        { 
-          ...body, 
-          users: { 
-            pfp: user?.pfp || '' 
-          } 
-        }
-      ]);
+  const setting = (): void => {
+    if (!loading) {
+      navigation.navigate('GroupSetting');
     }
-  } catch (error) {
-    console.log('Fetch error: ', error);
-    Alert.alert(
-      'Network Error', 
-      'Unable to connect to the server. Please try again later.'
-    );
-  } finally {
+  };
+
+  const toMembers = (): void => {
+    navigation.navigate('MembersList');
+  };
+
+
+  const toPost = (): void => {
+    if (createStatus === 'edit') {
+      navigation.navigate('EditPost');
+    } else if (createStatus === 'post') {
+      navigation.navigate('CreatePost');
+    } else {
+      Alert.alert('Wait 4 hours from previous post');
+    }
+  };
+
+  const toInfo = (): void => {
+    navigation.navigate('Info');
+  };
+
+  const loadMorePosts = (): void => {
+    const nextPage = page + 1;
+    const newVisiblePosts = posts.slice(0, nextPage * postsPerPage);
+    setVisiblePosts(newVisiblePosts);
+    setPage(nextPage);
+  };
+
+  const onOpenCommentsModal = (postid: string): void => {
+    const post = posts.find(p => p.postid === postid);
+    if (post) {
+      setSelectedPostComments(post.comment || []);
+      setSelectedPostId(postid);
+      setCommentsModalVisible(true);
+      bottomSheetRef.current?.expand();
+    }
+  };
+
+  const onOpenLikesModal = (postid: string): void => {
+    const post = posts.find(p => p.postid === postid);
+    if (post) {
+      setSelectedPostLikes(post.likes || []);
+      setSelectedPostId(postid);
+      setLikesModalVisible(true);
+      bottomSheetRef2.current?.expand();
+    }
+  };
+
+  const closeCommentsModal = (): void => {
+    setCommentsModalVisible(false);
+    setSelectedPostComments([]);
+    setSelectedPostId(null);
     setCommentText('');
-  }
-};
+    if (Keyboard.isVisible()) {
+      Keyboard.dismiss();
+    }
+  };
+
+  const closeLikesModal = (): void => {
+    setLikesModalVisible(false);
+    setSelectedPostLikes([]);
+    setSelectedPostId(null);
+  };
+
+  const postComment = async (): Promise<void> => {
+    if (commentText.trim() === '') {
+      return;
+    }
+
+    if (!selectedPostId) {
+      console.error('No post selected for comment');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/bindly/comment/addComment`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postid: selectedPostId,
+            groupid: groupId,
+            username: user?.username || '',
+            message: commentText.trim(),
+          }),
+        }
+      );
+
+      const { status, body } = await response.json().then((data: any) => ({
+        status: response.status,
+        body: data,
+      }));
+
+      if (status === 200) {
+        addComment(body, selectedPostId);
+        setSelectedPostComments(prevComments => [
+          ...prevComments,
+          {
+            ...body,
+            users: {
+              pfp: user?.pfp || ''
+            }
+          }
+        ]);
+      }
+    } catch (error) {
+      console.log('Fetch error: ', error);
+      Alert.alert(
+        'Network Error',
+        'Unable to connect to the server. Please try again later.'
+      );
+    } finally {
+      setCommentText('');
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -526,13 +537,13 @@ const postComment = async (): Promise<void> => {
             <PostItem
               key={post.postid}
               postid={post.postid}
-              imageLink={post.photolink}
-              videoLink={post.videolink}
+              imageLink={post?.photolink || ''}
+              videoLink={post.videolink || ''}
               username={post.username}
-              caption={post.caption}
+              caption={post.caption || ''}
               pfpLink={getUserPfp(post.username)}
               time={post.timepost}
-              valid={post.valid}
+              valid={post.valid || false}
               veto={post.veto}
               totalUsers={totalUsers}
               removePost={removePost}
@@ -542,7 +553,6 @@ const postComment = async (): Promise<void> => {
               userHasVeto={post.veto.includes(user?.username || '')}
               userHasLiked={post.likes.includes(user?.username || '')}
               comments={commentsHash[post.postid]}
-              addComment={addComment}
               onOpenCommentsModal={onOpenCommentsModal} // Pass the function
               onOpenLikesModal={onOpenLikesModal}
               likes={post.likes}
@@ -553,47 +563,47 @@ const postComment = async (): Promise<void> => {
       </ScrollView>
 
       {/* Comments Modal */}
-   
 
-        {/* @ts-ignore */}
-        <BottomSheetScrollView
-          ref={bottomSheetRef}
-          snapTo="66%"
-          backgroundColor="white"
-          backDropColor="rgba(0,0,0,0.5)"
-          closeFunc={closeCommentsModal}
 
-        >
-          <View style={{ ...styles.commentsModalContainer }}>
-            <View style={styles.commentsHeader}>
-              <Text style={styles.commentsTitle}>Comments</Text>
-            </View>
-            <ScrollView style={styles.commentsContent}>
-              {selectedPostComments.length === 0 ? (
-                <Text style={styles.noCommentsText}>No comments yet.</Text>
-              ) : (
-                selectedPostComments.map((comment) => (
-                  <View key={comment.id} style={styles.commentItem}>
-                    <View style={styles.commentRow}>
-                      <Image
-                        style={styles.commentProfileImage}
-                        source={comment.users.pfp ? { uri: comment.users.pfp } : placeholder}
-                      />
-                      <View style={styles.commentTextContainer}>
-                        <Text style={styles.commentUsername}>{comment.username}</Text>
-                        <Text style={styles.commentText}>{comment.message}</Text>
-                      </View>
+      {/* @ts-ignore */}
+      <BottomSheetScrollView
+        ref={bottomSheetRef}
+        snapTo="66%"
+        backgroundColor="white"
+        backDropColor="rgba(0,0,0,0.5)"
+        closeFunc={closeCommentsModal}
+
+      >
+        <View style={{ ...styles.commentsModalContainer }}>
+          <View style={styles.commentsHeader}>
+            <Text style={styles.commentsTitle}>Comments</Text>
+          </View>
+          <ScrollView style={styles.commentsContent}>
+            {selectedPostComments.length === 0 ? (
+              <Text style={styles.noCommentsText}>No comments yet.</Text>
+            ) : (
+              selectedPostComments.map((comment) => (
+                <View key={comment.id} style={styles.commentItem}>
+                  <View style={styles.commentRow}>
+                    <Image
+                      style={styles.commentProfileImage}
+                      source={comment.users.pfp ? { uri: comment.users.pfp } : placeholder}
+                    />
+                    <View style={styles.commentTextContainer}>
+                      <Text style={styles.commentUsername}>{comment.username}</Text>
+                      <Text style={styles.commentText}>{comment.message}</Text>
                     </View>
                   </View>
-                ))
-              )}
-            </ScrollView>
+                </View>
+              ))
+            )}
+          </ScrollView>
 
-            <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={320} // Use the dynamically set height
-      style={styles.commentInputKeyboardAvoiding}
-    >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={320} // Use the dynamically set height
+            style={styles.commentInputKeyboardAvoiding}
+          >
             <View style={styles.commentInputContainer}>
               <TextInput
                 style={styles.commentInput}
@@ -613,9 +623,9 @@ const postComment = async (): Promise<void> => {
                 <Text style={styles.sendButtonText}>Send</Text>
               </TouchableOpacity>
             </View>
-            </KeyboardAvoidingView>
-          </View>
-        </BottomSheetScrollView>
+          </KeyboardAvoidingView>
+        </View>
+      </BottomSheetScrollView>
 
 
       {/*likes Modal*/}

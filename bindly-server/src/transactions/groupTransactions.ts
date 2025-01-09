@@ -77,9 +77,6 @@ async function createGroup(
   }
 
   let time = timestamp;
-  if (fileUrl?.length == 0) {
-    time = "";
-  }
 
   const { data, error } = await supabase
     .from('groups')
@@ -99,6 +96,23 @@ async function createGroup(
     }])
     .select()
     .single();
+
+    console.log(data, 'Transaction data\n\n')
+    console.log(error, 'Transaction error\n\n')
+    console.log({
+      groupid,
+      groupname,
+      description,
+      buyin,
+      week,
+      startdate,
+      timeleft,
+      hostid,
+      enddate,
+      pfp: fileUrl || "",
+      tasksperweek,
+      lastpfpupdate: time
+    }, 'Transaction theGrrroup\n\n')
 
   return { 
     data, 

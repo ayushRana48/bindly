@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView, Keyboard, Platform, ActivityIndicator } from "react-native";
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../../UserContext";
 import { useGroupsContext } from "../../GroupsContext";
+// @ts-ignore
 import placeholder from "../../../assets/GroupIcon.png";
+// @ts-ignore
 import camera from "../../../assets/Camera.png";
+// @ts-ignore
 import cameraIcon from "../../../assets/cameraIcon.png";
+// @ts-ignore
 import galleryIcon from "../../../assets/galleryIcon.png";
+// @ts-ignore
 import trashIcon from "../../../assets/trashIcon.png";
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../../utils/compressImage";
 import blobToBase64 from "../../../utils/blobToBase64";
-import { BASEROOT_URL } from "@env";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList} from "../../../types";
 
-const GroupEditScreen = () => {
+const GroupEditScreen: React.FC = () => {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -22,40 +28,36 @@ const GroupEditScreen = () => {
     const { setGroups, setGroupData, groupData: gd } = useGroupsContext();
     const { user } = useUserContext();
 
-    const [groupName, setGroupName] = useState("");
-    const [description, setDescription] = useState("");
-    const [startDate, setStartDate] = useState(tomorrow);
-    const [numWeeks, setNumWeeks] = useState(0);
-    const [buyIn, setBuyIn] = useState(0);
-    const [taskPerWeek, setTaskPerWeek] = useState(0);
-    const [show, setShow] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
-    const [imageSrc, setImageSrc] = useState(placeholder);
-    const [openModal, setOpenModal] = useState(false);
-    const [groupid, setGroupid] = useState('');
-    const [timeStamp, setTimeStamp] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [groupName, setGroupName] = useState<string>("");
+    const [description, setDescription] = useState<string>("");
+    const [startDate, setStartDate] = useState<Date>(tomorrow);
+    const [numWeeks, setNumWeeks] = useState<number>(0);
+    const [buyIn, setBuyIn] = useState<number>(0);
+    const [taskPerWeek, setTaskPerWeek] = useState<number>(0);
+    const [show, setShow] = useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = useState<string>("");
+    const [imageSrc, setImageSrc] = useState<{ uri: string } | typeof placeholder>(placeholder);
+    const [openModal, setOpenModal] = useState<boolean>(false);
+    const [groupid, setGroupid] = useState<string>('');
+    const [timeStamp, setTimeStamp] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
 
-    const parseDateString = (dateString) => {
+    const parseDateString = (dateString: string): Date => {
         return new Date(dateString);
     };
 
-    const setNumWeeksF = (startDate, endDate) => {
+    const setNumWeeksF = (startDate: string, endDate: string) => {
         const start = parseDateString(startDate);
         const end = parseDateString(endDate);
 
         const timeDiff = end.getTime() - start.getTime();
         const diffDays = Math.floor(timeDiff / (1000 * 3600 * 24));
 
-        if (diffDays % 7 !== 0) {
-            // throw new Error(`The difference between startDate and endDate must be a multiple of 7. Start Date: ${startDate}, End Date: ${endDate}`);
-        }
-
         const diffWeeks = diffDays / 7;
-        setNumWeeks(diffWeeks.toString());
+        setNumWeeks(diffWeeks);
     };
 
-    const formatLocalDateTime = (date) => {
+    const formatLocalDateTime = (date: Date): string => {
         const date2 = new Date(date);
         return date2.toLocaleTimeString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
@@ -63,18 +65,18 @@ const GroupEditScreen = () => {
     useEffect(() => {
         if (gd.group) {
             setGroupName(gd.group.groupname);
-            setDescription(gd.group.description);
-            setStartDate(parseDateString(gd.group.startdate));
-            setNumWeeksF(gd.group.startdate, gd.group.enddate);
+            setDescription(gd.group.description || '');
+            setStartDate(new Date(gd.group.startdate));
+            setNumWeeksF(gd.group.startdate.toString(), gd.group.enddate.toString());
 
             if (gd.group.pfp) {
                 setImageSrc({ uri: gd.group.pfp });
             }
 
-            setBuyIn(gd.group.buyin.toString());
-            setTaskPerWeek(gd.group.tasksperweek.toString());
+            setBuyIn(gd.group.buyin);
+            setTaskPerWeek(gd.group.tasksperweek);
             setGroupid(gd.group.groupid);
-            setTimeStamp(gd.group.lastpfpupdate);
+            setTimeStamp(gd.group?.lastpfpupdate?.toString() || '');
         }
     }, [gd]);
 
@@ -118,7 +120,7 @@ const GroupEditScreen = () => {
         setOpenModal(false);
     };
 
-    const navigation = useNavigation();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const cancel = () => {
         navigation.goBack();
@@ -198,7 +200,7 @@ const GroupEditScreen = () => {
                         buyin: buyIn,
                         startdate: startDateUTC,
                         enddate: endDateUTC,
-                        hostid: user.username,
+                        hostid: user?.username || '',
                         pfp: imgBase64,
                         tasksperweek: taskPerWeek,
                         lastpfpupdate: timeStamp,
@@ -233,10 +235,12 @@ const GroupEditScreen = () => {
         }
     };
 
-    const onChange = ({ type }, selectedDate) => {
-        if (type === 'set') {
-            const currentDate = new Date(selectedDate);
-            setStartDate(currentDate);
+
+    const onChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        if (event.type === 'set' && selectedDate) {
+            setStartDate(selectedDate);
+        } else {
+            toggleDatepicker();
         }
     };
 
@@ -333,32 +337,32 @@ const GroupEditScreen = () => {
                             <TextInput
                                 style={styles.input}
                                 autoCapitalize='none'
-                                value={numWeeks}
-                                onChangeText={text => setNumWeeks(text.replace(/[^0-9]/g, ''))}
+                                value={numWeeks.toString()}
+                                onChangeText={text => setNumWeeks(parseInt(text.replace(/[^0-9]/g, ''), 10) || 0)}
                                 placeholder="5"
                                 keyboardType="numeric"
                             />
                         </View>
 
-                        {/* <View style={styles.inputContainer}>
+                        <View style={styles.inputContainer}>
                             <Text style={styles.label}>Buy In</Text>
                             <TextInput
                                 style={styles.input}
                                 autoCapitalize='none'
-                                value={buyIn}
-                                onChangeText={text => setBuyIn(text.replace(/[^0-9]/g, ''))}
+                                value={buyIn.toString()}
+                                onChangeText={text => setBuyIn(parseFloat(text.replace(/[^0-9.]/g, '')) || 0)}
                                 placeholder="202"
                                 keyboardType="numeric"
                             />
-                        </View> */}
+                        </View>
 
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Tasks Per Week</Text>
                             <TextInput
                                 style={styles.input}
                                 autoCapitalize='none'
-                                value={taskPerWeek}
-                                onChangeText={text => setTaskPerWeek(text.replace(/[^0-9]/g, ''))}
+                                value={taskPerWeek.toString()}
+                                onChangeText={text => setTaskPerWeek(parseInt(text.replace(/[^0-9]/g, ''), 10) || 0)}
                                 placeholder="5"
                                 keyboardType="numeric"
                             />

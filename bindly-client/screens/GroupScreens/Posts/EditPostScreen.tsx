@@ -7,49 +7,43 @@ import { useGroupsContext } from "../../GroupsContext";
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import compressPostImage from "../../../utils/compressPostImage";
-import { BASEROOT_URL } from "@env";
+import { Post, GroupData } from "../../../types";
 
-const EditPostScreen = () => {
-    const { setGroups, setGroupData, groupData } = useGroupsContext();
+const EditPostScreen: React.FC = () => {
+    const { groupData, setGroupData } = useGroupsContext();
     const { user } = useUserContext();
-
-    const [caption, setCaption] = useState("");
-    const [image, setImage] = useState("");
-    const [video, setVideo] = useState("");
-    const [thumbnail, setThumbnail] = useState("");
+  
+    const [caption, setCaption] = useState<string>("");
+    const [image, setImage] = useState<string>("");
+    const [video, setVideo] = useState<string>("");
+    const [thumbnail, setThumbnail] = useState<string>("");
+    const [postId, setPostId] = useState<string>("");
+    const [prevTime, setPrevTime] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalContent, setModalContent] = useState("");
     const [modalIsImage, setIsModalImage] = useState(true);
-    const [postId, setPostId] = useState("")
-    const [prevTime, setPrevTime] = useState(false)
 
-
-    useEffect(()=>{
-        console.log(groupData.timecycle,'time here')
-    },[])
-   
-    
-    useEffect(()=>{
-        const getPost = async () => {
-            let correctPost = {}
-            for (let i = 0; i < groupData?.post.length; i++) {
-                if (user.username == groupData.post[i].username) {
-                    correctPost = groupData.post[i]
-                    setCaption(correctPost.caption)
-                    setImage(correctPost.photolink)
-                    setVideo(correctPost.videolink)
-                    setPrevTime(correctPost.timepost)
-                    setPostId(correctPost.postid)
-                    const compressedUri = await compressVideo(correctPost.videolink);
-                    setThumbnail(compressedUri)
-                    break;
-                }
-            }
+    useEffect(() => {
+      const getPost = async () => {
+        let correctPost: Post | undefined;
+        for (let i = 0; i < groupData?.post.length; i++) {
+          if (user?.username === groupData.post[i].username) {
+            correctPost = groupData.post[i];
+            setCaption(correctPost.caption || "");
+            setImage(correctPost.photolink || "");
+            setVideo(correctPost.videolink || "");
+            setPrevTime(correctPost.timepost);
+            setPostId(correctPost.postid);
+            const compressedUri = await compressVideo(correctPost.videolink || "");
+            setThumbnail(compressedUri || "");
+            break;
+          }
         }
-        getPost()
-    }, [])
-
+      };
+      getPost();
+    }, [groupData, user]);
+  
 
 
     const takeImage = async () => {
@@ -84,7 +78,7 @@ const EditPostScreen = () => {
             if (!result.canceled) {
                 const compressedUri = await compressVideo(result.assets[0].uri);
                 setVideo(result.assets[0].uri);
-                setThumbnail(compressedUri);
+                setThumbnail(compressedUri || "");
             }
         } catch (error) {
             console.log(error);
@@ -121,14 +115,14 @@ const EditPostScreen = () => {
             if (!result.canceled) {
                 const compressedUri = await compressVideo(result.assets[0].uri);
                 setVideo(result.assets[0].uri);
-                setThumbnail(compressedUri);
+                setThumbnail(compressedUri || "");
             }
         } catch (error) {
             console.log(error);
         }
     };
 
-    const compressVideo = async (uri) => {
+    const compressVideo = async (uri: string) => {
         try {
             const { uri: compressedUri } = await VideoThumbnails.getThumbnailAsync(
                 uri,
@@ -183,7 +177,7 @@ const EditPostScreen = () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        fileName: `${user.username}-${groupData.group.groupid}`,
+                        fileName: `${user?.username}-${groupData.group.groupid}`,
                         date: time1,
                         isImage: true,
                     }),
@@ -225,7 +219,7 @@ const EditPostScreen = () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        fileName: `${user.username}-${groupData.group.groupid}`,
+                        fileName: `${user?.username}-${groupData.group.groupid}`,
                         date: time1,
                         isImage: false,
                     }),
@@ -269,19 +263,11 @@ const EditPostScreen = () => {
                 headers: { 'Content-Type': 'application/json' },
                 method: 'POST',
                 body: JSON.stringify({
-                    "username": user.username,
+                    "username": user?.username,  
                     "groupId": groupData.group.groupid
                 }),
                 });
         
-        
-        
-                if (!response2.ok) {
-                const errorResponse = await response2.json();
-                if(errorResponse.message=='JSON object requested, multiple (or no) rows returned]'){
-                    setCreateStatus('post')
-                }
-                }
         
                 const res2 = await response2.json();
         
@@ -303,13 +289,13 @@ const EditPostScreen = () => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: user.username,
+                    username: user?.username,
                     groupId: groupData.group.groupid,
                     photolink: imgPermanentUrl,
                     videolink: vidPermanentUrl,
                     caption: caption,
                     time: time,
-                    prevFileName: `${user.username}-${groupData.group.groupid}-${Date.parse(prevTime)}`,
+                    prevFileName: `${user?.username}-${groupData.group.groupid}-${Date.parse(prevTime)}`,
                     timecycle:groupData.timecycle
 
                 }),
@@ -333,7 +319,7 @@ const EditPostScreen = () => {
                     fetch(`http://localhost:3000/bindly/post/compressVideo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ videolink: `${user.username}-${groupData.group.groupid}-${time1}v` }),
+                        body: JSON.stringify({ videolink: `${user?.username}-${groupData.group.groupid}-${time1}v` }),
                     })
                         .then(response => {
                             console.log(response)
@@ -356,7 +342,7 @@ const EditPostScreen = () => {
     };
 
 
-    const openModal = (content, isImage) => {
+    const openModal = (content: string, isImage: boolean) => {
         setIsModalImage(isImage);
         setModalContent(content);
         setModalVisible(true);
@@ -453,6 +439,7 @@ const EditPostScreen = () => {
                                             source={{ uri: modalContent }}
                                             style={styles.modalImage}
                                             useNativeControls
+                                            //@ts-ignore
                                             resizeMode="contain"
                                             shouldPlay
                                             isLooping

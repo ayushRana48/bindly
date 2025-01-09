@@ -71,7 +71,6 @@ async function getAllUserGroups(): Promise<DatabaseResponse<Array<UserGroup & { 
 
 interface GroupMembersResponse {
   members: Array<UserGroup & { users: User }>;
-  group: Group;
 }
 
 async function getUserGroupsByGroupId(groupid: string): Promise<DatabaseResponse<GroupMembersResponse>> {
@@ -101,7 +100,6 @@ async function getUserGroupsByGroupId(groupid: string): Promise<DatabaseResponse
   return { 
     data: {
       members: userGroupData,
-      group: groupData
     }, 
     error: null 
   };

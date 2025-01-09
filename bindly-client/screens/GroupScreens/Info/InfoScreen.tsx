@@ -1,36 +1,32 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Alert, Modal } from "react-native";
-import { useNavigation } from '@react-navigation/native';
-import { useRoute } from '@react-navigation/native';
+import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Modal } from "react-native";
+import { useNavigation, useRoute } from '@react-navigation/native';
+// @ts-ignore
 import placeholder from '../../../assets/GroupIcon.png';
+// @ts-ignore
 import backArrow from '../../../assets/backArrow.png';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import LeaderboardItem from "../components/LeaderboardItem";
-import { BASEROOT_URL } from "@env";
+import { LeaderboardMember } from "../../../types"; // Import the updated type
 
-const InfoScreen = () => {
+const InfoScreen: React.FC = () => {
   const route = useRoute();
-  const [imageUrl, setImageUrl] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
   const navigation = useNavigation();
   const { groupData, setGroupData, setGroups } = useGroupsContext();
-  const [refreshing, setRefreshing] = useState(false);
-  const { user } = useUserContext();
-  const [posts, setPosts] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardMember[]>([]); // Use the updated type
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
 
   useEffect(() => {
-    if (groupData?.leaderboard) {
-      setLeaderboard(groupData?.leaderboard)
-    }
     if (groupData?.group?.pfp) {
-      setImageUrl(groupData.group.pfp)
+      setImageUrl(groupData.group.pfp);
     }
   }, [groupData]);
 
-  const getLeaderBoard = async () => {
+  const getLeaderBoard = async (): Promise<void> => {
     try {
       const response = await fetch(`http://localhost:3000/bindly/group/getLeaderboard/${groupData.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
@@ -42,7 +38,7 @@ const InfoScreen = () => {
       }
 
       const res = await response.json();
-      setLeaderboard(res)
+      setLeaderboard(res);
     } catch (error) {
       console.error(error);
     } finally {
@@ -56,10 +52,10 @@ const InfoScreen = () => {
   }, []);
 
   useEffect(() => {
-    getLeaderBoard()
+    getLeaderBoard();
   }, [groupData?.group?.groupid]);
 
-  const back = () => {
+  const back = (): void => {
     navigation.goBack();
   };
 
@@ -95,7 +91,7 @@ const InfoScreen = () => {
               </View>
               <View style={{ flexDirection: 'row', marginBottom: 5, flexWrap: 'wrap', paddingRight:10 }}>
                 <Text numberOfLines={5} ellipsizeMode="tail" onPress={() => setModalVisible(true)}>
-                <Text style={{ fontWeight: '700' }}>Description: </Text>
+                  <Text style={{ fontWeight: '700' }}>Description: </Text>
                   {groupData.group.description}
                 </Text>
               </View>
@@ -109,7 +105,7 @@ const InfoScreen = () => {
 
         {!loading && (
           <ScrollView style={{ paddingBottom: 32 }}>
-            {leaderboard.map((l) => <LeaderboardItem key={l.username} memberData={l}></LeaderboardItem>)}
+            {leaderboard.map((l) => <LeaderboardItem key={l.username} memberData={l} />)}
           </ScrollView>
         )}
       </ScrollView>

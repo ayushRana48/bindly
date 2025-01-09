@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView, Keyboard, Platform, ActivityIndicator } from "react-native";
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
+//@ts-ignore    
 import placeholder from "../../../assets/GroupIcon.png";
+//@ts-ignore
 import camera from "../../../assets/Camera.png";
+//@ts-ignore
 import cameraIcon from "../../../assets/cameraIcon.png";
+//@ts-ignore
 import galleryIcon from "../../../assets/galleryIcon.png";
+//@ts-ignore
 import trashIcon from "../../../assets/trashIcon.png";
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../../utils/compressImage";
 import blobToBase64 from "../../../utils/blobToBase64";
-import { BASEROOT_URL } from "@env";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList, User, Group } from "../../../types";
 
 const NewGroupScreen = () => {
     const today = new Date();
@@ -22,21 +28,21 @@ const NewGroupScreen = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setMinutes(tomorrow.getMinutes() + 30);
 
-    const formatLocalDateTime = (date) => {
+    const formatLocalDateTime = (date: Date) => {
         return date.toLocaleTimeString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
-    const [groupName, setGroupName] = useState("");
-    const [description, setDescription] = useState("");
-    const [startDate, setStartDate] = useState(tomorrow);
-    const [numWeeks, setNumWeeks] = useState(0);
-    const [buyIn, setBuyIn] = useState(0);
-    const [taskPerWeek, setTaskPerWeek] = useState(0);
-    const [show, setShow] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
-    const [imageSrc, setImageSrc] = useState(placeholder);
-    const [openModal, setOpenModal] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [groupName, setGroupName] = useState<string>("");
+    const [description, setDescription] = useState<string>("");
+    const [startDate, setStartDate] = useState<Date>(tomorrow);
+    const [numWeeks, setNumWeeks] = useState<number>(0);
+    const [buyIn, setBuyIn] = useState<number>(0);
+    const [taskPerWeek, setTaskPerWeek] = useState<number>(0);
+    const [show, setShow] = useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = useState<string>("");
+    const [imageSrc, setImageSrc] = useState<{ uri: string } | typeof placeholder>(placeholder);
+    const [openModal, setOpenModal] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -78,9 +84,9 @@ const NewGroupScreen = () => {
         setOpenModal(false);
     };
 
-    const navigation = useNavigation();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-    const { user,setUser } = useUserContext();
+    const { user, setUser } = useUserContext();
     const { setGroups, setGroupData } = useGroupsContext();
 
     const cancel = () => {
@@ -91,10 +97,14 @@ const NewGroupScreen = () => {
         setShow(!show);
     };
 
+    useEffect(() => {
+        console.log(user, 'user in the newGroupScree\n\n')
+    }, [])
+
     const submit = async () => {
         if (loading) return; // Prevent double click
         setLoading(true);
-        
+
         // Validate inputs
         if (!groupName.trim()) {
             setErrorMessage("Enter Group Name");
@@ -165,6 +175,7 @@ const NewGroupScreen = () => {
         const startDateUTC = startTime.toISOString();
         const endDateUTC = endTime.toISOString();
 
+
         try {
             const response = await fetch(`http://localhost:3000/bindly/group/createGroup`, {
                 method: 'POST',
@@ -175,7 +186,7 @@ const NewGroupScreen = () => {
                     buyin: buyIn,
                     startdate: startDateUTC,
                     enddate: endDateUTC,
-                    hostId: user.username,
+                    hostId: user?.username,
                     image: imgBase64,
                     tasksperweek: taskPerWeek
                 }),
@@ -184,16 +195,38 @@ const NewGroupScreen = () => {
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
-                setGroups(g => {
+                console.log(body, 'body\n')
+                setGroups((g:Group[]) => {
                     if (Array.isArray(g)) {
                         return [...g, body];
                     } else {
                         return [body];
                     }
                 });
-                setGroupData({ group: body, usergroup: user, invite: [], post: [], history: [] });
-                setUser(u=>{return {...u,balance:u.balance-parseFloat(buyIn)}})
+
+
+                setGroupData({
+                    group: body,
+                    usergroup: [{
+                        groupid: body.groupid, // Assuming body contains the groupid
+                        username: user?.username || '',
+                        tokens: [],
+                        users: user || undefined
+                    }],
+                    invite: [],
+                    post: []
+                });
+                
+                setUser((u:User | null) => {
+                    if (!u) return null; // Handle the case where user is null
+                    return {
+                        ...u,
+                        balance: u.balance - buyIn,
+                    };
+                });
+
                 navigation.navigate("Group", { groupData: body });
+
             } else {
                 if (body.error === "Insufficient Funds") {
                     setErrorMessage("Insufficient Funds, lower buy in");
@@ -208,10 +241,9 @@ const NewGroupScreen = () => {
         }
     };
 
-    const onChange = ({ type }, selectedDate) => {
-        if (type === 'set') {
-            const currentDate = selectedDate || startDate;
-            setStartDate(currentDate);
+    const onChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        if (event.type === 'set' && selectedDate) {
+            setStartDate(selectedDate);
         } else {
             toggleDatepicker();
         }
@@ -317,8 +349,8 @@ const NewGroupScreen = () => {
                             <TextInput
                                 style={styles.input}
                                 autoCapitalize='none'
-                                value={numWeeks}
-                                onChangeText={text => setNumWeeks(text.replace(/[^0-9]/g, ''))}
+                                value={numWeeks.toString()} // Convert number to string for display
+                                onChangeText={text => setNumWeeks(parseInt(text.replace(/[^0-9]/g, ''), 10) || 0)} // Parse to number
                                 placeholder="5"
                                 keyboardType="numeric"
                             />
@@ -329,8 +361,8 @@ const NewGroupScreen = () => {
                             <TextInput
                                 style={styles.input}
                                 autoCapitalize='none'
-                                value={buyIn}
-                                onChangeText={text => setBuyIn(text.replace(/[^0-9]/g, ''))}
+                                value={buyIn.toString()}
+                                onChangeText={text => setBuyIn(parseFloat(text) || 0)}
                                 placeholder="202"
                                 keyboardType="numeric"
                             />
@@ -341,8 +373,8 @@ const NewGroupScreen = () => {
                             <TextInput
                                 style={styles.input}
                                 autoCapitalize='none'
-                                value={taskPerWeek}
-                                onChangeText={text => setTaskPerWeek(text.replace(/[^0-9]/g, ''))}
+                                value={taskPerWeek.toString()}
+                                onChangeText={text => setTaskPerWeek(parseInt(text, 10) || 0)}
                                 placeholder="5"
                                 keyboardType="numeric"
                             />

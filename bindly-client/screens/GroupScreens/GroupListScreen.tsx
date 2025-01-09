@@ -12,7 +12,7 @@ type GroupListScreenNavigationProp = NativeStackNavigationProp<RootStackParamLis
 
 const GroupListScreen: React.FC = () => {
     const navigation = useNavigation<GroupListScreenNavigationProp>();
-    const { groups, setGroups } = useGroupsContext();
+    const { groups, setGroups, groupData } = useGroupsContext();
     const { user } = useUserContext();
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [activeTab, setActiveTab] = useState<"current" | "archive">("current");
@@ -49,11 +49,11 @@ const GroupListScreen: React.FC = () => {
             });
 
             const res = await response.json();
-            console.log(res, 'the ress List')
             const groupList = res.current.map((r: any) => r.groups)
             setGroups(groupList);
             const groupList2 = res.archive.map((r: any) => r.groups)
             setArchiveGroup(groupList2);
+            console.log('\n\n\n calling GroupData\n \n', groupData)
         } catch (error) {
             console.log(error);
         }

@@ -1,23 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
+import { RootStackParamList, User } from "../../../types";
+// @ts-ignore
 import placeholder from '../../../assets/profile.png';
-import { BASEROOT_URL } from "@env";
+import { InviteMember } from "../../../types";
 
-const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
-    const navigation = useNavigation();
-    const [imageUrl, setImageUrl] = useState("");
-    const [inviting, setInviting] = useState(false);
+interface InviteMemberItemProps {
+    memberData: InviteMember;
+    changeInviteStatus: (username: string) => void;
+  }
+  
+  const InviteMemberItem: React.FC<InviteMemberItemProps> = ({ memberData, changeInviteStatus }) => {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const [imageUrl, setImageUrl] = useState<string>("");
+    const [inviting, setInviting] = useState<boolean>(false);
     const { groupData } = useGroupsContext();
     const { user } = useUserContext();
 
-    useEffect(() => {
-        if (memberData.pfp) {
-            setImageUrl(memberData.pfp);
-        }
-    }, [memberData]);
+  useEffect(() => {
+    if (memberData.pfp) {
+      setImageUrl(memberData.pfp);
+    }
+  }, [memberData]);
+
+  // Rest of component stays the same
 
     const sendInvite = async () => {
         if (inviting) return; // Prevent multiple requests
@@ -28,7 +38,7 @@ const InviteMemberItem = ({ memberData, changeInviteStatus }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    senderid: user.username,
+                    senderid: user?.username,
                     receiverid: memberData.username,
                     groupid: groupData.group.groupid,
                 }),
