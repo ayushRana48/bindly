@@ -9,7 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function App() {
   return (
-    <StripeProvider publishableKey="pk_live_51PVKUSBgzlfK4h49kPSJUjXeCtABCsHdbS47j3lLCYIFPS51Zd2OZCpbrjWCOsEMiCXegHjXoqe5mBJzpmLSnAmc00Q5AwMFo2">
+    <StripeProvider publishableKey="pk_test_51PVKUSBgzlfK4h49cQZCpiH223xzj1SoQe769PZ9Yf2t1QQHHsTKmeKo2ILzdxd28dlNHe9WvrXFl3HVVWNKIOCf00gMDy1qdb">
       <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
 

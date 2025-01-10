@@ -2,26 +2,34 @@ import React, { useEffect, useState } from "react";
 import { View, Text, Image, StyleSheet, Pressable, Modal, Alert, TouchableWithoutFeedback, ScrollView, RefreshControl, ActivityIndicator } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../UserContext";
+//@ts-ignore
 import placeholder from "../../assets/profile.png";
+//@ts-ignore
 import camera from "../../assets/Camera.png";
+//@ts-ignore
 import cameraIcon from "../../assets/cameraIcon.png";
+//@ts-ignore
 import galleryIcon from "../../assets/galleryIcon.png";
+//@ts-ignore
 import trashIcon from "../../assets/trashIcon.png";
+//@ts-ignore
 import rules from "../../assets/rules.png";
+//@ts-ignore    
 import wallet from "../../assets/wallet.png";
+//@ts-ignore
 import connect from "../../assets/connect.png";
 
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../utils/compressImage";
 import blobToBase64 from "../../utils/blobToBase64";
-import { BASEROOT_URL } from "@env";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { removePushTokenAsync } from "../../notificationUtils";
-
+import { GroupData, RootStackParamList } from "../../types"; // Import necessary types
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const LOGGING_URL = 'http://localhost:3000/log';
 
-async function logToServer(message) {
+async function logToServer(message: string) {
   console.log(`message:  ${message}`);
   try {
     await fetch(LOGGING_URL, {
@@ -52,7 +60,7 @@ const ProfileScreen = () => {
         }
     }, [user]);
 
-    const navigation = useNavigation();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
 
     const toWallet = () => {
@@ -114,7 +122,7 @@ const ProfileScreen = () => {
         submitPicture("");
     };
 
-    const submitPicture = async (uri) => {
+    const submitPicture = async (uri: string) => {
         let imgBase64 = "";
 
 
@@ -129,18 +137,19 @@ const ProfileScreen = () => {
             imgBase64 = await blobToBase64(blob);
         }
 
-        fetch(`http://localhost:3000/bindly/users/updateUser/${user.username}`, {
+        fetch(`http://localhost:3000/bindly/users/updateUser/${user?.username}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 pfp: imgBase64,
-                lastpfpupdate: user.timestamp,
             }),
         })
             .then(response => response.json().then(data => ({ status: response.status, body: data })))
             .then(async ({ status, body }) => {
                 if (status === 200) {
-                    setUser({ ...user, pfp: uri });
+                    if (user) {
+                        setUser({ ...user, pfp: uri });
+                    }
                 } else {
                     Alert.alert("Error", "Failed to update profile picture.");
                 }
@@ -172,6 +181,7 @@ const ProfileScreen = () => {
 
     const logOut = async () => {
         if(loading){
+            console.log('loading')
             return
         }
         setLoading(true)
@@ -181,12 +191,12 @@ const ProfileScreen = () => {
                 method: "POST",
             });
             const data = await response.json();
-
+            console.log(data, 'logout data')
             if (response.status === 200) {
                 await AsyncStorage.removeItem('userEmail');
-                await removePushTokenAsync(user.username);
+                await removePushTokenAsync(user?.username || '');
                 console.log('removeTest')
-                setEmail(null);
+                setEmail('');
 
 
             } else if (data.error) {
@@ -223,25 +233,24 @@ const ProfileScreen = () => {
                     </Pressable>
                 </View>
                 <View style={{marginLeft:40, alignContent:'center'}}>
-                    <Text style={{fontSize:30,fontWeight:700}}>{user.username}</Text>
-                    <Text style={{fontSize:20,fontWeight:700}}>Balance: ${user.balance.toFixed(2)}</Text>
+                    <Text style={{fontSize:30,fontWeight:700}}>{user?.username}</Text>
+                    <Text style={{fontSize:20,fontWeight:700}}>Balance: ${user?.balance?.toFixed(2)}</Text>
                 </View>
             </View>
-
             <View style={{width:'100%', marginTop:50, borderColor:'black'}}>
-                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15, textAlign:'center'}} onPress={toWallet}>
-                    <Image resizeMode="contain"  style={{width:30, height:30}} source={wallet} />
-                    <Text style={{fontSize:18, marginLeft:20,textAlign:'center',marginVertical:'auto', fontWeight:400}}>Wallet</Text>
-                    <Text style={{fontSize:20,textAlign:'center',marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
+                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15}} onPress={toWallet}>
+                    <Image resizeMode="contain" style={{width:30, height:30}} source={wallet} />
+                    <Text style={{fontSize:18, marginLeft:20, marginVertical:'auto', fontWeight:400}}>Wallet</Text>
+                    <Text style={{fontSize:20, marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
                 </Pressable>
 
-                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15, textAlign:'center'}} onPress={toRules}>
+                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15}} onPress={toRules}>
                     <Image resizeMode="contain"  style={{width:30, height:30}} source={rules} />
                     <Text style={{fontSize:18, marginLeft:20,textAlign:'center',marginVertical:'auto', fontWeight:400}}>Rules</Text>
                     <Text style={{fontSize:20,textAlign:'center',marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
                 </Pressable>
 
-                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15, textAlign:'center'}} onPress={toConnection}>
+                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15}} onPress={toConnection}>
                     <Image resizeMode="contain"  style={{width:30, height:30}} source={connect} />
                     <Text style={{fontSize:18, marginLeft:20,textAlign:'center',marginVertical:'auto', fontWeight:400}}>Connections</Text>
                     <Text style={{fontSize:20,textAlign:'center',marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
@@ -278,7 +287,7 @@ const ProfileScreen = () => {
 
 
             <Pressable style={styles.pressableButton} onPress={logOut}>
-                {loading ? <ActivityIndicator color={'white'}></ActivityIndicator> : <Text style={{color:'white',fontSize:18,fontWeight:800, textAlign:'center'}}t>Log Out</Text>}
+                {loading ? <ActivityIndicator color={'white'}></ActivityIndicator> : <Text style={{color:'white',fontSize:18,fontWeight:800, textAlign:'center'}}>Log Out</Text>}
             </Pressable>
         </ScrollView>
     );
@@ -306,7 +315,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     pressableButton: {
-        marginTop: 16,
         padding: 10,
         backgroundColor: 'red',
         borderRadius: 5,

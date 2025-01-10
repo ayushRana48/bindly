@@ -2,35 +2,34 @@ import React, { useEffect, useState, useCallback } from "react";
 import { UserProvider, useUserContext } from "../../UserContext";
 import { View, ScrollView, RefreshControl, StyleSheet, Text, Pressable } from "react-native";
 import InviteList from "./components/InviteList";
-import { BASEROOT_URL } from "@env";
 import { useNavigation } from '@react-navigation/native';
+import { Invite, NotifyVeto, RootStackParamList } from "../../types";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-const ActivityScreen = () => {
-  const [invites, setInvites] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [notifyVeto, setNotifyVeto] = useState([]);
+const ActivityScreen: React.FC = () => {
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [notifyVeto, setNotifyVeto] = useState<NotifyVeto[]>([]);
   const { user } = useUserContext();
+  const [newVetoLength, setNewVetoLength] = useState<number>(0);
 
-  const [newVetoLength,setNewVetoLength]=useState(0)
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const navigation = useNavigation();
-
-
-  const getAllInvites = async () => {
+  const getAllInvites = async (): Promise<void> => {
     try {
-      const response = await fetch(`http://localhost:3000/bindly/invite/getInviteByReciever/${user.username}`, {
+      const response = await fetch(`http://localhost:3000/bindly/invite/getInviteByReciever/${user?.username}`, {
         headers: { 'Content-Type': 'application/json' },
       });
-      const res = await response.json();
+      const res: Invite[] = await response.json();
       setInvites(res);
     } catch (error) {
       console.log(error);
     }
   };
 
-  const getNotifyVeto = async () => {
+  const getNotifyVeto = async (): Promise<void> => {
     try {
-      const response = await fetch(`http://localhost:3000/bindly/notifyveto/${user.username}`, {
+      const response = await fetch(`http://localhost:3000/bindly/notifyveto/${user?.username}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -39,16 +38,17 @@ const ActivityScreen = () => {
         throw new Error(errorResponse.error || 'Failed to fetch group data');
       }
 
-      const res = await response.json();
+      const res: NotifyVeto[] = await response.json();
       if (res.length > 0) {
         setNotifyVeto(res);
-        setNewVetoLength(res.length)
+        setNewVetoLength(res.length);
       }
     } catch (error) {
       console.log('error', error);
     }
   };
 
+  // Rest of the component remains the same
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     Promise.all([getAllInvites(), getNotifyVeto()]).then(() => setRefreshing(false));

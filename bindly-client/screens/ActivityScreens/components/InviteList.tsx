@@ -1,9 +1,15 @@
 import React, { useMemo } from "react";
-import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import InviteItem from "./InviteItem";
+import { Invite } from "../../../types";
 
-const InviteList = ({ invites, setInvites }) => {
-    const removeInvite = (inviteid) => {
+interface InviteListProps {
+    invites: Invite[];
+    setInvites: React.Dispatch<React.SetStateAction<Invite[]>>;
+}
+
+const InviteList: React.FC<InviteListProps> = ({ invites, setInvites }) => {
+    const removeInvite = (inviteid: string): void => {
         setInvites(i => i.filter(j => j.inviteid !== inviteid));
     };
 

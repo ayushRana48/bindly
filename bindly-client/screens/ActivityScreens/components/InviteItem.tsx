@@ -1,33 +1,41 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, Image, StyleSheet, Alert, Modal, ActivityIndicator } from "react-native";
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
+//@ts-ignore
 import placeholder from '../../../assets/GroupIcon.png';
-import { BASEROOT_URL } from "@env";
+import { Invite, Group, RootStackParamList } from "../../../types";
 
-const InviteItem = ({ inviteData, removeInvite }) => {
-    const navigation = useNavigation();
-    const [imageUrl, setImageUrl] = useState("");
-    const [sender, setSender] = useState("");
-    const [groupName, setGroupName] = useState("");
-    const [inviteId, setInviteId] = useState("");
-    const [groupid, setGroupid] = useState("");
-    const [modalVisible, setModalVisible] = useState(false);
-    const [accepting, setAccepting] = useState(false);
-    const [rejecting, setRejecting] = useState(false);
+interface InviteItemProps {
+    inviteData: Invite;
+    removeInvite: (inviteid: string) => void;
+}
 
-    const { setGroups, groupData } = useGroupsContext();
-    const { user,setUser } = useUserContext();
+
+const InviteItem: React.FC<InviteItemProps> = ({ inviteData, removeInvite }) => {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const [imageUrl, setImageUrl] = useState<string>("");
+    const [sender, setSender] = useState<string>("");
+    const [groupName, setGroupName] = useState<string>("");
+    const [inviteId, setInviteId] = useState<string>("");
+    const [groupid, setGroupid] = useState<string>("");
+    const [modalVisible, setModalVisible] = useState<boolean>(false);
+    const [accepting, setAccepting] = useState<boolean>(false);
+    const [rejecting, setRejecting] = useState<boolean>(false);
+
+    const { setGroups } = useGroupsContext();
+    const { user, setUser } = useUserContext();
 
     useEffect(() => {
         if (inviteData?.groups?.pfp) {
-            setImageUrl(inviteData?.groups?.pfp);
+            setImageUrl(inviteData.groups.pfp);
         }
         setSender(inviteData.senderid);
-        setGroupName(inviteData?.groups?.groupname);
+        setGroupName(inviteData.groups.groupname);
         setInviteId(inviteData.inviteid);
-        setGroupid(inviteData?.groups?.groupid);
+        setGroupid(inviteData.groups.groupid);
     }, [inviteData]);
 
     const acceptInvite = async () => {
@@ -40,7 +48,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     inviteId: inviteId,
-                    receiverid: user.username,
+                    receiverid: user?.username,
                     groupid: groupid,
                 }),
             });
@@ -51,7 +59,7 @@ const InviteItem = ({ inviteData, removeInvite }) => {
                 setGroups(g => [...g, inviteData.groups]);
                 removeInvite(inviteId);
                 setModalVisible(false);
-                setUser(u=>{return {...u,balance:body.newBalance}})
+                setUser(u => u ? {...u, balance: body.newBalance} : null);
             } else {
                 if (body.error === "JSON object requested, multiple (or no) rows returned") {
                     Alert.alert('Invalid Invite', "Group is deleted");

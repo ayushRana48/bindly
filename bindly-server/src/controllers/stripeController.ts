@@ -6,8 +6,13 @@ import { supabase } from '../initSupabase';
 async function saveCardController(req: Request, res: Response) {
   const { email } = req.body;
 
+
+  console.log(email, 'email')
   //@ts-ignore
-  const { setupIntent, ephemeralKey, customer, error } = await saveCard(email);
+  const { data, error } = await saveCard(email);
+
+  console.log(data, 'data')
+
 
   if (error) {
     return res.status(400).json({ 
@@ -15,11 +20,8 @@ async function saveCardController(req: Request, res: Response) {
     });
   }
 
-  return res.status(200).json({
-    setupIntent,
-    ephemeralKey,
-    customer,
-  });
+  return res.status(200).json(data
+  );
 }
 
 async function addMoneyController(req: Request, res: Response) {

@@ -1,31 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useUserContext } from '../../UserContext';
+//@ts-ignore
 import backArrow from '../../assets/backArrow.png';
 import AddCard from './components/AddCard';
 import DepositMoney from './components/DepositMoney';
 import TransferMoney from './components/TransferMoney';
-import { BASEROOT_URL } from "@env";
+import { StripeCard, RootStackParamList } from '../../types';
 
-const WalletScreen = () => {
-    const [cards, setCards] = useState([]);
+interface CardsResponse {
+    data: StripeCard[];
+}
+
+const WalletScreen: React.FC = () => {
+    const [cards, setCards] = useState<StripeCard[]>([]);    
     const { user } = useUserContext();
-    const navigation = useNavigation();
-    const [loading, setLoading] = useState(false)
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
-        if (user && user.stripeid) {
-            setLoading(true)
+        if (user?.stripeid) {
+            setLoading(true);
             fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${user.stripeid}`)
-                .then(response => response.json())
+                .then(async response => {
+                    const res = await response.json() as CardsResponse;
+                    return res;
+                })
                 .then(data => setCards(data.data))
                 .catch(error => console.error('Error fetching cards:', error))
                 .finally(() => setLoading(false));
         }
     }, [user]);
 
-    const back = () => {
+    const back = (): void => {
         navigation.goBack();
     };
 
@@ -34,14 +43,14 @@ const WalletScreen = () => {
             <Pressable style={styles.backArrow} onPress={back}>
                 <Image style={styles.backArrowImage} source={backArrow} />
             </Pressable>
-            <Text style={styles.title}>Wallekt</Text>
-            {loading ? <ActivityIndicator></ActivityIndicator>
+            <Text style={styles.title}>Wallet</Text>
+            {loading ? <ActivityIndicator /> 
                 : <>
                     <View style={{ paddingHorizontal: 20 }}>
                         <View style={{ borderColor: 'black', borderBottomWidth: 0.5 }}>
                             <Text style={{ fontSize: 20, fontWeight: '600' }}>Balance</Text>
                         </View>
-                        <Text style={styles.balance}>${user.balance.toFixed(2)}</Text>
+                        <Text style={styles.balance}>${user?.balance.toFixed(2)}</Text>
                     </View>
                     <AddCard setCards={setCards} cards={cards}/>
                     <View style={{ paddingHorizontal: 20 }}>
@@ -54,8 +63,6 @@ const WalletScreen = () => {
                     <TransferMoney />
                 </>
             }
-
-
         </View>
     );
 };

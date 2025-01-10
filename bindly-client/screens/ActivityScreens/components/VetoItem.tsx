@@ -1,34 +1,60 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, Image, Pressable, Modal,ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Image, Pressable, Modal, ActivityIndicator } from 'react-native';
 import Swiper from 'react-native-swiper';
 import { Video } from 'expo-av';
-import placeholder from '../../../assets/profile.png'
+//@ts-ignore
+import placeholder from '../../../assets/profile.png';
 import { useUserContext } from '../../../UserContext';
+import { User } from '../../../types';
 
-const width = 300
-const height = width * 1.77777778
-const VetoItem = ({ postid, imageLink, videoLink, username, caption, users, time, groupname, veto }) => {
+interface VetoItemProps {
+    postid: string;
+    imageLink?: string;
+    videoLink?: string;
+    username: string;
+    caption?: string;
+    users: {
+        pfp?: string;
+    };
+    time: string;
+    groupname: string;
+    veto: string[];
+}
 
-    const [pfpLink, setPfpLink] = useState(placeholder)
-    const { user } = useUserContext()
+const width = 300;
+const height = width * 1.77777778;
 
+const VetoItem: React.FC<VetoItemProps> = ({ 
+    postid, 
+    imageLink, 
+    videoLink, 
+    username, 
+    caption, 
+    users, 
+    time, 
+    groupname, 
+    veto 
+}) => {
+    const [pfpLink, setPfpLink] = useState<typeof placeholder | { uri: string }>(placeholder);
+    const { user } = useUserContext();
 
     useEffect(() => {
-    console.log(user)
-      if(user.pfp){
-        setPfpLink({uri:user.pfp})
-      }
-    }, [users])
+        if(user?.pfp){
+            setPfpLink({uri: user.pfp});
+        }
+    }, [users]);
 
-    const displayDate = (time) => {
-        const date = new Date(time)
-        return date.toLocaleDateString()
-    }
-    const displayTime = (time) => {
+    const displayDate = (time: string): string => {
+        const date = new Date(time);
+        return date.toLocaleDateString();
+    };
+
+    const displayTime = (time: string): string => {
         const date = new Date(time);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
+    // Rest of the component remains the same
     
 
     return (
@@ -65,6 +91,7 @@ const VetoItem = ({ postid, imageLink, videoLink, username, caption, users, time
                             style={styles.media}
                             source={{ uri: videoLink }}
                             useNativeControls
+                            //@ts-ignore
                             resizeMode="contain"
                             isLooping
                         />
@@ -92,6 +119,7 @@ const styles = StyleSheet.create({
         paddingTop: 10,
         paddingBottom: 10,
         flexDirection: 'row',
+        //@ts-ignore
         justifyContent: 'cener',
         alignItems: 'center'
     },

@@ -31,7 +31,6 @@ export async function registerForPushNotificationsAsync(username: string): Promi
 
         const storedToken = await AsyncStorage.getItem('expoPushToken');
         if (storedToken) {
-            console.log('Push notification token already exists:', storedToken);
             await logToServer(`Push notification token already exists:, ${storedToken}`);
         }
 

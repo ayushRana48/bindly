@@ -1,28 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Modal, Pressable, FlatList, ActivityIndicator,Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Modal, Pressable, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { useUserContext } from '../../../UserContext';
-import { BASEROOT_URL } from "@env";
+import { StripeCard } from '../../../types';
 
-const DepositMoney = ({ cards }) => {
-    const [isAddMoneyModalVisible, setAddMoneyModalVisible] = useState(false);
-    const [amount, setAmount] = useState('');
+interface DepositMoneyProps {
+    cards: StripeCard[];
+}
+
+const DepositMoney: React.FC<DepositMoneyProps> = ({ cards }) => {
+    const [isAddMoneyModalVisible, setAddMoneyModalVisible] = useState<boolean>(false);
+    const [amount, setAmount] = useState<string>('');
     const { user, setUser } = useUserContext();
-    const [error, setError] = useState('');
-    const [selectedCard, setSelectedCard] = useState();
-    const [selectCardScreen, setSelectCardScreen] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string>('');
+    const [selectedCard, setSelectedCard] = useState<StripeCard | undefined>(undefined);
+    const [selectCardScreen, setSelectCardScreen] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
-        if(cards && cards?.length>0 && cards[0]){
+        if (cards?.length > 0 && cards[0]) {
             setSelectedCard(cards[0]);
         }
     }, [cards]);
 
-    const handleAddMoney = () => {
-        console.log(cards,'the carfd')
-        if(cards?.length==0){
-            Alert.alert('add card')
-            return
+    const handleAddMoney = (): void => {
+        if (!cards?.length) {
+            Alert.alert('add card');
+            return;
         }
         setLoading(true);
         if (!amount) {
@@ -36,15 +39,15 @@ const DepositMoney = ({ cards }) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                customerId: user.stripeid,
+                customerId: user?.stripeid,
                 amount,
-                cardId: selectedCard.id,
-                username: user.username,
+                cardId: selectedCard?.id,
+                username: user?.username,
             }),
         })
             .then(response => response.json())
             .then(data => {
-                setUser(u => ({ ...u, balance: parseFloat(u.balance) + parseFloat(amount) }));
+                setUser(u => u ? ({ ...u, balance: u.balance + parseFloat(amount) }) : null);
                 setLoading(false);
                 setAddMoneyModalVisible(false);
                 setAmount('');
@@ -56,21 +59,20 @@ const DepositMoney = ({ cards }) => {
             });
     };
 
-    const openModal = () => {
-        if (!cards || !user.stripeid || cards.length == 0) {
+    const openModal = (): void => {
+        if (!cards || !user?.stripeid || cards.length === 0) {
             Alert.alert('Add Card first');
             return;
-        } else {
-            setAddMoneyModalVisible(true);
         }
+        setAddMoneyModalVisible(true);
     };
 
-    const selectCard = card => {
+    const selectCard = (card: StripeCard): void => {
         setSelectedCard(card);
         setSelectCardScreen(false);
     };
 
-    const renderCard = ({ item }) => (
+    const renderCard = ({ item }: { item: StripeCard }): React.ReactElement => (
         <Pressable style={styles.cardContainer} onPress={() => selectCard(item)}>
             <Text style={styles.cardBrand}>{item.card.brand}</Text>
             <Text style={styles.cardLast4}>**** {item.card.last4}</Text>
@@ -144,6 +146,8 @@ const DepositMoney = ({ cards }) => {
         </View>
     );
 };
+
+// Styles remain the same
 
 const styles = StyleSheet.create({
     button: {

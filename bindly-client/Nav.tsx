@@ -20,9 +20,7 @@ const Nav = () => {
             setLoading(true);
             try {
                 const userEmail = await AsyncStorage.getItem('userEmail');
-                console.log('userEmail set Here in getUser', userEmail);
                 if (userEmail) {
-                    console.log('set email here in Nav');
                     setEmail(userEmail);
                     return;
                 }

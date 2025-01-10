@@ -126,6 +126,23 @@ export interface Comment {
 
 
 
+export interface Invite {
+  inviteid: string;
+  groupid: string;
+  senderid: string;
+  receiverid: string;
+  groups: Group; // Assuming Group is already defined in your types
+}
+
+
+export interface NotifyVeto {
+  notifyvetoid: string;
+  postid: string; 
+  username: string;
+  groupid: string; 
+  groups: Group;
+  post: Post;
+}
 //component types
 export interface WeekData {
   countedPosts: number;
@@ -186,7 +203,7 @@ export type RootStackParamList = {
 
   // Activity Stack
   Activity: undefined;
-  Veto: { postId: string };
+  Veto: undefined;
 };
 
 // Component Props Types
@@ -206,6 +223,39 @@ export interface LeaderboardItemProps {
     totalCountedPosts: number;
     totalUnCountedPosts: number;
   };
+}
+
+export interface StripeCard {
+  allow_redisplay: string;
+  billing_details: {
+    address: any;
+    email: string | null;
+    name: string | null;
+    phone: string | null;
+  };
+  card: {
+    brand: string;
+    checks: any;
+    country: string;
+    display_brand: string;
+    exp_month: number;
+    exp_year: number;
+    fingerprint: string;
+    funding: string;
+    generated_from: null;
+    last4: string;
+    networks: any;
+    regulated_status: string;
+    three_d_secure_usage: any;
+    wallet: null;
+  };
+  created: number;
+  customer: string;
+  id: string;
+  livemode: boolean;
+  metadata: any;
+  object: string;
+  type: string;
 }
 
 export interface ConnectExProps {

@@ -44,6 +44,11 @@ async function saveCard(email: string): Promise<DatabaseResponse<SaveCardRespons
       return { data: null, error: new Error(error.message) };
     }
 
+    console.log({
+      setupIntent: setupIntent.client_secret ?? '',
+      ephemeralKey: ephemeralKey.secret ?? '',
+      customer: customer.id,
+    }, 'from the transactions data')
     return {
       data: {
         setupIntent: setupIntent.client_secret ?? '',

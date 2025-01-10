@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+//@ts-ignore
 import backArrow from '../../assets/backArrow.png';
 import RuleItem from './components/RuleItem';
 

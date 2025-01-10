@@ -2,134 +2,139 @@ import React, { useState, useEffect } from 'react';
 import { View, Button, Alert, StyleSheet, FlatList, Text, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { useStripe } from '@stripe/stripe-react-native';
 import { useUserContext } from '../../../UserContext';
-import { BASEROOT_URL } from "@env";
+import { StripeCard, User } from '../../../types';
 
-const AddCard = ({ setCards: setCards2,cards:cards2 }) => {
+interface AddCardProps {
+    setCards: React.Dispatch<React.SetStateAction<StripeCard[]>>;
+    cards: StripeCard[];
+}
+
+interface PaymentSheetParams {
+    setupIntent: string;
+    ephemeralKey: string;
+    customer: string;
+    account?: string;
+}
+
+const AddCard: React.FC<AddCardProps> = ({ setCards: setCards2, cards: cards2 }) => {
     const { user, setUser } = useUserContext();
     const { initPaymentSheet, presentPaymentSheet, confirmPaymentSheetPayment } = useStripe();
-    const [loading, setLoading] = useState(false);
-    const [isInitialized, setIsInitialized] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [cardToDelete, setCardToDelete] = useState(null);
-    const [loadingRemove, setLoadingRemove] = useState(false);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [isInitialized, setIsInitialized] = useState<boolean>(false);
+    const [modalVisible, setModalVisible] = useState<boolean>(false);
+    const [cardToDelete, setCardToDelete] = useState<string | null>(null);
+    const [loadingRemove, setLoadingRemove] = useState<boolean>(false);
 
-    // useEffect(() => {
-    //     console.log(user.stripeid,'in the useEffect')
-    //     if (user && user.stripeid) {
-    //         getCards(user.stripeid);
-    //     }
-    // }, []);
-
-    useEffect(()=>{
-        console.log('cardUpatde here')
-        console.log(cards2)
-        console.log(cards2?.length)
-    },[cards2])
-
-
-
-  
-    const initialisePaymentSheet = async () => {
-        setLoading(true);
-        const { setupIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
-
-        const { error } = await initPaymentSheet({
-            customerId: customer,
-            customerEphemeralKeySecret: ephemeralKey,
-            setupIntentClientSecret: setupIntent,
-            merchantDisplayName: 'Bindly Inc.',
-            allowsDelayedPaymentMethods: false,
-            returnURL: 'stripe-example://stripe-redirect',
-        });
-
-        if (error) {
-            Alert.alert(`Error code: ${error.code}`, error.message);
-        } else {
-            setUser(prevUser => ({ ...prevUser, stripeid: customer }));
-            setIsInitialized(true);
-        }
-        setLoading(false);
-        return customer
-    };
-
-    const fetchPaymentSheetParams = async () => {
+    const fetchPaymentSheetParams = async (): Promise<PaymentSheetParams> => {
         const response = await fetch(`http://localhost:3000/bindly/stripe/saveCard`, {
             method: 'POST',
-            body: JSON.stringify({ email: user.email }),
+            body: JSON.stringify({ email: user?.email }),
             headers: { 'Content-Type': 'application/json' },
         });
-        const { setupIntent, ephemeralKey, customer, account } = await response.json();
-        return { setupIntent, ephemeralKey, customer, account };
+        return response.json();
     };
 
-    const handleBuyPress = async () => {
-        if(cards2?.length >= 3){
-            return
-        }
-        let customer
-        if (!isInitialized) {
-            customer = await initialisePaymentSheet();
-        }
-
-        const { error } = await presentPaymentSheet();
-
-        if (error) {
-            Alert.alert(`Error code: ${error.code}`, error.message);
-        } else {
-            await confirmPaymentSheetPayment();
-            try {
-                console.log('customer in buy press',customer)
-                const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${customer}`);
-                const data = await response.json();
-                
-    
-
-                if (JSON.stringify(cards2) !== JSON.stringify(data.data)) {
-                    console.log('heree')
-                    setCards2(data.data);
-                    console.log(data.data)
-                    console.log(data.data?.length,'in the call')
-                }
-
-            } catch (error) {
-                console.error('Error fetching cards:', error);
-            }
-            setIsInitialized(false);
+    const initialisePaymentSheet = async (): Promise<string | null> => {
+        setLoading(true);
+        try {
+            const { setupIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
             
+            const { error } = await initPaymentSheet({
+                customerId: customer,
+                customerEphemeralKeySecret: ephemeralKey,
+                setupIntentClientSecret: setupIntent,
+                merchantDisplayName: 'Bindly Inc.',
+                allowsDelayedPaymentMethods: false,
+                returnURL: 'stripe-example://stripe-redirect',
+            });
+
+            if (error) {
+                Alert.alert(`Error code: ${error.code}`, error.message);
+                return null;
+            }
+
+            setUser(prevUser => prevUser ? { ...prevUser, stripeid: customer } : null);
+            setIsInitialized(true);
+            return customer;
+        } catch (error) {
+            console.error('Payment sheet initialization error:', error);
+            return null;
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleRemoveCard = (cardId) => {
+    const handleBuyPress = async (): Promise<void> => {
+        if (cards2?.length >= 3) return;
+
+        try {
+            let customerId = user?.stripeid;
+
+            if (!isInitialized || !customerId) {
+                const newCustomerId = await initialisePaymentSheet();
+                if (!newCustomerId) {
+                    throw new Error('Failed to initialize payment sheet');
+                }
+                customerId = newCustomerId;
+            }
+
+            const { error } = await presentPaymentSheet();
+            if (error) {
+                Alert.alert(`Error code: ${error.code}`, error.message);
+                return;
+            }
+
+            await confirmPaymentSheetPayment();
+            const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${customerId}`);
+            const data = await response.json();
+            
+            if (JSON.stringify(cards2) !== JSON.stringify(data.data)) {
+                setCards2(data.data);
+            }
+            
+            setIsInitialized(false);
+        } catch (error) {
+            console.error('Error in handleBuyPress:', error);
+            Alert.alert('Error', 'Failed to process payment setup');
+        }
+    };
+
+    const handleRemoveCard = (cardId: string): void => {
         setCardToDelete(cardId);
         setModalVisible(true);
     };
 
-    const confirmRemoveCard = async () => {
-        if (loadingRemove) {
-            return;
-        }
+    const confirmRemoveCard = async (): Promise<void> => {
+        if (loadingRemove || !user?.stripeid || !cardToDelete) return;
+        
         setLoadingRemove(true);
-
-        const response = await fetch(`http://localhost:3000/bindly/stripe/detachOldPaymentMethods`, {
-            method: 'POST',
-            body: JSON.stringify({ customerId: user.stripeid, cardId: cardToDelete }),
-            headers: { 'Content-Type': 'application/json' },
-        });
-        const data = await response.json();
-        if (data.success) {
-            const updatedCards = cards2.filter(card => card.id !== cardToDelete);
-            setCards2(updatedCards);
-            setCardToDelete(null);
-            setModalVisible(false);
+        try {
+            const response = await fetch(`http://localhost:3000/bindly/stripe/detachOldPaymentMethods`, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    customerId: user.stripeid, 
+                    cardId: cardToDelete 
+                }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                setCards2(cards2.filter(card => card.id !== cardToDelete));
+                setCardToDelete(null);
+                setModalVisible(false);
+                Alert.alert('Success', 'The card was removed successfully');
+            } else {
+                Alert.alert('Error', 'There was an error removing the card');
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Failed to remove card');
+        } finally {
             setLoadingRemove(false);
-            Alert.alert('Success', 'The card was removed successfully');
-        } else {
-            setLoadingRemove(false);
-            Alert.alert('Error', 'There was an error removing the card');
         }
     };
 
-    const renderCard = ({ item }) => (
+    const renderCard = ({ item }: { item: StripeCard }): React.ReactElement => (
         <View style={styles.cardContainer}>
             <Text style={styles.cardBrand}>{item.card.brand}</Text>
             <Text style={styles.cardLast4}>**** **** **** {item.card.last4}</Text>
@@ -138,6 +143,7 @@ const AddCard = ({ setCards: setCards2,cards:cards2 }) => {
             </Pressable>
         </View>
     );
+
 
     return (
         <View style={{ padding: 20 }}>
@@ -265,23 +271,12 @@ const styles = StyleSheet.create({
         width: '100%',
         marginTop: 20,
     },
-    button: {
-        flex: 1,
-        borderRadius: 10,
-        padding: 10,
-        elevation: 2,
-        marginHorizontal: 5,
-    },
+   
     buttonConfirm: {
         backgroundColor: '#2196F3',
     },
     buttonCancel: {
         backgroundColor: '#f44336',
-    },
-    buttonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
     },
     button: {
         backgroundColor: '#2196F3',

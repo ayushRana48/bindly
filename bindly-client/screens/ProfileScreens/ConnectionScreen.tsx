@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useUserContext } from '../../UserContext';
+
+//@ts-ignore
 import backArrow from '../../assets/backArrow.png';
-import AddCard from './components/AddCard';
-import DepositMoney from './components/DepositMoney';
-import TransferMoney from './components/TransferMoney';
-import { BASEROOT_URL } from "@env";
 import StravaConnect from './components/StravaConnect';
 import ConnectEx from "./components/ConnectEx";
 

@@ -17,5 +17,5 @@
     "include": [
          "**/*.ts",
          "**/*.tsx"
-       ]
+, "ProfileScreens/components/AddCard.tsx", "ProfileScreens/ProfileScreen.tsx"       ]
   }
