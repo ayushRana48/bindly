@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { getAccessToken } from './tokenUtility';
+import { getAccessToken } from './paypalHelper/tokenUtility';
 import { supabase } from '../initSupabase';
 import { DatabaseResponse } from '../types';
 

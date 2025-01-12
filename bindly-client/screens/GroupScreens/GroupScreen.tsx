@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
-  Text,
   Pressable,
   Image,
   StyleSheet,
@@ -10,14 +9,11 @@ import {
   RefreshControl,
   Alert,
   Dimensions,
-  TextInput,
-  KeyboardAvoidingView,
   Platform,
   Keyboard,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 import { Post, Comment, UserGroup, GroupData } from '../../types';
 import { RootStackParamList } from '../../types';
 
@@ -200,6 +196,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     }
     try {
       // 1. Fetch group data
+      
       const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });

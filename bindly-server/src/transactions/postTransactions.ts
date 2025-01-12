@@ -7,6 +7,7 @@ import os from 'os';
 import { execFile } from 'child_process';
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { Post, DatabaseResponse } from '../types';
+import { sendBatchNotifications } from '../utils/sendNotificationUtil';
 
 const expo = new Expo();
 
@@ -614,17 +615,6 @@ async function postStatus(
     return { 
       error: error instanceof Error ? error : new Error('Unknown error') 
     };
-  }
-}
-
-async function sendBatchNotifications(notifications: ExpoPushMessage[]): Promise<void> {
-  const chunks = expo.chunkPushNotifications(notifications);
-  for (const chunk of chunks) {
-    try {
-      await expo.sendPushNotificationsAsync(chunk);
-    } catch (error) {
-      console.error('Error sending notifications:', error);
-    }
   }
 }
 

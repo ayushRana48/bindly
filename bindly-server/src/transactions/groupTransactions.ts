@@ -1,10 +1,10 @@
-import fs from 'fs';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../initSupabase';
 import { uploadFile } from './uploadFile';
-import { Group, User, Post, DatabaseResponse } from '../types';
-// import { distributeMoney } from './groupHelpers/distributeMoney';
+import { Group, Post, DatabaseResponse } from '../types';
+import { distributeMoney } from './groupHelpers/leaderboard/distributeMoney';
+import { buildLeaderboardData } from './groupHelpers/leaderboard/leaderboard';
+import { processPosts } from './groupHelpers/veto/processPosts';
+import { aggregateLeaderboards, updateUserBalances } from './groupHelpers/endGroup/endGroupHelpers';
 
 interface LeaderboardWeek {
   weekNum: number;
@@ -27,32 +27,8 @@ interface GroupsResponse {
   archive: Group[];
 }
 
-interface UserPosts {
-  [username: string]: {
-    [weekNum: string]: Date[];
-  };
-}
 
-interface RankMember {
-  rank: number;
-  members: LeaderboardEntry[];
-  quantity: number;
-}
 
-interface VetoCount {
-  [key: string]: {
-    count: number;
-    username: string;
-    reason: string;
-  };
-}
-
-interface ProcessedVeto {
-  postid: string;
-  count: number;
-  username: string;
-  reason: string;
-}
 
 
 async function createGroup(
@@ -96,9 +72,9 @@ async function createGroup(
     .select()
     .single();
 
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
+  return {
+    data,
+    error: error ? new Error(error.message) : null
   };
 }
 
@@ -122,67 +98,12 @@ async function getAllGroups(): Promise<DatabaseResponse<GroupsResponse>> {
     return { data: null, error: new Error(archiveError.message) };
   }
 
-  return { 
-    data: { current: currentGroups, archive }, 
-    error: null 
+  return {
+    data: { current: currentGroups, archive },
+    error: null
   };
 }
 
-
-
-function distributeMoney(leaderboard: LeaderboardEntry[], buyin: number): LeaderboardEntry[] {
-  let rankDict = new Array(leaderboard.length);
-
-  for (let i = 0; i < rankDict.length; i++) {
-    rankDict[i] = [];
-  }
-
-  const ranks = new Set<number>();
-
-  for (let i = 0; i < leaderboard.length; i++) {
-    const currUser = leaderboard[i];
-    const currPlace = currUser.place!;
-    let currArr = rankDict[currPlace - 1];
-    currArr.push(currUser);
-    ranks.add(currPlace);
-  }
-
-  let ranksArr = Array.from(ranks);
-  const arr: RankMember[] = [];
-
-  for (let i = 0; i < ranksArr.length; i++) {
-    const currRank = ranksArr[i];
-    const currList = rankDict[currRank - 1];
-    const currentObj: RankMember = { 
-      rank: currRank, 
-      members: currList, 
-      quantity: currList.length 
-    };
-    arr.push(currentObj);
-  }
-
-  if (arr.length == 1) {
-    arr[0].members.forEach(user => user.netMoney = buyin);
-    return arr.flatMap(rank => rank.members);
-  }
-
-  const totalGain = buyin * leaderboard.length;
-  const incrementPercentage = 0.5;
-  let sumTop = 0;
-
-  for (let i = arr.length - 1; i >= 0; i--) {
-    sumTop += arr[i].members.length * incrementPercentage * (arr.length - 1 - i);
-  }
-
-  const baseGain = totalGain / sumTop;
-
-  for (let i = arr.length - 1; i >= 0; i--) {
-    const rankGain = baseGain * incrementPercentage * (arr.length - 1 - i);
-    arr[i].members.forEach(user => user.netMoney = rankGain);
-  }
-
-  return arr.flatMap(rank => rank.members);
-}
 
 
 async function getLeaderBoard(groupid: string): Promise<DatabaseResponse<LeaderboardEntry[]>> {
@@ -219,52 +140,7 @@ async function getLeaderBoard(groupid: string): Promise<DatabaseResponse<Leaderb
       return { data: null, error: new Error(postsError.message) };
     }
 
-    const userPosts: UserPosts = {};
-    postsData.forEach(post => {
-      const { username, timepost } = post;
-      const postDate = new Date(timepost);
-      const weekNum = Math.floor((postDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
-
-      if (!userPosts[username]) {
-        userPosts[username] = {};
-      }
-      if (!userPosts[username][weekNum]) {
-        userPosts[username][weekNum] = [];
-      }
-      userPosts[username][weekNum].push(postDate);
-    });
-
-    const leaderboard: LeaderboardEntry[] = usersData.map(user => {
-      const username = user.username;
-      const userWeeks = userPosts[username] || {};
-
-      const weeks = Object.keys(userWeeks).map(weekNum => {
-        const weekPosts = userWeeks[weekNum];
-        const countedPosts = weekPosts.slice(0, tasksperweek);
-        const unCountedPosts = weekPosts.slice(tasksperweek);
-
-        const weekStart = new Date(startDate);
-        weekStart.setDate(startDate.getDate() + parseInt(weekNum) * 7);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 7);
-
-        return {
-          weekNum: parseFloat(weekNum) + 1,
-          weekRange: `${weekStart.toISOString()} - ${weekEnd.toISOString()}`,
-          countedPosts: countedPosts.length,
-          unCountedPosts: unCountedPosts.length,
-        };
-      });
-
-      return {
-        username,
-        weeks,
-        totalCountedPosts: weeks.reduce((acc, week) => acc + week.countedPosts, 0),
-        totalUnCountedPosts: weeks.reduce((acc, week) => acc + week.unCountedPosts, 0),
-      };
-    });
-
-    leaderboard.sort((a, b) => b.totalCountedPosts - a.totalCountedPosts);
+    const leaderboard = buildLeaderboardData(postsData, usersData, startDate, tasksperweek);
 
     let currentPlace = 1;
     for (let i = 0; i < leaderboard.length; i++) {
@@ -291,31 +167,46 @@ async function getGroup(groupid: string): Promise<DatabaseResponse<{
   post: Post[];
 }>> {
   try {
-    const [groupResponse, usergroupResponse, inviteResponse] = await Promise.all([
-      supabase
-        .from('groups')
-        .select('*')
-        .eq('groupid', groupid)
-        .single(),
-      supabase
-        .from('usergroup')
-        .select(`
+    console.log("Fetching group data for groupid: ", groupid);
+
+    const { data: groupData, error } = await supabase
+      .from("groups")
+      .select(
+        `
           *,
-          users!inner(*)
-        `)
-        .eq('groupid', groupid),
-      supabase
-        .from('invite')
-        .select('*')
-        .eq('groupid', groupid),
-    ]);
+          usergroup(
+            *,
+            users(*)
+          ),
+          invite(*),
+          post(
+            *,
+            comment(
+              commentid,
+              username,
+              message,
+              created,
+              users(pfp)
+            )
+          )
+        `
+      )
+      .eq("groupid", groupid)
+      .single();
 
-    const groupError = groupResponse.error;
-    const usergroupError = usergroupResponse.error;
-    const inviteError = inviteResponse.error;
+    if (error) {
+      return {
+        data: null,
+        error: new Error(error.message || "Unknown error"),
+      };
+    }
 
-    if (groupError || usergroupError || inviteError) {
-      return { data: null, error: new Error(groupError?.message || usergroupError?.message || inviteError?.message || 'Unknown error') };
+    if (!groupData) {
+      // No record found for this group
+      return {
+        data: null,
+        error: new Error("Group not found"),
+      };
     }
 
     const { data: processData, error: processError } = await processVeto(groupid);
@@ -323,29 +214,26 @@ async function getGroup(groupid: string): Promise<DatabaseResponse<{
       return { data: null, error: processError };
     }
 
-    const { data: postWithComments, error: postError } = await supabase
-      .from('post')
-      .select(`
-        *,
-        comment(commentid, username, message, created, users(pfp))
-      `)
-      .eq('groupid', groupid)
-      .or('valid.is.null,valid.eq.true')
-      .order('timepost', { ascending: false });
 
-    if (postError) {
-      return { data: null, error: new Error(postError.message) };    }
+    groupData.post = (groupData.post || [])
+      .filter((p: Post) => p.valid === null || p.valid === true)
+      .sort((a: Post, b: Post) => new Date(b.timepost).getTime() - new Date(a.timepost).getTime())
+      .map((post: any) => ({
+        ...post,
+        comment: post.comment
+          ? post.comment.sort(
+            (a: any, b: any) =>
+              new Date(a.created).getTime() - new Date(b.created).getTime()
+          )
+          : [],
+      }));
 
-    const sortedPostWithComments = postWithComments.map(post => ({
-      ...post,
-      comment: post.comment ? post.comment.sort((a: any, b:any) => new Date(b.created).getTime() - new Date(a.created).getTime()) : []
-    }));
 
     const data = {
-      group: groupResponse.data,
-      usergroup: usergroupResponse.data,
-      invite: inviteResponse.data,
-      post: sortedPostWithComments,
+      group: groupData, // The "groups" row (top-level columns)
+      usergroup: groupData.usergroup || [],
+      invite: groupData.invite || [],
+      post: groupData.post || [],
     };
 
     return { data, error: null };
@@ -377,54 +265,7 @@ async function processVeto(groupid: string): Promise<DatabaseResponse<string>> {
 
     if (postError) throw postError;
 
-    const currentTime = new Date();
-    const cutoffTime = new Date(currentTime.getTime() - 48 * 60 * 60 * 1000);
-    const latePosts = postData.filter(post => new Date(post.timecycle) < cutoffTime);
-
-    if (latePosts.length > 0) {
-      const postIdsToInvalidate = latePosts
-        .filter(post => post.veto.length >= Math.ceil(memberCount * (1 / 2)))
-        .map(post => post.postid);
-
-      const postIdsToValidate = latePosts
-        .filter(post => post.veto.length < Math.ceil(memberCount * (1 / 2)))
-        .map(post => post.postid);
-
-      if (postIdsToValidate.length > 0) {
-        const { error: updateError } = await supabase
-          .from('post')
-          .update({ valid: true })
-          .in('postid', postIdsToValidate);
-
-        if (updateError) throw updateError;
-      }
-
-      if (postIdsToInvalidate.length > 0) {
-        const { error: invalidateError } = await supabase
-          .from('post')
-          .update({ valid: false })
-          .in('postid', postIdsToInvalidate);
-
-        if (invalidateError) throw invalidateError;
-
-        const notifications = latePosts
-          .filter(post => postIdsToInvalidate.includes(post.postid))
-          .map(post => ({
-            notifyvetoid: uuidv4(),
-            postid: post.postid,
-            username: post.username,
-            groupid: groupid
-          }));
-
-        if (notifications.length > 0) {
-          const { error: notifyError } = await supabase
-            .from('notifyveto')
-            .insert(notifications);
-
-          if (notifyError) throw notifyError;
-        }
-      }
-    }
+    await processPosts(postData, memberCount, groupid);
 
     return { data: 'Process completed successfully', error: null };
   } catch (error) {
@@ -432,74 +273,20 @@ async function processVeto(groupid: string): Promise<DatabaseResponse<string>> {
   }
 }
 
-
-
-async function processVetoDemo(groupid: string): Promise<DatabaseResponse<ProcessedVeto[]>> {
-  try {
-    const { data: memberData, error: memberError } = await supabase
-      .from('usergroup')
-      .select('username')
-      .eq('groupid', groupid);
-
-    if (memberError) throw memberError;
-
-    const memberCount = memberData.length;
-
-    if (memberCount <= 2) {
-      return { data: [], error: null };
-    }
-
-    const { data: postData, error: postError } = await supabase
-      .from('post')
-      .select('*')
-      .eq('groupid', groupid)
-      .is('valid', null);
-
-    if (postError) throw postError;
-
-    const currentTime = new Date();
-    const cutoffTime = new Date(currentTime.getTime() - 48 * 60 * 60 * 1000);
-    const latePosts = postData.filter(post => new Date(post.timecycle) < cutoffTime);
-
-    const vetoCount: VetoCount = {};
-    latePosts.forEach(post => {
-      if (post.veto && post.veto.length >= Math.ceil(memberCount * (1 / 2))) {
-        vetoCount[post.postid] = {
-          count: post.veto.length,
-          username: post.username,
-          reason: post.reason || ''
-        };
-      }
-    });
-
-    const processedVetos: ProcessedVeto[] = Object.entries(vetoCount).map(([postid, data]) => ({
-      postid,
-      count: data.count,
-      username: data.username,
-      reason: data.reason
-    }));
-
-    return { data: processedVetos, error: null };
-  } catch (error) {
-    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
-  }
-}
-
-
 async function getGroupsByHostId(hostid: string): Promise<DatabaseResponse<Group[]>> {
   const { data, error } = await supabase
     .from('groups')
     .select('*')
     .eq('hostid', hostid);
 
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
+  return {
+    data,
+    error: error ? new Error(error.message) : null
   };
 }
 
 async function updateGroup(
-  groupId: string, 
+  groupId: string,
   updateParams: Partial<Group>
 ): Promise<DatabaseResponse<Group>> {
   let newTimeStamp: string | null = null;
@@ -508,10 +295,10 @@ async function updateGroup(
   if (updateParams.pfp) {
     newTimeStamp = new Date(Date.now()).toISOString();
     const { fileUrl: newFileUrl, error: uploadError } = await uploadFile(
-      updateParams.pfp, 
-      'groupProfiles', 
-      groupId, 
-      updateParams.lastpfpupdate?.toString() || null, 
+      updateParams.pfp,
+      'groupProfiles',
+      groupId,
+      updateParams.lastpfpupdate?.toString() || null,
       newTimeStamp
     );
 
@@ -535,9 +322,9 @@ async function updateGroup(
     .select()
     .single();
 
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
+  return {
+    data,
+    error: error ? new Error(error.message) : null
   };
 }
 
@@ -620,25 +407,18 @@ async function deleteGroup(groupId: string): Promise<DatabaseResponse<string>> {
 }
 
 
-
 async function endGroup(groupIds: string[]): Promise<DatabaseResponse<string>> {
   try {
+    // 1) Process vetoes for each group
     await Promise.all(groupIds.map(groupId => processVeto(groupId)));
 
-    const leaderboardPromises = groupIds.map(groupId => getLeaderBoard(groupId));
-    const leaderboards = await Promise.all(leaderboardPromises);
-    const validLeaderboards = leaderboards
-      .filter(l => l.data !== null)
-      .map(l => l.data) as LeaderboardEntry[][];
+    // 2) Fetch leaderboards in parallel
+    const leaderboards = await Promise.all(groupIds.map(getLeaderBoard));
 
-    const allUsers = validLeaderboards.flat();
-    const uniqueUsers = Array.from(new Set(allUsers.map(user => user.username)))
-      .map(username => ({
-        username,
-        netMoney: allUsers
-          .filter(user => user.username === username)
-          .reduce((sum, user) => sum + (user.netMoney || 0), 0),
-      }));
+    // 3) Aggregate all users & netMoney from valid leaderboards
+    const uniqueUsers = aggregateLeaderboards(leaderboards);
+
+    // 4) Fetch the current user balances from DB
 
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -649,33 +429,28 @@ async function endGroup(groupIds: string[]): Promise<DatabaseResponse<string>> {
       return { data: null, error: new Error(userError.message) };
     }
 
-    const balanceUpdatePromises = userData.map(user => {
-      const userUpdate = uniqueUsers.find(u => u.username === user.username);
-      return supabase
-        .from('users')
-        .update({ balance: user.balance + (userUpdate?.netMoney || 0) })
-        .eq('username', user.username);
-    });
-
-    const balanceUpdateResults = await Promise.all(balanceUpdatePromises);
-    const balanceUpdateErrors = balanceUpdateResults.filter(result => result.error);
-
-    if (balanceUpdateErrors.length > 0) {
-      return { data: null, error: new Error('Failed to update some user balances') };
+    // 5) Update each user’s balance by adding their total netMoney
+    const { error: balanceUpdateError } = await updateUserBalances(userData!, uniqueUsers);
+    if (balanceUpdateError) {
+      return { data: null, error: balanceUpdateError };
     }
 
+    // 6) Mark the groups as archived
     const { error: groupUpdateError } = await supabase
-      .from('groups')
+      .from("groups")
       .update({ archive: true })
-      .in('groupid', groupIds);
+      .in("groupid", groupIds);
 
     if (groupUpdateError) {
       return { data: null, error: new Error(groupUpdateError.message) };
     }
 
-    return { data: 'success', error: null };
+    return { data: "success", error: null };
   } catch (error) {
-    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error("Unknown error"),
+    };
   }
 }
 
@@ -701,9 +476,4 @@ async function processGroups(groups: any[]): Promise<DatabaseResponse<string>> {
   }
 }
 
-
-
-
-
-
-export { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup, getLeaderBoard,processGroups,endGroup,processVetoDemo };
+export { createGroup, getAllGroups, getGroup, getGroupsByHostId, updateGroup, deleteGroup, getLeaderBoard, processGroups, processVeto, endGroup };

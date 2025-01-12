@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { 
   createGroup,
-  processVetoDemo,
+  processVeto,
   getLeaderBoard,
   processGroups,
   endGroup, 
@@ -92,7 +92,7 @@ async function processVetoDemoController(req: Request, res: Response) {
   const { groupId } = req.params;
 
   try {
-    const { data: leaderboard, error } = await processVetoDemo(groupId);
+    const { data: leaderboard, error } = await processVeto(groupId);
 
     if (error) {
       return res.status(400).json({ error: error.message });

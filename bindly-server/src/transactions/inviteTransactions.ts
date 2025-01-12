@@ -1,7 +1,8 @@
 import { supabase } from '../initSupabase';
-import { Expo } from 'expo-server-sdk';
+import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseResponse, Invite, Group } from '../types';
+import { sendBatchNotifications } from '../utils/sendNotificationUtil';
 
 const expo = new Expo();
 
@@ -45,7 +46,7 @@ async function createInvite(
     return { data, error: null };
   }
 
-  const notifications: ExpoNotification[] = tokens.map((token: any) => ({
+  const notifications: ExpoPushMessage[] = tokens.map((token: any) => ({
     to: token,
     sound: 'default',
     title: 'Bindly',
@@ -56,21 +57,6 @@ async function createInvite(
   return { data, error: null };
 }
 
-async function sendBatchNotifications(notifications: ExpoNotification[]): Promise<void> {
-  const chunks = expo.chunkPushNotifications(notifications.map(notification => ({
-    ...notification,
-    sound: 'default' as const
-  })));
-  for (const chunk of chunks) {
-    try {
-      await expo.sendPushNotificationsAsync(chunk);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(error.message);
-      }
-    }
-  }
-}
 
 async function getAllInvites(): Promise<DatabaseResponse<Invite[]>> {
   const { data, error } = await supabase
