@@ -35,6 +35,9 @@ import members from '../../assets/members.png'
 import info from '../../assets/info.png';
 import PostItem from './components/PostItem';
 import BottomSheetScrollView from './components/BottomSheetScrollView';
+import CommentsModal from "./components/groupScreenComponents/CommentsModal";
+import LikesModal from "./components/groupScreenComponents/LikesModal";
+import GroupHeader from "./components/groupScreenComponents/GroupHeader";
 
 interface GroupScreenProps {
   route: RouteProp<RootStackParamList, 'Group'>;
@@ -162,49 +165,6 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     });
   };
 
-  // // Post status check effect
-  // useEffect(() => {
-  //   const postStatusCheck = async (): Promise<void> => {
-  //     try {
-  //       const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
-  //         headers: { 'Content-Type': 'application/json' },
-  //         method: 'POST',
-  //         body: JSON.stringify({
-  //           username: user?.username || '',
-  //           groupId: groupData.groupid
-  //         }),
-  //       });
-
-  //       if (!response2.ok) {
-  //         const errorResponse = await response2.json();
-  //         if (errorResponse.message === 'JSON object requested, multiple (or no) rows returned]') {
-  //           setCreateStatus('post');
-  //         }
-  //         return;
-  //       }
-
-  //       const res2 = await response2.json();
-
-  //       console.log('resss22', res2)
-
-  //       if (res2) {
-  //         setCreateStatus(res2.data);
-  //         if (res2.data !== gd?.createStatus) {
-  //           setGroupData((g: GroupData) => ({
-  //             ...g,
-  //             createStatus: res2.data,
-  //             timecycle: res2.startdate
-  //           }));
-  //         }
-  //       }
-  //     } catch (error) {
-  //       console.error('Error checking post status:', error);
-  //     }
-  //   };
-
-  //   postStatusCheck();
-  // }, [gd?.post, gd?.createStatus, user?.username, groupData.groupid]);
-
 
   const getUserPfp = (username: string) => {
     return usersHashmap[username];
@@ -251,7 +211,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
 
       const res = await response.json();
 
-  
+
       // 3. Update group state
       setGroupData(res);
       setPosts(res.post || []);
@@ -488,48 +448,24 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
             <Image style={{ height: 40, width: 40 }} source={settings} />
           </Pressable>
         )}
-        <View style={styles.logoContainer}>
-          <Text style={styles.title}>{groupData.groupname}</Text>
 
-          <View style={{ flexDirection: 'row' }}>
-            <View>
-              <Image style={{ width: 100, height: 100, borderRadius: 8 }} source={imageUrl.length > 0 && !loading ? { uri: imageUrl } : placeholder} />
-            </View>
-            {!loading && (
-              <View style={{ flexDirection: 'row', width: 160, justifyContent: 'space-between', marginTop: 20, marginLeft: 40 }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Pressable style={styles.headerButton} onPress={toMembers}>
-                    <Image style={styles.headerButtonIcon} source={members} />
-                  </Pressable>
-                  <Text>Members</Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Pressable style={styles.headerButton} onPress={toInfo}>
-                    <Image style={styles.headerButtonIcon} source={info} />
-                  </Pressable>
-                  <Text>Info</Text>
-                </View>
-              </View>
-            )}
-          </View>
 
-          {(!loading && started && !ended) && (
-            <>
-              <Pressable style={styles.createPost} onPress={toPost}>
-                <Text style={{ color: 'white' }}>{createStatus == 'edit' ? 'Edit Post' : 'Create Post'}</Text>
-              </Pressable>
-              <Text style={{ textAlign: 'center' }}>Post by {new Date(groupData.startdate).toLocaleTimeString()}</Text>
-            </>
-          )}
-
-          {(!loading && !started) && <Text style={{ textAlign: 'center', fontSize: 18, marginTop: 20 }} >Starts {new Date(groupData.startdate).toLocaleDateString() + ' ' + new Date(groupData.startdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }</Text>}
-
-          {(!loading && ended) && <Text style={{ textAlign: 'center', fontSize: 18, marginTop: 20 }}>Ended {new Date(groupData.enddate).toLocaleDateString() + ' ' + new Date(groupData.enddate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }</Text>}
-
-        </View>
-
+        <GroupHeader
+          loading={loading}
+          imageUrl={imageUrl}
+          groupName={groupData.groupname}
+          started={started}
+          ended={ended}
+          startDate={groupData.startdate}
+          endDate={groupData.enddate}
+          createStatus={createStatus}
+          back={back}
+          setting={setting}
+          toMembers={toMembers}
+          toInfo={toInfo}
+          toPost={toPost}
+          styles={styles}
+        />
         {loading && <ActivityIndicator size="large" color="#0000ff" />}
 
         <View style={{ marginBottom: 60 }}>
@@ -563,105 +499,27 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
       </ScrollView>
 
       {/* Comments Modal */}
-
-
-      {/* @ts-ignore */}
-      <BottomSheetScrollView
-        ref={bottomSheetRef}
-        snapTo="66%"
-        backgroundColor="white"
-        backDropColor="rgba(0,0,0,0.5)"
-        closeFunc={closeCommentsModal}
-
-      >
-        <View style={{ ...styles.commentsModalContainer }}>
-          <View style={styles.commentsHeader}>
-            <Text style={styles.commentsTitle}>Comments</Text>
-          </View>
-          <ScrollView style={styles.commentsContent}>
-            {selectedPostComments.length === 0 ? (
-              <Text style={styles.noCommentsText}>No comments yet.</Text>
-            ) : (
-              selectedPostComments.map((comment) => (
-                <View key={comment.id} style={styles.commentItem}>
-                  <View style={styles.commentRow}>
-                    <Image
-                      style={styles.commentProfileImage}
-                      source={comment.users.pfp ? { uri: comment.users.pfp } : placeholder}
-                    />
-                    <View style={styles.commentTextContainer}>
-                      <Text style={styles.commentUsername}>{comment.username}</Text>
-                      <Text style={styles.commentText}>{comment.message}</Text>
-                    </View>
-                  </View>
-                </View>
-              ))
-            )}
-          </ScrollView>
-
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={320} // Use the dynamically set height
-            style={styles.commentInputKeyboardAvoiding}
-          >
-            <View style={styles.commentInputContainer}>
-              <TextInput
-                style={styles.commentInput}
-                placeholder="Add a comment..."
-                multiline
-                maxLength={300}
-                value={commentText}
-                onChangeText={setCommentText}
-              />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={() => {
-                  postComment();
-                  Keyboard.dismiss();
-                }}
-              >
-                <Text style={styles.sendButtonText}>Send</Text>
-              </TouchableOpacity>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      </BottomSheetScrollView>
-
-
-      {/*likes Modal*/}
-      {/* @ts-ignore */}
-      <BottomSheetScrollView
-        ref={bottomSheetRef2}
-        snapTo="66%"
-        backgroundColor="white"
-        backDropColor="rgba(0,0,0,0.5)"
-        closeFunc={closeLikesModal}
-
-      >
-        <View style={{ ...styles.commentsModalContainer }}>
-          <View style={styles.commentsHeader}>
-            <Text style={styles.commentsTitle}>Likes</Text>
-          </View>
-          <ScrollView style={styles.commentsContent}>
-            {selectedPostLikes.length === 0 ? (
-              <Text style={styles.noCommentsText}>No likes ye.</Text>
-            ) : (
-              selectedPostLikes.map((like) => (
-                <View key={like} style={styles.likeItem}>
-                  <View style={styles.commentRow}>
-                    <Image
-                      style={styles.likeProfileImage}
-                      source={getUserPfp(like) ? { uri: getUserPfp(like) } : placeholder}
-                    />
-                    <Text style={styles.likeUsername}>{like}</Text>
-                  </View>
-                </View>
-              ))
-            )}
-          </ScrollView>
-
-        </View>
-      </BottomSheetScrollView>
+      <CommentsModal
+        bottomSheetRef={bottomSheetRef}
+        selectedPostComments={selectedPostComments}
+        setSelectedPostComments={setSelectedPostComments}  // Add this
+        commentText={commentText}
+        setCommentText={setCommentText}
+        closeCommentsModal={closeCommentsModal}
+        styles={styles}
+        selectedPostId={selectedPostId}
+        groupId={groupId}
+        username={user?.username || ''}
+        addComment={addComment}
+        userPfp={user?.pfp || ''}  // Add this
+      />
+      <LikesModal
+        bottomSheetRef={bottomSheetRef2}
+        selectedPostLikes={selectedPostLikes}
+        getUserPfp={getUserPfp}
+        closeLikesModal={closeLikesModal}
+        styles={styles}
+      />
     </View>
   );
 };

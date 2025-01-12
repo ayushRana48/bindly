@@ -11,8 +11,8 @@ import placeholder from "../../../assets/GroupIcon.png";
 import camera from "../../../assets/Camera.png";
 import ImagePickerModal from "./components/ImagePickerModal";
 import GroupForm from "./components/GroupForm";
-import compressImage from "../../../utils/compressImage";
-import blobToBase64 from "../../../utils/blobToBase64";
+import compressImage from "../../../utils/compressImage.js";
+import blobToBase64 from "../../../utils/blobToBase64.js";
 
 const GroupEditScreen: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();

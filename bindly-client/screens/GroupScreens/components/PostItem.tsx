@@ -85,9 +85,6 @@ const PostComponent: React.FC<PostItemProps> = ({
   const scale = useSharedValue(0);
 
 
-
-
-
   const { user } = useUserContext();
 
   const profilePicture = pfpLink ? { uri: pfpLink } : placeholder;
