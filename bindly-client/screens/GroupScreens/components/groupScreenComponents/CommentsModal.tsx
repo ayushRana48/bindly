@@ -45,7 +45,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
 
         try {
             const response = await fetch(
-                `http://localhost:3000/bindly/comment/addComment`,
+                `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/comment/addComment`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -65,7 +65,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
 
             if (status === 200) {
                 addComment(body, selectedPostId);
-                setSelectedPostComments(prevComments => [...prevComments, {
+                setSelectedPostComments([...selectedPostComments, {
                     ...body,
                     users: {
                         pfp: userPfp

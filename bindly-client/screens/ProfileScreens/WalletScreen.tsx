@@ -23,7 +23,7 @@ const WalletScreen: React.FC = () => {
     useEffect(() => {
         if (user?.stripeid) {
             setLoading(true);
-            fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${user.stripeid}`)
+            fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/getSavedCards/${user.stripeid}`)
                 .then(async response => {
                     const res = await response.json() as CardsResponse;
                     return res;

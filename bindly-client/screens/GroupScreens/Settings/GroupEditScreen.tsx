@@ -93,7 +93,7 @@ const GroupEditScreen: React.FC = () => {
                 imgBase64 = await blobToBase64(blob);
             }
 
-            const response = await fetch(`http://localhost:3000/bindly/group/updateGroup/${groupId}`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

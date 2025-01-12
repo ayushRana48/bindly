@@ -38,7 +38,7 @@ const MembersListScreen: React.FC = () => {
   const getAllMembers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByGroup/${groupData.group.groupid}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByGroup/${groupData.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const res: { members: UserGroup[] } = await response.json(); // Ensure response is typed
@@ -59,7 +59,7 @@ const MembersListScreen: React.FC = () => {
   const getGroup = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/bindly/group/${groupData.group.groupid}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${groupData.group.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 

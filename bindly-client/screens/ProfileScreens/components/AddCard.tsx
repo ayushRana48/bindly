@@ -26,7 +26,7 @@ const AddCard: React.FC<AddCardProps> = ({ setCards: setCards2, cards: cards2 })
     const [loadingRemove, setLoadingRemove] = useState<boolean>(false);
 
     const fetchPaymentSheetParams = async (): Promise<PaymentSheetParams> => {
-        const response = await fetch(`http://localhost:3000/bindly/stripe/saveCard`, {
+        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/saveCard`, {
             method: 'POST',
             body: JSON.stringify({ email: user?.email }),
             headers: { 'Content-Type': 'application/json' },
@@ -85,7 +85,7 @@ const AddCard: React.FC<AddCardProps> = ({ setCards: setCards2, cards: cards2 })
             }
 
             await confirmPaymentSheetPayment();
-            const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${customerId}`);
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/getSavedCards/${customerId}`);
             const data = await response.json();
             
             if (JSON.stringify(cards2) !== JSON.stringify(data.data)) {
@@ -109,7 +109,7 @@ const AddCard: React.FC<AddCardProps> = ({ setCards: setCards2, cards: cards2 })
         
         setLoadingRemove(true);
         try {
-            const response = await fetch(`http://localhost:3000/bindly/stripe/detachOldPaymentMethods`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/detachOldPaymentMethods`, {
                 method: 'POST',
                 body: JSON.stringify({ 
                     customerId: user.stripeid, 

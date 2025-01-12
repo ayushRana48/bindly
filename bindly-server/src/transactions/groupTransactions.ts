@@ -4,8 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../initSupabase';
 import { uploadFile } from './uploadFile';
 import { Group, User, Post, DatabaseResponse } from '../types';
-
-
+// import { distributeMoney } from './groupHelpers/distributeMoney';
 
 interface LeaderboardWeek {
   weekNum: number;
@@ -96,23 +95,6 @@ async function createGroup(
     }])
     .select()
     .single();
-
-    console.log(data, 'Transaction data\n\n')
-    console.log(error, 'Transaction error\n\n')
-    console.log({
-      groupid,
-      groupname,
-      description,
-      buyin,
-      week,
-      startdate,
-      timeleft,
-      hostid,
-      enddate,
-      pfp: fileUrl || "",
-      tasksperweek,
-      lastpfpupdate: time
-    }, 'Transaction theGrrroup\n\n')
 
   return { 
     data, 

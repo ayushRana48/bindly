@@ -19,7 +19,7 @@ const VetoScreen = () => {
     const getVetos = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3000/bindly/post/getInvalid/${user.username}`, {
+            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/getInvalid/${user.username}`, {
                 headers: { 'Content-Type': 'application/json' },
             });
 

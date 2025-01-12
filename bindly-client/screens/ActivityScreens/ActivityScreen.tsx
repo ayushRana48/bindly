@@ -17,7 +17,7 @@ const ActivityScreen: React.FC = () => {
 
   const getAllInvites = async (): Promise<void> => {
     try {
-      const response = await fetch(`http://localhost:3000/bindly/invite/getInviteByReciever/${user?.username}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getInviteByReciever/${user?.username}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const res: Invite[] = await response.json();
@@ -29,7 +29,7 @@ const ActivityScreen: React.FC = () => {
 
   const getNotifyVeto = async (): Promise<void> => {
     try {
-      const response = await fetch(`http://localhost:3000/bindly/notifyveto/${user?.username}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/notifyveto/${user?.username}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
