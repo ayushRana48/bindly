@@ -1,166 +1,80 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Alert, Modal, TouchableWithoutFeedback, ScrollView, KeyboardAvoidingView, Keyboard, Platform, ActivityIndicator } from "react-native";
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, Image, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Keyboard, Platform, ActivityIndicator, TouchableWithoutFeedback, Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../../../UserContext";
 import { useGroupsContext } from "../../GroupsContext";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../../types";
 // @ts-ignore
 import placeholder from "../../../assets/GroupIcon.png";
-// @ts-ignore
+//@ts-ignore
 import camera from "../../../assets/Camera.png";
-// @ts-ignore
-import cameraIcon from "../../../assets/cameraIcon.png";
-// @ts-ignore
-import galleryIcon from "../../../assets/galleryIcon.png";
-// @ts-ignore
-import trashIcon from "../../../assets/trashIcon.png";
-import * as ImagePicker from 'expo-image-picker';
+import ImagePickerModal from "./components/ImagePickerModal";
+import GroupForm from "./components/GroupForm";
 import compressImage from "../../../utils/compressImage";
 import blobToBase64 from "../../../utils/blobToBase64";
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList} from "../../../types";
 
 const GroupEditScreen: React.FC = () => {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const { setGroups, setGroupData, groupData: gd } = useGroupsContext();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { user } = useUserContext();
+    const { setGroups, setGroupData, groupData: gd } = useGroupsContext();
 
     const [groupName, setGroupName] = useState<string>("");
     const [description, setDescription] = useState<string>("");
-    const [startDate, setStartDate] = useState<Date>(tomorrow);
+    const [startDate, setStartDate] = useState<Date>(new Date());
     const [numWeeks, setNumWeeks] = useState<number>(0);
     const [buyIn, setBuyIn] = useState<number>(0);
     const [taskPerWeek, setTaskPerWeek] = useState<number>(0);
-    const [show, setShow] = useState<boolean>(false);
+    const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>("");
     const [imageSrc, setImageSrc] = useState<{ uri: string } | typeof placeholder>(placeholder);
     const [openModal, setOpenModal] = useState<boolean>(false);
-    const [groupid, setGroupid] = useState<string>('');
-    const [timeStamp, setTimeStamp] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
-
-    const parseDateString = (dateString: string): Date => {
-        return new Date(dateString);
-    };
-
-    const setNumWeeksF = (startDate: string, endDate: string) => {
-        const start = parseDateString(startDate);
-        const end = parseDateString(endDate);
-
-        const timeDiff = end.getTime() - start.getTime();
-        const diffDays = Math.floor(timeDiff / (1000 * 3600 * 24));
-
-        const diffWeeks = diffDays / 7;
-        setNumWeeks(diffWeeks);
-    };
-
-    const formatLocalDateTime = (date: Date): string => {
-        const date2 = new Date(date);
-        return date2.toLocaleTimeString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    };
+    const [groupId, setGroupId] = useState<string>("");
+    const [timeStamp, setTimeStamp] = useState<string>("");
 
     useEffect(() => {
         if (gd.group) {
             setGroupName(gd.group.groupname);
-            setDescription(gd.group.description || '');
+            setDescription(gd.group.description || "");
             setStartDate(new Date(gd.group.startdate));
-            setNumWeeksF(gd.group.startdate.toString(), gd.group.enddate.toString());
-
-            if (gd.group.pfp) {
-                setImageSrc({ uri: gd.group.pfp });
-            }
-
+            setNumWeeks(calculateWeeks(gd.group.startdate, gd.group.enddate));
+            setImageSrc(gd.group.pfp ? { uri: gd.group.pfp } : placeholder);
             setBuyIn(gd.group.buyin);
             setTaskPerWeek(gd.group.tasksperweek);
-            setGroupid(gd.group.groupid);
-            setTimeStamp(gd.group?.lastpfpupdate?.toString() || '');
+            setGroupId(gd.group.groupid);
+            setTimeStamp(gd.group?.lastpfpupdate?.toString() || "");
         }
     }, [gd]);
 
-    const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
+    const calculateWeeks = (startDate: Date, endDate: Date): number => {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
+        return Math.ceil(diffDays / 7);
+    };
 
-        if (!result.canceled) {
-            const compressedUri = await compressImage(result.assets[0].uri);
-            setImageSrc({ uri: compressedUri });
-            setOpenModal(false);
+    const formatLocalDateTime = (date: Date): string =>
+        date.toLocaleTimeString([], { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+
+    const toggleDatePicker = () => setShowDatePicker(!showDatePicker);
+
+    const onDateChange = (event: any, selectedDate?: Date) => {
+        if (event.type === "set" && selectedDate) {
+            setStartDate(selectedDate);
+        } else {
+            toggleDatePicker();
         }
     };
 
-    const takeImage = async () => {
-        try {
-            await ImagePicker.requestCameraPermissionsAsync();
-            let result = await ImagePicker.launchCameraAsync({
-                cameraType: ImagePicker.CameraType.front,
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 1,
-            });
-
-            if (!result.canceled) {
-                const compressedUri = await compressImage(result.assets[0].uri);
-                setImageSrc({ uri: compressedUri });
-                setOpenModal(false);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    const removeImage = () => {
-        setImageSrc(placeholder);
-        setOpenModal(false);
-    };
-
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-    const cancel = () => {
-        navigation.goBack();
-    };
-
-    const toggleDatepicker = () => {
-        setShow(!show);
-    };
+    const cancel = () => navigation.goBack();
 
     const submit = async () => {
-        if (loading) return; // Prevent double click
+        if (loading) return;
         setLoading(true);
 
-        if (!groupName.trim()) {
-            console.error("Enter Group Name");
-            setLoading(false);
-            return;
-        }
-        if (!description.trim()) {
-            console.error("Please enter description.");
-            setLoading(false);
-            return;
-        }
-        if (!startDate) {
-            console.error("Please enter start date.");
-            setLoading(false);
-            return;
-        }
-        if (!numWeeks) {
-            console.error("Please enter number of weeks.");
-            setLoading(false);
-            return;
-        }
-        if (!buyIn) {
-            console.error("Please enter buy in");
-            setLoading(false);
-            return;
-        }
-        if (!taskPerWeek) {
-            console.error("Please enter number of tasks per week");
+        if (!groupName.trim() || !description.trim() || !startDate || !numWeeks || !buyIn || !taskPerWeek) {
+            setErrorMessage("Please fill out all fields.");
             setLoading(false);
             return;
         }
@@ -168,87 +82,50 @@ const GroupEditScreen: React.FC = () => {
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + numWeeks * 7);
 
-        let img = imageSrc;
-        if (imageSrc === placeholder) {
-            img = "";
-        }
+        const startDateUTC = startDate.toISOString();
+        const endDateUTC = endDate.toISOString();
 
-        if (groupid) {
-            try {
-                let imgBase64 = "";
-                if (img.uri) {
-                    const response = await fetch(img.uri);
-                    const blob = await response.blob();
-                    imgBase64 = await blobToBase64(blob);
-                }
-
-                // Convert dates to UTC
-                const startTime = new Date(startDate);
-                const endTime = new Date(endDate);
-                startTime.setSeconds(0, 0);
-                endTime.setSeconds(0, 0);
-
-                const startDateUTC = startTime.toISOString();
-                const endDateUTC = endTime.toISOString();
-
-                const response = await fetch(`http://localhost:3000/bindly/group/updateGroup/${groupid}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        groupname: groupName,
-                        description: description,
-                        buyin: buyIn,
-                        startdate: startDateUTC,
-                        enddate: endDateUTC,
-                        hostid: user?.username || '',
-                        pfp: imgBase64,
-                        tasksperweek: taskPerWeek,
-                        lastpfpupdate: timeStamp,
-                    }),
-                });
-
-                const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
-
-                if (status === 200) {
-                    setGroups(currentGroups => {
-                        return currentGroups.map(group =>
-                            group.groupid === body.groupid ? body : group
-                        );
-                    });
-
-                    setGroupData(g => ({
-                        ...g,
-                        group: body,
-                    }));
-                    navigation.navigate("Group", { groupData: body });
-                } else {
-                    console.error(body.error || "An error occurred. Please try again.");
-                }
-            } catch (error) {
-                console.log(error);
-            } finally {
-                setLoading(false);
+        try {
+            let imgBase64 = "";
+            if (imageSrc.uri) {
+                const compressedUri = await compressImage(imageSrc.uri);
+                const blob = await (await fetch(compressedUri)).blob();
+                imgBase64 = await blobToBase64(blob);
             }
-        } else {
-            console.error("No group ID provided.");
+
+            const response = await fetch(`http://localhost:3000/bindly/group/updateGroup/${groupId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    groupname: groupName,
+                    description,
+                    buyin: buyIn,
+                    startdate: startDateUTC,
+                    enddate: endDateUTC,
+                    hostid: user?.username,
+                    pfp: imgBase64,
+                    tasksperweek: taskPerWeek,
+                    lastpfpupdate: timeStamp,
+                }),
+            });
+
+            const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
+            if (status === 200) {
+                setGroups(currentGroups => currentGroups.map(group => (group.groupid === body.groupid ? body : group)));
+                setGroupData({ ...gd, group: body });
+                navigation.navigate("Group", { groupData: body });
+            } else {
+                setErrorMessage(body.error || "An error occurred. Please try again.");
+            }
+        } catch (error) {
+            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
+        } finally {
             setLoading(false);
         }
     };
 
-
-    const onChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        if (event.type === 'set' && selectedDate) {
-            setStartDate(selectedDate);
-        } else {
-            toggleDatepicker();
-        }
-    };
-
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
             <ScrollView contentContainerStyle={styles.container}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View>
@@ -266,112 +143,36 @@ const GroupEditScreen: React.FC = () => {
                             </Pressable>
                         </View>
 
-                        <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
-                            <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
-                                <View style={styles.modalOverlay}>
-                                    <TouchableWithoutFeedback>
-                                        <View style={styles.modalContent}>
-                                            <Text style={styles.modalTitle}>Group Photo</Text>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
-                                                <Pressable style={styles.modalButton} onPress={takeImage}>
-                                                    <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={cameraIcon} />
-                                                    <Text>Camera</Text>
-                                                </Pressable>
-                                                <Pressable style={styles.modalButton} onPress={pickImage}>
-                                                    <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={galleryIcon} />
-                                                    <Text>Gallery</Text>
-                                                </Pressable>
-                                                <Pressable style={styles.modalButton} onPress={removeImage}>
-                                                    <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={trashIcon} />
-                                                    <Text>Remove</Text>
-                                                </Pressable>
-                                            </View>
-                                        </View>
-                                    </TouchableWithoutFeedback>
-                                </View>
-                            </TouchableWithoutFeedback>
-                        </Modal>
+                        <ImagePickerModal
+                            visible={openModal}
+                            onClose={() => setOpenModal(false)}
+                            onImageSelected={imageUri => setImageSrc(imageUri ? { uri: imageUri } : placeholder)}
+                        />
 
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Group Name</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={groupName}
-                                onChangeText={setGroupName}
-                                placeholder="group name"
-                            />
-                        </View>
+                        <GroupForm
+                            {...{
+                                groupName,
+                                setGroupName,
+                                description,
+                                setDescription,
+                                startDate,
+                                numWeeks,
+                                setNumWeeks,
+                                buyIn,
+                                setBuyIn,
+                                taskPerWeek,
+                                setTaskPerWeek,
+                                formatLocalDateTime,
+                                showDatePicker,
+                                toggleDatePicker,
+                                onDateChange,
+                            }}
+                        />
 
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Task Description</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={description}
-                                onChangeText={setDescription}
-                                placeholder="description"
-                            />
-                        </View>
-
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Start Date</Text>
-                            <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-                                <Text>{formatLocalDateTime(startDate)}</Text>
-                            </Pressable>
-                        </View>
-
-                        {show && (
-                            <View>
-                                <DateTimePicker mode="datetime" display="spinner" value={startDate} onChange={onChange} style={{ height: 120 }} minimumDate={new Date(gd.group.startdate)} />
-                                <View style={styles.centeredRow}>
-                                    <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
-                                        <Text style={styles.buttonText}>Done</Text>
-                                    </Pressable>
-                                </View>
-                            </View>
-                        )}
-
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Weeks</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={numWeeks.toString()}
-                                onChangeText={text => setNumWeeks(parseInt(text.replace(/[^0-9]/g, ''), 10) || 0)}
-                                placeholder="5"
-                                keyboardType="numeric"
-                            />
-                        </View>
-
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Buy In</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={buyIn.toString()}
-                                onChangeText={text => setBuyIn(parseFloat(text.replace(/[^0-9.]/g, '')) || 0)}
-                                placeholder="202"
-                                keyboardType="numeric"
-                            />
-                        </View>
-
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Tasks Per Week</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={taskPerWeek.toString()}
-                                onChangeText={text => setTaskPerWeek(parseInt(text.replace(/[^0-9]/g, ''), 10) || 0)}
-                                placeholder="5"
-                                keyboardType="numeric"
-                            />
-                        </View>
-
-                        {!show && (
+                        {!showDatePicker && (
                             <View style={styles.centeredRow}>
                                 <Pressable style={styles.signUpButton} onPress={submit} disabled={loading}>
-                                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Confirm</Text>}
+                                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Create</Text>}
                                 </Pressable>
                             </View>
                         )}
@@ -486,6 +287,21 @@ const styles = StyleSheet.create({
         color: 'red',
         fontWeight: 'bold',
     },
+    footer: {
+        marginTop: 32,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    linkText: {
+        color: 'dodgerblue',
+        textAlign: 'center',
+    },
+    bold: {
+        fontWeight: 'bold',
+    },
 });
 
+
 export default GroupEditScreen;
+

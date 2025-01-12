@@ -29,10 +29,10 @@ interface LeaderboardItemProps {
 
     useEffect(()=>{
         for(let i=0;i<groupData?.usergroup?.length; i++){
-            const user =groupData.usergroup[i]
-            if(user.username == memberData.username){
-                if(user.users.pfp){
-                    setImageUrl({uri:user.users.pfp})
+            const user = groupData.usergroup[i];
+            if (user?.username === memberData.username) {
+                if (user?.users?.pfp) {
+                    setImageUrl({uri: user.users.pfp});
                 }
             }
         }

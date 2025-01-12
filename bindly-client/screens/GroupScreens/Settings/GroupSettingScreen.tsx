@@ -10,7 +10,6 @@ import backArrow from '../../../assets/backArrow.png';
 import { GroupData, RootStackParamList } from "../../../types"; // Import necessary types
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 const GroupSetting: React.FC = () => {
-    const route = useRoute();
 
     const [groupName, setGroupName] = useState<string>("");
     const [description, setDescription] = useState<string>("");

@@ -8,17 +8,13 @@ import { useUserContext } from "../../../UserContext";
 import placeholder from "../../../assets/GroupIcon.png";
 //@ts-ignore
 import camera from "../../../assets/Camera.png";
-//@ts-ignore
-import cameraIcon from "../../../assets/cameraIcon.png";
-//@ts-ignore
-import galleryIcon from "../../../assets/galleryIcon.png";
-//@ts-ignore
-import trashIcon from "../../../assets/trashIcon.png";
-import * as ImagePicker from 'expo-image-picker';
+
 import compressImage from "../../../utils/compressImage";
 import blobToBase64 from "../../../utils/blobToBase64";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, User, Group } from "../../../types";
+import ImagePickerModal from "./components/ImagePickerModal";
+import GroupForm from "./components/GroupForm";
 
 const NewGroupScreen = () => {
     const today = new Date();
@@ -38,51 +34,13 @@ const NewGroupScreen = () => {
     const [numWeeks, setNumWeeks] = useState<number>(0);
     const [buyIn, setBuyIn] = useState<number>(0);
     const [taskPerWeek, setTaskPerWeek] = useState<number>(0);
-    const [show, setShow] = useState<boolean>(false);
+    const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>("");
     const [imageSrc, setImageSrc] = useState<{ uri: string } | typeof placeholder>(placeholder);
     const [openModal, setOpenModal] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
 
-    const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
 
-        if (!result.canceled) {
-            const compressedUri = await compressImage(result.assets[0].uri);
-            setImageSrc({ uri: compressedUri });
-            setOpenModal(false);
-        }
-    };
-
-    const takeImage = async () => {
-        try {
-            await ImagePicker.requestCameraPermissionsAsync();
-            let result = await ImagePicker.launchCameraAsync({
-                cameraType: ImagePicker.CameraType.front,
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 1,
-            });
-
-            if (!result.canceled) {
-                const compressedUri = await compressImage(result.assets[0].uri);
-                setImageSrc({ uri: compressedUri });
-                setOpenModal(false);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    const removeImage = () => {
-        setImageSrc(placeholder);
-        setOpenModal(false);
-    };
 
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -93,13 +51,10 @@ const NewGroupScreen = () => {
         navigation.navigate("GroupsList");
     };
 
-    const toggleDatepicker = () => {
-        setShow(!show);
+    const toggleDatePicker = () => {
+        setShowDatePicker(!showDatePicker);
     };
 
-    useEffect(() => {
-        console.log(user, 'user in the newGroupScree\n\n')
-    }, [])
 
     const submit = async () => {
         if (loading) return; // Prevent double click
@@ -196,7 +151,7 @@ const NewGroupScreen = () => {
 
             if (status === 200) {
                 console.log(body, 'body\n')
-                setGroups((g:Group[]) => {
+                setGroups((g: Group[]) => {
                     if (Array.isArray(g)) {
                         return [...g, body];
                     } else {
@@ -216,8 +171,8 @@ const NewGroupScreen = () => {
                     invite: [],
                     post: []
                 });
-                
-                setUser((u:User | null) => {
+
+                setUser((u: User | null) => {
                     if (!u) return null; // Handle the case where user is null
                     return {
                         ...u,
@@ -241,11 +196,11 @@ const NewGroupScreen = () => {
         }
     };
 
-    const onChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
         if (event.type === 'set' && selectedDate) {
             setStartDate(selectedDate);
         } else {
-            toggleDatepicker();
+            toggleDatePicker();
         }
     };
 
@@ -271,116 +226,40 @@ const NewGroupScreen = () => {
                             </Pressable>
                         </View>
 
-                        <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
-                            <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
-                                <View style={styles.modalOverlay}>
-                                    <TouchableWithoutFeedback>
-                                        <View style={styles.modalContent}>
-                                            <Text style={styles.modalTitle}>Group Photo</Text>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
-                                                <Pressable style={styles.modalButton} onPress={takeImage}>
-                                                    <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={cameraIcon} />
-                                                    <Text>Camera</Text>
-                                                </Pressable>
-                                                <Pressable style={styles.modalButton} onPress={pickImage}>
-                                                    <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={galleryIcon} />
-                                                    <Text>Gallery</Text>
-                                                </Pressable>
-                                                <Pressable style={styles.modalButton} onPress={removeImage}>
-                                                    <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={trashIcon} />
-                                                    <Text>Remove</Text>
-                                                </Pressable>
-                                            </View>
-                                        </View>
-                                    </TouchableWithoutFeedback>
-                                </View>
-                            </TouchableWithoutFeedback>
-                        </Modal>
 
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Group Name</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={groupName}
-                                onChangeText={setGroupName}
-                                placeholder="group name"
-                            />
-                        </View>
+                        <ImagePickerModal
+                            visible={openModal}
+                            onClose={() => setOpenModal(false)}
+                            onImageSelected={(imageUri) => {
+                                if (imageUri) {
+                                    setImageSrc({ uri: imageUri });
+                                } else {
+                                    setImageSrc(placeholder); // Reset to placeholder if image is removed
+                                }
+                            }}
+                        />
 
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Description</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={description}
-                                onChangeText={setDescription}
-                                placeholder="description"
-                            />
-                        </View>
+                        <GroupForm
+                            {...{
+                                groupName,
+                                setGroupName,
+                                description,
+                                setDescription,
+                                startDate,
+                                numWeeks,
+                                setNumWeeks,
+                                buyIn,
+                                setBuyIn,
+                                taskPerWeek,
+                                setTaskPerWeek,
+                                formatLocalDateTime,
+                                showDatePicker,
+                                toggleDatePicker,
+                                onDateChange,
+                            }}
+                        />
 
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Start Date</Text>
-                            <Pressable onPress={toggleDatepicker} style={styles.datePressable}>
-                                <Text>{formatLocalDateTime(startDate)}</Text>
-                            </Pressable>
-                        </View>
-
-                        {show && (
-                            <View>
-                                <DateTimePicker
-                                    mode="datetime"
-                                    display="spinner"
-                                    value={startDate}
-                                    onChange={onChange}
-                                    style={{ height: 120 }}
-                                    minimumDate={tomorrow}
-                                />
-                                <View style={styles.centeredRow}>
-                                    <Pressable style={styles.doneButton} onPress={toggleDatepicker}>
-                                        <Text style={styles.buttonText}>Done</Text>
-                                    </Pressable>
-                                </View>
-                            </View>
-                        )}
-
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Weeks</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={numWeeks.toString()} // Convert number to string for display
-                                onChangeText={text => setNumWeeks(parseInt(text.replace(/[^0-9]/g, ''), 10) || 0)} // Parse to number
-                                placeholder="5"
-                                keyboardType="numeric"
-                            />
-                        </View>
-
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Buy In</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={buyIn.toString()}
-                                onChangeText={text => setBuyIn(parseFloat(text) || 0)}
-                                placeholder="202"
-                                keyboardType="numeric"
-                            />
-                        </View>
-
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Tasks Per Week</Text>
-                            <TextInput
-                                style={styles.input}
-                                autoCapitalize='none'
-                                value={taskPerWeek.toString()}
-                                onChangeText={text => setTaskPerWeek(parseInt(text, 10) || 0)}
-                                placeholder="5"
-                                keyboardType="numeric"
-                            />
-                        </View>
-
-                        {!show && (
+                        {!showDatePicker && (
                             <View style={styles.centeredRow}>
                                 <Pressable style={styles.signUpButton} onPress={submit} disabled={loading}>
                                     {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Create</Text>}
