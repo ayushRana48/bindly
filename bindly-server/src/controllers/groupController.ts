@@ -16,6 +16,7 @@ import { getUser } from '../transactions/usersTransactions';
 import { v4 as uuidv4 } from 'uuid';
 
 async function createGroupController(req: Request, res: Response) {
+  console.log('createGroupController')
   const groupid = uuidv4();
   const { 
     groupname, 
@@ -33,9 +34,9 @@ async function createGroupController(req: Request, res: Response) {
   try {
     const { data: userData, error: userError } = await getUser(hostId);
     
-    if (!userData || userData.balance < buyin) {
-      return res.status(400).json({ error: 'Insufficient Funds' });
-    }
+    // if (!userData || userData.balance < buyin) {
+    //   return res.status(400).json({ error: 'Insufficient Funds' });
+    // }
 
     const { data, error } = await createGroup(
       groupid,
@@ -51,6 +52,7 @@ async function createGroupController(req: Request, res: Response) {
       tasksperweek
     );
 
+    console.log("group data", data)
     if (error) {
       return res.status(400).json({ error: error.message });
     }

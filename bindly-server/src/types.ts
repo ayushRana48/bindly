@@ -93,3 +93,29 @@ export interface User {
     data: T | null;
     error: Error | null;
   }
+
+
+
+export interface BalanceTransaction {
+  id: string; // UUID
+  time: string; // ISO timestamp (use Date if parsing the string)
+  transactionType: string;
+  username: string; // Foreign key to 'users' table
+  amount: number; // Double precision
+  status: string;
+  error?: string | null; // Optional
+}
+
+export interface BalanceStripeTransaction {
+  id: string; 
+  cardid: string;
+  state: string | null;
+  timeinitiated: string | null; 
+  timeconfirmed: string | null; 
+}
+
+export interface BalanceGroupTransaction {
+  id: string; // UUID (Foreign key to 'balance_transaction')
+  groupid: string; // UUID (Foreign key to 'groups')
+  type: string | null;
+}

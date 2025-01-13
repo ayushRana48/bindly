@@ -31,9 +31,9 @@ const NewGroupScreen = () => {
     const [groupName, setGroupName] = useState<string>("");
     const [description, setDescription] = useState<string>("");
     const [startDate, setStartDate] = useState<Date>(tomorrow);
-    const [numWeeks, setNumWeeks] = useState<number>(0);
+    const [numWeeks, setNumWeeks] = useState<number>(1);
     const [buyIn, setBuyIn] = useState<number>(0);
-    const [taskPerWeek, setTaskPerWeek] = useState<number>(0);
+    const [taskPerWeek, setTaskPerWeek] = useState<number>(1);
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>("");
     const [imageSrc, setImageSrc] = useState<{ uri: string } | typeof placeholder>(placeholder);
@@ -132,7 +132,7 @@ const NewGroupScreen = () => {
 
 
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/createGroup`, {
+            const response = await fetch(`http://localhost:3000/bindly/group/createGroup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -184,7 +184,7 @@ const NewGroupScreen = () => {
 
             } else {
                 if (body.error === "Insufficient Funds") {
-                    setErrorMessage("Insufficient Funds, lower buy in");
+                    setErrorMessage("Insufficient jkFunds, lower buy in");
                 } else {
                     setErrorMessage(body.error || "An error occurred. Please try again.");
                 }

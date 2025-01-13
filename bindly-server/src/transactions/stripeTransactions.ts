@@ -2,7 +2,7 @@ import { stripe } from '../initStripe';
 import { supabase } from '../initSupabase';
 import { DatabaseResponse, User } from '../types';
 import Stripe from 'stripe';
-
+import { createPendingStripeBalanceTransaction, finalizeStripeBalanceTransaction } from './balanceTransactions/stripeBalanceTransactions';
 interface SaveCardResponse {
   setupIntent: string;
   ephemeralKey: string;
@@ -58,61 +58,79 @@ async function saveCard(email: string): Promise<DatabaseResponse<SaveCardRespons
       error: null
     };
   } catch (error) {
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error('Unknown error') 
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Unknown error')
     };
   }
 }
 
+
 async function addMoney(
-  customerId: string, 
-  amount: number, 
-  cardId: string, 
+  customerId: string,
+  amount: string,
+  cardId: string,
   username: string
 ): Promise<DatabaseResponse<Stripe.PaymentIntent>> {
+  const amountNumber = parseFloat(amount);
+
+  if (isNaN(amountNumber) || amountNumber <= 0) {
+    return {
+      data: null,
+      error: new Error('Invalid amount provided.'),
+    };
+  }
+  let transactionId=""
+
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('balance')
-      .eq('username', username)
-      .single();
+    console.log("Creating pending transaction")
+    // Step 1: Create Pending Transaction
+    const { data: pendingTransaction, error: pendingError } = await createPendingStripeBalanceTransaction(
+      cardId,
+      amountNumber,
+      username
+    );
 
-    if (error) {
-      return { data: null, error: new Error(error.message) };
+
+    if (pendingError) {
+      return { data: null, error: pendingError };
     }
 
-    const newBalance = parseFloat(data.balance) + amount;
 
-    const { error: supabaseError } = await supabase
-      .from('users')
-      .update({ balance: newBalance })
-      .eq('username', username);
 
-    if (supabaseError) {
-      return { data: null, error: new Error(supabaseError.message) };
-    }
+    transactionId = pendingTransaction.transactionId;
+    console.log('now creating stripe payment intent', transactionId)
 
+    // Step 2: Create Stripe PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // amount in cents
+      amount: Math.round(amountNumber * 100), // Convert to cents
       currency: 'usd',
       customer: customerId,
       payment_method: cardId,
       off_session: true,
       confirm: true,
     });
+    console.log('Stripe PaymentIntent created:', ' now finalizing stripe transaction');
 
+    // Step 3: Finalize on Success
+    await finalizeStripeBalanceTransaction(transactionId, cardId, 'Success', new Date(), username, amountNumber, null);
+
+    console.log("Stripe transaction finalized")
     return { data: paymentIntent, error: null };
-  } catch (error) {
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error('Unknown error') 
-    };
+  } catch (error: any) {
+    console.log('Error in addMoney:', error.message);
+
+    // Step 4: Finalize on Failure
+    await finalizeStripeBalanceTransaction(transactionId, cardId, 'Fail', new Date(),username,amountNumber, error.message,);
+
+    return { data: null, error: new Error('Payment failed.') };
   }
 }
 
+
+
 async function withdrawMoney(
-  customerId: string, 
+  customerId: string,
   amount: number
 ): Promise<DatabaseResponse<Stripe.Transfer>> {
   try {
@@ -124,9 +142,9 @@ async function withdrawMoney(
 
     return { data: transfer, error: null };
   } catch (error) {
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error('Unknown error') 
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Unknown error')
     };
   }
 }
@@ -142,9 +160,9 @@ async function getSavedCards(
 
     return { data: cards, error: null };
   } catch (error) {
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error('Unknown error') 
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Unknown error')
     };
   }
 }

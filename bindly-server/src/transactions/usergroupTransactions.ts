@@ -1,6 +1,7 @@
 import { supabase } from '../initSupabase';
 import { processGroups } from './groupTransactions';
 import { DatabaseResponse, Group, UserGroup, User } from '../types';
+import { createGroupBalanceTransaction } from './balanceTransactions/groupBalanceTransactions';
 
 async function createUserGroup(
   usergroupid: string, 
@@ -17,30 +18,23 @@ async function createUserGroup(
     return { data: null, error: new Error(groupError.message) };
   }
 
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('balance')
-    .eq('username', username)
-    .single();
+  console.log("about to create group balance transaction")
 
-  if (userError) {
-    return { data: null, error: new Error(userError.message) };
+  // Call `createGroupBalanceTransaction` to handle balance updates and transaction creation
+  const { newBalance, error: transactionError } = await createGroupBalanceTransaction(
+    username,
+    groupid,
+    'BuyIn', // Assuming "BuyIn" is the subtype for joining a group
+    -groupData.buyin
+  );
+
+  if(transactionError){
+    console.log('pushing error', transactionError)
+    return {data:null, error:transactionError}
   }
 
-  const newBalance = userData.balance - groupData.buyin;
+  console.log( 'newBalance', newBalance)
 
-  if (newBalance < 0) {
-    return { data: null, error: new Error('Insufficient Funds') };
-  }
-
-  const { data: balanceUpdate, error: balanceUpdateError } = await supabase
-    .from('users')
-    .update({ balance: newBalance })
-    .eq('username', username);
-
-  if (balanceUpdateError) {
-    return { data: null, error: new Error(balanceUpdateError.message) };
-  }
 
   const { data, error } = await supabase
     .from('usergroup')
@@ -48,8 +42,9 @@ async function createUserGroup(
     .select()
     .single();
 
+
   return { 
-    data: { data, newBalance }, 
+    data: { data, newBalance: newBalance || 0 }, 
     error: error ? new Error(error.message) : null 
   };
 }
