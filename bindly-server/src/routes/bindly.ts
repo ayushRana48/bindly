@@ -31,7 +31,7 @@ router.get('/group/', groupController.getAllGroupsController as unknown as Reque
 router.delete('/group/deleteGroup', groupController.deleteGroupController as unknown as RequestHandler);
 router.put('/group/updateGroup/:groupId', groupController.updateGroupController as unknown as RequestHandler);
 router.put('/group/changeHost', groupController.changeHostController as unknown as RequestHandler);
-router.put('/group/endGroup', groupController.endGroupController as unknown as RequestHandler);
+// router.put('/group/endGroup', groupController.endGroupController as unknown as RequestHandler);
 router.get('/group/proccessVetoDemo/:groupId', groupController.processVetoDemoController as unknown as RequestHandler);
 
 // UserGroup routes

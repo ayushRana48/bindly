@@ -12,7 +12,8 @@ export interface User {
     timezone: string | null;
     stravarefresh: string | null;
   }
-  
+
+
   export interface Group {
     groupid: string;
     groupname: string;
@@ -20,11 +21,11 @@ export interface User {
     buyin: number | null;
     week: Date | null;
     startdate: Date | null;
-    timeleft: string | null;
+    timeleft: Date | null; // Match Prisma
     hostid: string;
     enddate: Date | null;
     pfp: string | null;
-    tasksperweek: number | null;
+    tasksperweek: number | null; // Clarify BigInt
     lastpfpupdate: Date | null;
     archive: boolean;
     notification_time: Date | null;
@@ -35,7 +36,7 @@ export interface User {
     photolink: string | null;
     videolink: string | null;
     caption: string | null;
-    valid: boolean | null;
+    valid: boolean | null; // Correct type
     username: string;
     groupid: string;
     startdate: Date | null;
@@ -44,6 +45,7 @@ export interface User {
     veto: string[];
     likes: string[] | null;
   }
+  
   
   export interface Comment {
     commentid: string;
@@ -95,16 +97,16 @@ export interface User {
   }
 
 
-
 export interface BalanceTransaction {
-  id: string; // UUID
-  time: string; // ISO timestamp (use Date if parsing the string)
+  id: string;
+  time: Date;
   transactionType: string;
-  username: string; // Foreign key to 'users' table
-  amount: number; // Double precision
-  status: string;
-  error?: string | null; // Optional
+  username: string;
+  amount: number;
+  state: string; // Add missing field
+  error?: string | null;
 }
+
 
 export interface BalanceStripeTransaction {
   id: string; 

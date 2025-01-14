@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model balance_group_transaction {
+  id                  String              @id(map: "balance_group_transaction_pkey1") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupid             String              @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                String?
+  groups              groups              @relation(fields: [groupid], references: [groupid], onDelete: NoAction, onUpdate: NoAction)
+  balance_transaction balance_transaction @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "balance_group_transaction_id_fkey1")
+}
+
+model balance_stripe_transaction {
+  id                  String              @id(map: "balance_group_transaction_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cardid              String
+  state               String?
+  timeinitiated       DateTime?           @db.Timestamptz(6)
+  timeconfirmed       DateTime?           @db.Timestamptz(6)
+  balance_transaction balance_transaction @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "balance_group_transaction_id_fkey")
+}
+
+model balance_transaction {
+  time                       DateTime                    @db.Timestamptz(6)
+  transactionType            String
+  username                   String
+  amount                     Float
+  error                      String?
+  id                         String                      @id(map: "transaction_pkey") @db.Uuid
+  state                      String
+  balance_group_transaction  balance_group_transaction?
+  balance_stripe_transaction balance_stripe_transaction?
+  users                      users                       @relation(fields: [username], references: [username], onDelete: NoAction, onUpdate: NoAction, map: "transaction_username_fkey")
+}
+
+model comment {
+  commentid String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created   DateTime @default(now()) @db.Timestamptz(6)
+  postid    String   @db.Uuid
+  username  String   @db.VarChar
+  message   String
+  post      post     @relation(fields: [postid], references: [postid], onDelete: NoAction, onUpdate: NoAction)
+  users     users    @relation(fields: [username], references: [username], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model groups {
+  groupid                   String                      @id @db.Uuid
+  groupname                 String                      @db.VarChar(255)
+  description               String?
+  buyin                     Float?
+  week                      DateTime?                   @db.Date
+  startdate                 DateTime?                   @db.Timestamptz(6)
+  timeleft                  DateTime?                   @db.Time(6)
+  hostid                    String
+  enddate                   DateTime?                   @db.Timestamptz(6)
+  pfp                       String?
+  tasksperweek              BigInt?
+  lastpfpupdate             DateTime?                   @db.Timestamptz(6)
+  archive                   Boolean?                    @default(false)
+  notification_time         DateTime?                   @db.Timestamptz(6)
+  balance_group_transaction balance_group_transaction[]
+  users                     users                       @relation(fields: [hostid], references: [username], onDelete: NoAction, onUpdate: NoAction)
+  invite                    invite[]
+  notifyveto                notifyveto[]
+  post                      post[]
+  usergroup                 usergroup[]
+}
+
+model invite {
+  inviteid                       String @id @db.Uuid
+  groupid                        String @db.Uuid
+  senderid                       String @db.VarChar(255)
+  receiverid                     String @db.VarChar(255)
+  groups                         groups @relation(fields: [groupid], references: [groupid], onDelete: NoAction, onUpdate: NoAction)
+  users_invite_receiveridTousers users  @relation("invite_receiveridTousers", fields: [receiverid], references: [username], onDelete: NoAction, onUpdate: NoAction)
+  users_invite_senderidTousers   users  @relation("invite_senderidTousers", fields: [senderid], references: [username], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model notifyveto {
+  notifyvetoid String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postid       String? @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username     String? @default(dbgenerated("gen_random_uuid()")) @db.VarChar
+  groupid      String? @db.Uuid
+  groups       groups? @relation(fields: [groupid], references: [groupid], onDelete: NoAction, onUpdate: NoAction)
+  post         post?   @relation(fields: [postid], references: [postid], onDelete: NoAction, onUpdate: NoAction)
+  users        users?  @relation(fields: [username], references: [username], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model post {
+  postid     String       @id @db.Uuid
+  photolink  String?
+  videolink  String?
+  caption    String?      @db.VarChar(255)
+  valid      Boolean?
+  username   String       @db.VarChar(255)
+  groupid    String       @db.Uuid
+  startdate  DateTime?    @db.Date
+  timepost   DateTime     @db.Timestamptz(6)
+  timecycle  DateTime?    @db.Timestamptz(6)
+  veto       String[]     @default([])
+  likes      String[]
+  comment    comment[]
+  notifyveto notifyveto[]
+  groups     groups       @relation(fields: [groupid], references: [groupid], onDelete: NoAction, onUpdate: NoAction)
+  users      users        @relation(fields: [username], references: [username], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model usergroup {
+  usergroupid            String    @id @db.Uuid
+  username               String    @db.VarChar(255)
+  groupid                String    @db.Uuid
+  strikes                Int?
+  moneypaid              Float?
+  moneyowed              Float?
+  post_notification_time DateTime? @db.Timestamptz(6)
+  tokens                 String[]
+  users                  users     @relation(fields: [username], references: [username], onDelete: NoAction, onUpdate: NoAction, map: "public_usergroup_username_fkey")
+  groups                 groups    @relation(fields: [groupid], references: [groupid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+  username                        String                @id @db.VarChar(255)
+  email                           String                @unique @db.VarChar(255)
+  firstName                       String
+  pfp                             String?               @db.VarChar(255)
+  lastName                        String?
+  lastpfpupdate                   DateTime?             @db.Timestamp(6)
+  balance                         Float?                @default(0)
+  stripeid                        String?
+  tokens                          String[]              @default([])
+  lastlogin                       DateTime?             @db.Timestamptz(6)
+  timezone                        String?
+  stravarefresh                   String?
+  balance_transaction             balance_transaction[]
+  comment                         comment[]
+  groups                          groups[]
+  invite_invite_receiveridTousers invite[]              @relation("invite_receiveridTousers")
+  invite_invite_senderidTousers   invite[]              @relation("invite_senderidTousers")
+  notifyveto                      notifyveto[]
+  post                            post[]
+  usergroup                       usergroup[]
+}

@@ -4,7 +4,7 @@ import { Group, Post, DatabaseResponse } from '../types';
 import { distributeMoney } from './groupHelpers/leaderboard/distributeMoney';
 import { buildLeaderboardData } from './groupHelpers/leaderboard/leaderboard';
 import { processPosts } from './groupHelpers/veto/processPosts';
-import { aggregateLeaderboards, updateUserBalances } from './groupHelpers/endGroup/endGroupHelpers';
+import { updateUserBalance } from './groupHelpers/endGroup/endGroupHelpers';
 
 interface LeaderboardWeek {
   weekNum: number;
@@ -407,57 +407,66 @@ async function deleteGroup(groupId: string): Promise<DatabaseResponse<string>> {
 }
 
 
-async function endGroup(groupIds: string[]): Promise<DatabaseResponse<string>> {
+async function endGroups(groupIds: string[]): Promise<DatabaseResponse<string>> {
   try {
-    // 1) Process vetoes for each group
-    await Promise.all(groupIds.map(groupId => processVeto(groupId)));
+    for (const groupId of groupIds) {
+      const { error } = await endGroup(groupId);
+      if (error) {
+        return { data: null, error };
+      }
+    }
+    return { data: "success", error: null };
+  } catch (error) {
+    return { data: null, error: error instanceof Error ? error : new Error("Unknown error") };
+  }
+}
 
-    // 2) Fetch leaderboards in parallel
-    const leaderboards = await Promise.all(groupIds.map(getLeaderBoard));
+async function endGroup(groupId: string): Promise<{ error: Error | null }> {
+  try {
+    // Process veto for this group
+    await processVeto(groupId);
 
-    // 3) Aggregate all users & netMoney from valid leaderboards
-    const uniqueUsers = aggregateLeaderboards(leaderboards);
-
-    // 4) Fetch the current user balances from DB
-
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('username, balance')
-      .in('username', uniqueUsers.map(user => user.username));
-
-    if (userError) {
-      return { data: null, error: new Error(userError.message) };
+    // Fetch the leaderboard for this group
+    const leaderboardResponse = await getLeaderBoard(groupId);
+    if (!leaderboardResponse.data) {
+      return { error: new Error("Failed to fetch leaderboard for group: " + groupId) };
     }
 
-    // 5) Update each user’s balance by adding their total netMoney
-    const { error: balanceUpdateError } = await updateUserBalances(userData!, uniqueUsers);
-    if (balanceUpdateError) {
-      return { data: null, error: balanceUpdateError };
+    const leaderboard = leaderboardResponse.data;
+
+    // Go through each user and update their balance and logs
+    for (const entry of leaderboard) {
+      const { username, netMoney } = entry;
+      if (netMoney && netMoney !== 0) {
+        const { error } = await updateUserBalance(username, netMoney, groupId);
+        if (error) {
+          return { error };
+        }
+      }
     }
 
-    // 6) Mark the groups as archived
+    // Mark the group as archived
     const { error: groupUpdateError } = await supabase
       .from("groups")
       .update({ archive: true })
-      .in("groupid", groupIds);
+      .eq("groupid", groupId);
 
     if (groupUpdateError) {
-      return { data: null, error: new Error(groupUpdateError.message) };
+      return { error: new Error(groupUpdateError.message) };
     }
 
-    return { data: "success", error: null };
+    return { error: null };
   } catch (error) {
-    return {
-      data: null,
-      error: error instanceof Error ? error : new Error("Unknown error"),
-    };
+    console.error("Error in endGroup:", error);
+    return { error: error instanceof Error ? error : new Error("Unknown error") };
   }
 }
 
 
+
 async function processGroups(groups: any[]): Promise<DatabaseResponse<string>> {
   const now = new Date();
-  const groupsToEnd = groups
+  const groupsToEnd: string[] = groups
     .filter(group => {
       const endDate = new Date(group.enddate!);
       return now.getTime() - endDate.getTime() >= 24 * 60 * 60 * 1000;
@@ -469,7 +478,7 @@ async function processGroups(groups: any[]): Promise<DatabaseResponse<string>> {
   }
 
   try {
-    const result = await endGroup(groupsToEnd);
+    const result = await endGroups(groupsToEnd);
     return result;
   } catch (error) {
     return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
