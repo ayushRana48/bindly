@@ -1,4 +1,4 @@
-import { supabase } from '../initSupabase';
+import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import fetch from 'node-fetch';
 import fs from 'fs';
@@ -8,7 +8,9 @@ import { execFile } from 'child_process';
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { Post, DatabaseResponse } from '../types';
 import { sendBatchNotifications } from '../utils/sendNotificationUtil';
+import { supabase } from '../initSupabase';
 
+const prisma = new PrismaClient();
 const expo = new Expo();
 
 interface CreatePostParams {
@@ -18,7 +20,6 @@ interface CreatePostParams {
   videolink: string;
   caption: string;
   timepost: string;
-  startdate: string;
   timecycle: string;
 }
 
@@ -39,9 +40,9 @@ interface PostWithComments extends Post {
     commentid: string;
     username: string;
     message: string;
-    created: string;
+    created: Date;
     users: {
-      pfp: string;
+      pfp: string | null;
     };
   }[];
 }
@@ -49,21 +50,29 @@ interface PostWithComments extends Post {
 
 
 async function createPost(params: CreatePostParams): Promise<DatabaseResponse<Post>> {
-  const postid = uuidv4();
-  const { username, groupid, photolink, videolink, caption, startdate, timepost, timecycle } = params;
+  try {
+    const postid = uuidv4();
+    const { username, groupid, photolink, videolink, caption, timepost, timecycle } = params;
 
-  const { data, error } = await supabase
-    .from('post')
-    .insert([
-      { postid, username, groupid, photolink, videolink, caption, startdate, timepost, timecycle }
-    ])
-    .select()
-    .single();
+    const data = await prisma.post.create({
+      data: {
+        postid,
+        username,
+        groupid,
+        photolink,
+        videolink,
+        caption,
+        timepost: new Date(timepost),
+        timecycle: new Date(timecycle),
+        veto: [],
+        likes: []
+      }
+    });
 
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: new Error(error.message) };
+  }
 }
 
 async function getPresignedUrl(
@@ -173,94 +182,85 @@ async function compressVideo(fileName: string): Promise<DatabaseResponse<any>> {
 }
 
 async function getAllPosts(): Promise<DatabaseResponse<Post[]>> {
-  const { data, error } = await supabase
-    .from('post')
-    .select('*');
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+  try {
+    const data = await prisma.post.findMany();
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: new Error(error.message) };
+  }
 }
 
 
 async function getPost(postId: string): Promise<DatabaseResponse<Post>> {
-  const { data, error } = await supabase
-    .from('post')
-    .select('*')
-    .eq('postid', postId)
-    .single();
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+  try {
+    const data = await prisma.post.findUnique({
+      where: { postid: postId }
+    });
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: new Error(error.message) };
+  }
 }
 
 async function getPostsByUsername(username: string): Promise<DatabaseResponse<Post[]>> {
-  const { data, error } = await supabase
-    .from('post')
-    .select('*')
-    .eq('username', username);
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+  try {
+    const data = await prisma.post.findMany({
+      where: { username }
+    });
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: new Error(error.message) };
+  }
 }
 
 async function getPostsByGroupId(groupid: string): Promise<DatabaseResponse<Post[]>> {
-  const { data, error } = await supabase
-    .from('post')
-    .select(`*`)
-    .eq('groupid', groupid);
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+  try {
+    const data = await prisma.post.findMany({
+      where: { groupid }
+    });
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: new Error(error.message) };
+  }
 }
 
 async function getInvalidPosts(username: string): Promise<DatabaseResponse<(Post & { groups: any })[]>> {
-  const { data, error } = await supabase
-    .from('post')
-    .select(`*,
-      groups:groupid(*)`)
-    .eq('username', username)
-    .eq('valid', false);
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+  try {
+    const data = await prisma.post.findMany({
+      where: {
+        username,
+        valid: false
+      },
+      include: {
+        groups: true
+      }
+    });
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: new Error(error.message) };
+  }
 }
 
 async function updatePost(postid: string, updateParams: UpdatePostParams): Promise<DatabaseResponse<Post>> {
   const { username, groupId, photolink, videolink, caption, time, prevFileName, timecycle } = updateParams;
 
   try {
-    const { data, error } = await supabase
-      .from('post')
-      .update({ 
-        postid, 
-        username, 
-        groupid: groupId, 
-        photolink, 
-        videolink, 
-        caption, 
-        timepost: time, 
-        timecycle,
+    const updatedPost = await prisma.post.update({
+      where: { postid },
+      data: {
+        username,
+        groupid: groupId,
+        photolink,
+        videolink,
+        caption,
+        timepost: new Date(time),
+        timecycle: new Date(timecycle),
         veto: [],
-        likes: [] 
-      })
-      .eq('postid', postid)
-      .select()
-      .single();
+        likes: []
+      }
+    });
 
-    if (error) {
-      return { data: null, error: new Error(error.message) };
-    }
-
+    // Keep the storage operations as they are since they're specific to your setup
     const { error: deleteError } = await supabase.storage
       .from('posts')
       .remove([`${prevFileName}v`]);
@@ -277,7 +277,7 @@ async function updatePost(postid: string, updateParams: UpdatePostParams): Promi
       return { data: null, error: new Error(deleteError2.message) };
     }
 
-    return { data, error: null };
+    return { data: updatedPost, error: null };
   } catch (error) {
     return { 
       data: null, 
@@ -287,16 +287,15 @@ async function updatePost(postid: string, updateParams: UpdatePostParams): Promi
 }
 
 async function deletePost(postid: string): Promise<DatabaseResponse<{ message: string }>> {
-  const { data, error } = await supabase
-    .from('post')
-    .delete()
-    .eq('postid', postid);
-
-  if (error) {
-    return { data: null, error: new Error(error.message) };
+  try {
+    await prisma.post.delete({
+      where: { postid }
+    });
+    
+    return { data: { message: 'success' }, error: null };
+  } catch (error:any) {
+    return { data: null, error: error instanceof Error ? error : new Error(error.message) };
   }
-
-  return { data: { message: 'success' }, error: null };
 }
 
 
@@ -311,81 +310,76 @@ async function addVeto(
   username: string, 
   groupid: string
 ): Promise<DatabaseResponse<PostWithComments>> {
-  const { data: userData, error: userError } = await supabase
-    .from('usergroup')
-    .select(`
-      *,
-      user:username!inner(
-        tokens
-      ),
-      group:groupid!inner(
-        groupname
-      )
-    `)
-    .eq('groupid', groupid)
-    .eq('username', username)
-    .single();
+  try {
+    const userGroup = await prisma.usergroup.findFirst({
+      where: {
+        groupid,
+        username
+      },
+      include: {
+        users: {
+          select: {
+            tokens: true
+          }
+        },
+        groups: {
+          select: {
+            groupname: true
+          }
+        }
+      }
+    });
 
-  if (userError) {
-    if (userError.message === 'JSON object requested, multiple (or no) rows returned') {
+    if (!userGroup) {
       return { data: null, error: new Error('user not in group') };
     }
-    return { data: null, error: new Error(userError.message) };
+
+    const post = await prisma.post.findUnique({
+      where: { postid }
+    });
+
+    if (!post) {
+      return { data: null, error: new Error('Post not found') };
+    }
+
+    const newVetoList = [...(post.veto || [])];
+    if (!newVetoList.includes(username)) {
+      newVetoList.push(username);
+    }
+
+    const updatedPost = await prisma.post.update({
+      where: { postid },
+      data: { veto: newVetoList },
+      include: {
+        comment: {
+          include: {
+            users: {
+              select: {
+                pfp: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const vetoCount = newVetoList.length;
+    const ordinalVetoCount = getOrdinalSuffix(vetoCount);
+
+    const tokens = userGroup.users.tokens.filter((token:string) => Expo.isExpoPushToken(token));
+    const notifications: ExpoPushMessage[] = tokens.map((token:string) => ({
+      to: token,
+      sound: 'default',
+      title: 'Bindly',
+      body: `You received your ${ordinalVetoCount} veto for group ${userGroup.groups.groupname}`,
+    }));
+
+    await sendBatchNotifications(notifications);
+
+    return { data: updatedPost, error: null };
+  } catch (error: any) {
+    return { data: null, error: new Error(error.message) };
   }
-
-  const { data: postData, error: postError } = await supabase
-    .from('post')
-    .select('veto')
-    .eq('postid', postid)
-    .single();
-
-  if (postError) {
-    return { data: null, error: new Error(postError.message) };
-  }
-
-  const newVetoList = postData.veto || [];
-  if (!newVetoList.includes(username)) {
-    newVetoList.push(username);
-  }
-
-  const { data: updateData, error: updateError } = await supabase
-    .from('post')
-    .update({ veto: newVetoList })
-    .eq('postid', postid)
-    .select(`
-      *,
-      comment(commentid, username, message, created, users(pfp))
-    `)
-    .single();
-
-  if (updateError) {
-    return { data: null, error: new Error(updateError.message) };
-  }
-
-  const vetoCount = newVetoList.length;
-  const ordinalVetoCount = getOrdinalSuffix(vetoCount);
-
-  interface UserGroupData {
-    user: {
-      tokens: string[];
-    };
-    group: {
-      groupname: string;
-    };
-  }
-
-  const typedUserData = userData as unknown as UserGroupData;
-  const tokens = typedUserData.user.tokens.filter((token: string) => Expo.isExpoPushToken(token));
-  const notifications: ExpoPushMessage[] = tokens.map((token: string) => ({
-    to: token,
-    sound: 'default',
-    title: `Bindly`,
-    body: `You received your ${ordinalVetoCount} veto for group ${typedUserData.group.groupname}`,
-  }));
-
-  await sendBatchNotifications(notifications);
-
-  return { data: updateData, error: null };
 }
 
 async function removeVeto(
@@ -393,50 +387,52 @@ async function removeVeto(
   username: string, 
   groupid: string
 ): Promise<DatabaseResponse<PostWithComments>> {
-  const { data: userData, error: userError } = await supabase
-    .from('usergroup')
-    .select('*')
-    .eq('groupid', groupid)
-    .eq('username', username)
-    .single();
+  try {
+    const userGroup = await prisma.usergroup.findFirst({
+      where: {
+        groupid,
+        username
+      }
+    });
 
-  if (userError) {
-    if (userError.message === 'JSON object requested, multiple (or no) rows returned') {
+    if (!userGroup) {
       return { data: null, error: new Error('user not in group') };
     }
-    return { data: null, error: new Error(userError.message) };
+
+    const post = await prisma.post.findUnique({
+      where: { postid }
+    });
+
+    if (!post) {
+      return { data: null, error: new Error('Post not found') };
+    }
+
+    const newVetoList = [...(post.veto || [])];
+    const index = newVetoList.indexOf(username);
+    if (index > -1) {
+      newVetoList.splice(index, 1);
+    }
+
+    const updatedPost = await prisma.post.update({
+      where: { postid },
+      data: { veto: newVetoList },
+      include: {
+        comment: {
+          include: {
+            users: {
+              select: {
+                pfp: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return { data: updatedPost, error: null };
+  } catch (error:any) {
+    return { data: null, error: error instanceof Error ? error : new Error(error.message) };
   }
-
-  const { data: postData, error: postError } = await supabase
-    .from('post')
-    .select('veto')
-    .eq('postid', postid)
-    .single();
-
-  if (postError) {
-    return { data: null, error: new Error(postError.message) };
-  }
-
-  const newVetoList = postData.veto || [];
-  const index = newVetoList.indexOf(username);
-  if (index > -1) {
-    newVetoList.splice(index, 1);
-  }
-
-  const { data: updateData, error: updateError } = await supabase
-    .from('post')
-    .update({ veto: newVetoList })
-    .eq('postid', postid)
-    .select(`
-      *,
-      comment(commentid, username, message, created, users(pfp))
-    `)
-    .single();
-
-  return { 
-    data: updateData, 
-    error: updateError ? new Error(updateError.message) : null 
-  };
 }
 
 
@@ -445,57 +441,63 @@ async function addLike(
   username: string, 
   groupid: string
 ): Promise<DatabaseResponse<PostWithComments>> {
-  const { data: userData, error: userError } = await supabase
-    .from('usergroup')
-    .select(`
-      *,
-      user:username!inner(
-        tokens
-      ),
-      group:groupid!inner(
-        groupname
-      )
-    `)
-    .eq('groupid', groupid)
-    .eq('username', username)
-    .single();
+  try {
+    const userGroup = await prisma.usergroup.findFirst({
+      where: {
+        groupid,
+        username
+      },
+      include: {
+        users: {
+          select: {
+            tokens: true
+          }
+        },
+        groups: {
+          select: {
+            groupname: true
+          }
+        }
+      }
+    });
 
-  if (userError) {
-    if (userError.message === 'JSON object requested, multiple (or no) rows returned') {
+    if (!userGroup) {
       return { data: null, error: new Error('user not in group') };
     }
-    return { data: null, error: new Error(userError.message) };
+
+    const post = await prisma.post.findUnique({
+      where: { postid }
+    });
+
+    if (!post) {
+      return { data: null, error: new Error('Post not found') };
+    }
+
+    const newLikeList = [...(post.likes || [])];
+    if (!newLikeList.includes(username)) {
+      newLikeList.push(username);
+    }
+
+    const updatedPost = await prisma.post.update({
+      where: { postid },
+      data: { likes: newLikeList },
+      include: {
+        comment: {
+          include: {
+            users: {
+              select: {
+                pfp: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return { data: updatedPost, error: null };
+  } catch (error: any) {
+    return { data: null, error: error instanceof Error ? error : new Error(error.message) };
   }
-
-  const { data: postData, error: postError } = await supabase
-    .from('post')
-    .select('likes')
-    .eq('postid', postid)
-    .single();
-
-  if (postError) {
-    return { data: null, error: new Error(postError.message) };
-  }
-
-  const newLikeList = postData.likes || [];
-  if (!newLikeList.includes(username)) {
-    newLikeList.push(username);
-  }
-
-  const { data: updateData, error: updateError } = await supabase
-    .from('post')
-    .update({ likes: newLikeList })
-    .eq('postid', postid)
-    .select(`
-      *,
-      comment(commentid, username, message, created, users(pfp))
-    `)
-    .single();
-
-  return { 
-    data: updateData, 
-    error: updateError ? new Error(updateError.message) : null 
-  };
 }
 
 async function removeLike(
@@ -503,50 +505,52 @@ async function removeLike(
   username: string, 
   groupid: string
 ): Promise<DatabaseResponse<PostWithComments>> {
-  const { data: userData, error: userError } = await supabase
-    .from('usergroup')
-    .select('*')
-    .eq('groupid', groupid)
-    .eq('username', username)
-    .single();
+  try {
+    const userGroup = await prisma.usergroup.findFirst({
+      where: {
+        groupid,
+        username
+      }
+    });
 
-  if (userError) {
-    if (userError.message === 'JSON object requested, multiple (or no) rows returned') {
+    if (!userGroup) {
       return { data: null, error: new Error('user not in group') };
     }
-    return { data: null, error: new Error(userError.message) };
+
+    const post = await prisma.post.findUnique({
+      where: { postid }
+    });
+
+    if (!post) {
+      return { data: null, error: new Error('Post not found') };
+    }
+
+    const newLikeList = [...(post.likes || [])];
+    const index = newLikeList.indexOf(username);
+    if (index > -1) {
+      newLikeList.splice(index, 1);
+    }
+
+    const updatedPost = await prisma.post.update({
+      where: { postid },
+      data: { likes: newLikeList },
+      include: {
+        comment: {
+          include: {
+            users: {
+              select: {
+                pfp: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return { data: updatedPost, error: null };
+  } catch (error:any) {
+    return { data: null, error: error instanceof Error ? error : new Error(error.message) };
   }
-
-  const { data: postData, error: postError } = await supabase
-    .from('post')
-    .select('likes')
-    .eq('postid', postid)
-    .single();
-
-  if (postError) {
-    return { data: null, error: new Error(postError.message) };
-  }
-
-  const newLikeList = postData.likes || [];
-  const index = newLikeList.indexOf(username);
-  if (index > -1) {
-    newLikeList.splice(index, 1);
-  }
-
-  const { data: updateData, error: updateError } = await supabase
-    .from('post')
-    .update({ likes: newLikeList })
-    .eq('postid', postid)
-    .select(`
-      *,
-      comment(commentid, username, message, created, users(pfp))
-    `)
-    .single();
-
-  return { 
-    data: updateData, 
-    error: updateError ? new Error(updateError.message) : null 
-  };
 }
 
 async function postStatus(
@@ -554,17 +558,16 @@ async function postStatus(
   groupid: string
 ): Promise<{ data?: 'post' | 'edit', startdate?: Date, error?: Error }> {
   try {
-    const { data: groupData, error: groupError } = await supabase
-      .from('groups')
-      .select('startdate')
-      .eq('groupid', groupid)
-      .single();
+    const group = await prisma.groups.findUnique({
+      where: { groupid },
+      select: { startdate: true }
+    });
 
-    if (groupError) {
-      return { error: new Error(groupError.message) };
+    if (!group) {
+      return { error: new Error('Group not found') };
     }
 
-    const startdate = new Date(groupData.startdate);
+    const startdate = group.startdate;
     const currentTime = new Date();
 
     const cycleStartTime = new Date(
@@ -580,23 +583,17 @@ async function postStatus(
       cycleStartTime.setDate(cycleStartTime.getDate() - 1);
     }
 
-    const { data: postData, error: postError } = await supabase
-      .from('post')
-      .select('timepost')
-      .eq('username', username)
-      .eq('groupid', groupid)
-      .order('timepost', { ascending: false })
-      .limit(1)
-      .single();
+    const lastPost = await prisma.post.findFirst({
+      where: { username, groupid },
+      orderBy: { timepost: 'desc' },
+      select: { timepost: true }
+    });
 
-    if (postError) {
-      if (postError.message === 'JSON object requested, multiple (or no) rows returned') {
-        return { data: 'post', startdate: cycleStartTime };
-      }
-      return { error: new Error(postError.message) };
+    if (!lastPost) {
+      return { data: 'post', startdate: cycleStartTime };
     }
 
-    const timepost = new Date(postData.timepost);
+    const timepost = lastPost.timepost;
     const cycleEndTime = new Date(cycleStartTime.getTime() + 24 * 60 * 60 * 1000);
     const isInSame24HourCycle = timepost >= cycleStartTime && timepost < cycleEndTime;
     const fourHoursAfterLastPost = new Date(timepost.getTime() + 2 * 60 * 60 * 1000);

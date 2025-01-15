@@ -1,260 +1,251 @@
-import { supabase } from '../initSupabase';
+import { PrismaClient } from '@prisma/client';
 import { processGroups } from './groupTransactions';
 import { DatabaseResponse, Group, UserGroup, User } from '../types';
 import { createGroupBalanceTransaction } from './balanceTransactions/groupBalanceTransactions';
 
-async function createUserGroup(
-  usergroupid: string, 
-  username: string, 
-  groupid: string
-): Promise<DatabaseResponse<{ data: any; newBalance: number }>> {
-  const { data: groupData, error: groupError } = await supabase
-    .from('groups')
-    .select('buyin')
-    .eq('groupid', groupid)
-    .single();
-
-  if (groupError) {
-    return { data: null, error: new Error(groupError.message) };
-  }
-
-  console.log("about to create group balance transaction")
-
-  // Call `createGroupBalanceTransaction` to handle balance updates and transaction creation
-  const { newBalance, error: transactionError } = await createGroupBalanceTransaction(
-    username,
-    groupid,
-    'BuyIn', // Assuming "BuyIn" is the subtype for joining a group
-    -groupData.buyin
-  );
-
-  if(transactionError){
-    console.log('pushing error', transactionError)
-    return {data:null, error:transactionError}
-  }
-
-  console.log( 'newBalance', newBalance)
-
-
-  const { data, error } = await supabase
-    .from('usergroup')
-    .insert([{ usergroupid, username, groupid }])
-    .select()
-    .single();
-
-
-  return { 
-    data: { data, newBalance: newBalance || 0 }, 
-    error: error ? new Error(error.message) : null 
-  };
-}
-
-async function getAllUserGroups(): Promise<DatabaseResponse<Array<UserGroup & { groups: Group }>>> {
-  const { data, error } = await supabase
-    .from('usergroup')
-    .select(`
-      *,
-      groups:groups!inner(*)
-    `);
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
-}
-
+const prisma = new PrismaClient();
 
 interface GroupMembersResponse {
   members: Array<UserGroup & { users: User }>;
 }
-
-async function getUserGroupsByGroupId(groupid: string): Promise<DatabaseResponse<GroupMembersResponse>> {
-  const { data: userGroupData, error: userGroupError } = await supabase
-    .from('usergroup')
-    .select(`
-      *,
-      users:users!inner(*)
-    `)
-    .eq('groupid', groupid);
-
-  if (userGroupError) {
-    return { data: null, error: new Error(userGroupError.message) };
-  }
-
-  const groupId = userGroupData[0]?.groupid;
-  const { data: groupData, error: groupError } = await supabase
-    .from('groups')
-    .select('*')
-    .eq('groupid', groupId)
-    .single();
-
-  if (groupError) {
-    return { data: null, error: new Error(groupError.message) };
-  }
-
-  return { 
-    data: {
-      members: userGroupData,
-    }, 
-    error: null 
-  };
-}
-
 
 interface UserGroupResponse {
   current: Array<UserGroup & { groups: Group }>;
   archive: Array<UserGroup & { groups: Group }>;
 }
 
-async function getUserGroupsByUsername(username: string): Promise<DatabaseResponse<UserGroupResponse>> {
-  const { data: allGroups, error } = await supabase
-    .from('usergroup')
-    .select(`
+
+async function createUserGroup(
+  usergroupid: string, 
+  username: string, 
+  groupid: string
+): Promise<DatabaseResponse<{ data: any; newBalance: number }>> {
+  try {
+    const group = await prisma.groups.findUnique({
+      where: { groupid },
+      select: { buyin: true }
+    });
+
+    if (!group) {
+      return { data: null, error: new Error('Group not found') };
+    }
+
+    console.log("about to create group balance transaction");
+
+    const { newBalance, error: transactionError } = await createGroupBalanceTransaction(
+      prisma,
+      username,
       groupid,
-      groups:groups!inner(*)
-    `)
-    .eq('username', username)
-    .eq('groups.archive', false);
+      'BuyIn',
+      -group.buyin
+    );
 
-  if (error) {
-    return { data: null, error: new Error(error.message) };
+    if (transactionError) {
+      console.log('pushing error', transactionError);
+      return { data: null, error: transactionError };
+    }
+
+    console.log('newBalance', newBalance);
+
+    const data = await prisma.usergroup.create({
+      data: {
+        usergroupid,
+        username,
+        groupid
+      }
+    });
+
+    return { 
+      data: { data, newBalance: newBalance || 0 }, 
+      error: null 
+    };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
   }
-
-  const currentDate = new Date();
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  const { error: userError } = await supabase
-    .from('users')
-    .update({
-      lastlogin: currentDate.toISOString(),
-      timezone: timezone
-    })
-    .eq('username', username);
-
-  if (userError) {
-    return { data: null, error: new Error(userError.message) };
-  }
-
-  const groups = allGroups.map(g => g.groups);
-  await processGroups(groups);
-
-  const { data: currentGroups, error: currentError } = await supabase
-    .from('usergroup')
-    .select(`
-      *,
-      groups:groups!inner(*)
-    `)
-    .eq('username', username)
-    .eq('groups.archive', false);
-
-  if (currentError) {
-    return { data: null, error: new Error(currentError.message) };
-  }
-
-  const { data: archiveGroups, error: archiveError } = await supabase
-    .from('usergroup')
-    .select(`
-      *,
-      groups:groups!inner(*)
-    `)
-    .eq('username', username)
-    .eq('groups.archive', true);
-
-  if (archiveError) {
-    return { data: null, error: new Error(archiveError.message) };
-  }
-
-  return { 
-    data: { 
-      current: currentGroups || [], 
-      archive: archiveGroups || [] 
-    }, 
-    error: null 
-  };
 }
 
+async function getAllUserGroups(): Promise<DatabaseResponse<Array<UserGroup & { groups: Group }>>> {
+  try {
+    const data = await prisma.usergroup.findMany({
+      include: {
+        groups: true
+      }
+    });
+    return { data, error: null };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
+}
+
+async function getUserGroupsByGroupId(groupid: string): Promise<DatabaseResponse<GroupMembersResponse>> {
+  try {
+    const userGroupData = await prisma.usergroup.findMany({
+      where: { groupid },
+      include: {
+        users: true
+      }
+    });
+
+    return { 
+      data: {
+        members: userGroupData,
+      }, 
+      error: null 
+    };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
+}
+
+async function getUserGroupsByUsername(username: string): Promise<DatabaseResponse<UserGroupResponse>> {
+  try {
+    const allGroups = await prisma.usergroup.findMany({
+      where: {
+        username,
+        groups: {
+          archive: false
+        }
+      },
+      select: {
+        groupid: true,
+        groups: true
+      }
+    });
+
+    const currentDate = new Date();
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    await prisma.users.update({
+      where: { username },
+      data: {
+        lastlogin: currentDate,
+        timezone
+      }
+    });
+
+    const groups = allGroups.map((g: any) => g.groups);
+    await processGroups(groups);
+
+    const currentGroups = await prisma.usergroup.findMany({
+      where: {
+        username,
+        groups: {
+          archive: false
+        }
+      },
+      include: {
+        groups: true
+      }
+    });
+
+    const archiveGroups = await prisma.usergroup.findMany({
+      where: {
+        username,
+        groups: {
+          archive: true
+        }
+      },
+      include: {
+        groups: true
+      }
+    });
+
+    return { 
+      data: { 
+        current: currentGroups, 
+        archive: archiveGroups 
+      }, 
+      error: null 
+    };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
+}
 
 async function getUserGroup(userGroupId: string): Promise<DatabaseResponse<UserGroup & { groups: Group }>> {
-  const { data, error } = await supabase
-    .from('usergroup')
-    .select(`
-      *,
-      groups:groups!inner(*)
-    `)
-    .eq('usergroupid', userGroupId)
-    .single();
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+  try {
+    const data = await prisma.usergroup.findUnique({
+      where: { usergroupid: userGroupId },
+      include: {
+        groups: true
+      }
+    });
+    return { data, error: null };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
 }
-
 type UserGroupUpdateParams = Partial<Omit<UserGroup, 'usergroupid' | 'username' | 'groupid'>>;
 
 async function updateUserGroup(
   usergroupid: string, 
   updateParams: UserGroupUpdateParams
 ): Promise<DatabaseResponse<UserGroup>> {
-  const { data, error } = await supabase
-    .from('usergroup')
-    .update(updateParams)
-    .eq('usergroupid', usergroupid)
-    .select()
-    .single();
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+  try {
+    const data = await prisma.usergroup.update({
+      where: { usergroupid },
+      data: updateParams
+    });
+    return { data, error: null };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
 }
-// Function to delete a group
 
 async function deleteUserGroup(
   username: string, 
   groupId: string
 ): Promise<DatabaseResponse<string>> {
   try {
-    const { data: groupData, error: groupError } = await supabase
-      .from('groups')
-      .select('buyin')
-      .eq('groupid', groupId)
-      .single();
+    const group = await prisma.groups.findUnique({
+      where: { groupid: groupId },
+      select: { buyin: true }
+    });
 
-    if (groupError) {
-      return { data: null, error: new Error(groupError.message) };
+    if (!group) {
+      return { data: null, error: new Error('Group not found') };
     }
 
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('balance')
-      .eq('username', username)
-      .single();
+    const user = await prisma.users.findUnique({
+      where: { username },
+      select: { balance: true }
+    });
 
-    if (userError) {
-      return { data: null, error: new Error(userError.message) };
+    if (!user) {
+      return { data: null, error: new Error('User not found') };
     }
 
-    const newBalance = userData.balance + groupData.buyin;
+    const newBalance = user.balance + group.buyin;
 
-    const { error: balanceUpdateError } = await supabase
-      .from('users')
-      .update({ balance: newBalance })
-      .eq('username', username);
+    await prisma.users.update({
+      where: { username },
+      data: { balance: newBalance }
+    });
 
-    if (balanceUpdateError) {
-      return { data: null, error: new Error(balanceUpdateError.message) };
-    }
-
-    const { error } = await supabase
-      .from('usergroup')
-      .delete()
-      .eq('username', username)
-      .eq('groupid', groupId);
-
-    if (error) {
-      return { data: null, error: new Error(error.message) };
-    }
+    await prisma.usergroup.deleteMany({
+      where: {
+        username,
+        groupid: groupId
+      }
+    });
 
     return { data: 'Successfully deleted', error: null };
   } catch (error) {
@@ -269,19 +260,20 @@ async function getUserGroupByUsernameGroup(
   username: string, 
   groupId: string
 ): Promise<DatabaseResponse<UserGroup>> {
-  const { data, error } = await supabase
-    .from('usergroup')
-    .select()
-    .eq('username', username)
-    .eq('groupid', groupId)
-    .single();
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+  try {
+    const data = await prisma.usergroup.findFirst({
+      where: {
+        username,
+        groupid: groupId
+      }
+    });
+    return { data, error: null };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
 }
-
-
 
 export { createUserGroup, getAllUserGroups, getUserGroup, getUserGroupsByGroupId, getUserGroupsByUsername, updateUserGroup, deleteUserGroup, getUserGroupByUsernameGroup };

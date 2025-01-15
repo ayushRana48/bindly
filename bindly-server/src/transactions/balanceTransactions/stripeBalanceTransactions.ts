@@ -1,39 +1,41 @@
-import { supabase } from "../../initSupabase";
+import { PrismaClient } from '@prisma/client';
 import { createPendingBalanceTransaction, finalizeBalanceTransaction } from "./balanceTransactions";
 
-
 async function createPendingStripeBalanceTransaction(
+    prisma: PrismaClient,
     cardid: string,
     amount: number,
     username: string
 ) {
-    console.log("Creating pending stripe transaction")
-    const { data, error } = await createPendingBalanceTransaction('Stripe', username, amount);
+    console.log("Creating pending stripe transaction");
+    const { data, error } = await createPendingBalanceTransaction(prisma, 'Stripe', username, amount);
     if (error) {
         return { data: null, error: new Error(`Failed to create pending transaction: ${error.message}`) };
     }
 
-    console.log("Pending transaction created in stripe_balance_transaction", data.id)
+    console.log("Pending transaction created in stripe_balance_transaction", data.id);
     const transactionId = data.id;
 
-    // Insert into `balance_stripe_transaction` with the pending state
-    const { data: stripeData, error: stripeError } = await supabase.from('balance_stripe_transaction').insert({
-        id: transactionId,
-        cardid: cardid,
-        state: 'Pending',
-        timeinitiated: new Date(),
-    });
+    try {
+        // Insert into `balance_stripe_transaction` with the pending state
+        const stripeData = await prisma.balance_stripe_transaction.create({
+            data: {
+                id: transactionId,
+                cardid: cardid,
+                state: 'Pending',
+                timeinitiated: new Date(),
+            }
+        });
 
-    if (stripeError) {
-        console.log("Failed to create pending Stripe transaction", stripeError)
-        return { data: null, error: new Error(`Failed to create pending Stripe transaction: ${stripeError.message}`) };
+        return { data: { transactionId, stripeData }, error: null };
+    } catch (error) {
+        console.log("Failed to create pending Stripe transaction", error);
+        return { data: null, error: new Error(`Failed to create pending Stripe transaction: ${error instanceof Error ? error.message : 'Unknown error'}`) };
     }
-
-    return { data: { transactionId, stripeData }, error: null };
 }
 
-
 async function finalizeStripeBalanceTransaction(
+    prisma: PrismaClient,
     id: string,
     cardid: string,
     state: 'Success' | 'Fail',
@@ -42,21 +44,21 @@ async function finalizeStripeBalanceTransaction(
     amountNumber: number,
     errorMessage?: string | null
 ) {
-    await finalizeBalanceTransaction(id, state, username, amountNumber, errorMessage);
+    await finalizeBalanceTransaction(prisma, id, state, username, amountNumber, errorMessage);
 
-    
-    const { data, error } = await supabase.from('balance_stripe_transaction').update({
-        state: state,
-        timeconfirmed: timeconfirmed,
-    }).eq('id', id);
+    try {
+        const data = await prisma.balance_stripe_transaction.update({
+            where: { id },
+            data: {
+                state: state,
+                timeconfirmed: timeconfirmed,
+            }
+        });
 
-    if (error) {
-        return { data: null, error: new Error(`Failed to finalize Stripe transaction: ${error.message}`) };
+        return { data, error: null };
+    } catch (error) {
+        return { data: null, error: new Error(`Failed to finalize Stripe transaction: ${error instanceof Error ? error.message : 'Unknown error'}`) };
     }
-
-    return { data, error: null };
 }
 
-
-
-export { createPendingStripeBalanceTransaction,finalizeStripeBalanceTransaction };
+export { createPendingStripeBalanceTransaction, finalizeStripeBalanceTransaction };

@@ -1,6 +1,7 @@
-import { supabase } from '../initSupabase';
+import { PrismaClient } from '@prisma/client';
 import { User, DatabaseResponse } from '../types';
-import { PostgrestError } from '@supabase/supabase-js';
+
+const prisma = new PrismaClient();
 
 interface StravaAuthResponse {
   access_token: string;
@@ -27,17 +28,16 @@ export const addStravaRefresh = async (
   refresh: string, 
   username: string
 ): Promise<DatabaseResponse<User>> => {
-  const { data, error } = await supabase
-    .from('users')
-    .update({ stravarefresh: refresh })
-    .eq('username', username)
-    .select()
-    .single();
+  try {
+    const data = await prisma.users.update({
+      where: { username },
+      data: { stravarefresh: refresh }
+    }) as User;
 
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+  }
 };
 
 export const reauthorizeStrava = async (
@@ -62,10 +62,10 @@ export const reauthorizeStrava = async (
     });
 
     if (!response.ok) {
-      await supabase
-        .from('users')
-        .update({ stravarefresh: null })
-        .eq('username', username);
+      await prisma.users.update({
+        where: { username },
+        data: { stravarefresh: null }
+      });
       return { data: null, error: new Error('refresh invalid') };
     }
 
@@ -103,17 +103,12 @@ export const revokeStravaAccess = async (
       throw new Error('Failed to revoke Strava access.');
     }
 
-    const { data: removeResponse, error } = await supabase
-      .from('users')
-      .update({ stravarefresh: null })
-      .eq('username', username)
-      .select()
-      .single();
+    const data = await prisma.users.update({
+      where: { username },
+      data: { stravarefresh: null }
+    }) as User;
 
-    return { 
-      data: removeResponse, 
-      error: error ? new Error(error.message) : null 
-    };
+    return { data, error: null };
   } catch (error) {
     return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
   }

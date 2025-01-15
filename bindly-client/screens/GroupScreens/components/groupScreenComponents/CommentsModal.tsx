@@ -45,7 +45,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
 
         try {
             const response = await fetch(
-                `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/comment/addComment`,
+                `http://localhost:3000/bindly/comment/addComment`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

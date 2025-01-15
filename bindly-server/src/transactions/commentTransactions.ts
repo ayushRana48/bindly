@@ -1,57 +1,71 @@
-import { supabase } from '../initSupabase';
+import { PrismaClient } from '@prisma/client';
 import { Comment, DatabaseResponse } from '../types';
 
+const prisma = new PrismaClient();
+
 async function addComment(
-  postid: string, 
-  groupid: string, 
-  username: string, 
+  postid: string,
+  groupid: string,
+  username: string,
   message: string
 ): Promise<DatabaseResponse<Comment>> {
-  const timestamp = new Date().toISOString();
+  const timestamp = new Date();
 
-  const { data: userGroupData, error: userGroupError } = await supabase
-    .from('usergroup')
-    .select('username')
-    .eq('groupid', groupid);
+  try {
+    // Check if the user is part of the group
+    console.log("Checking if user is part of the group", ' the new Messashe');
+    const userGroup = await prisma.usergroup.findMany({
+      where: {
+        groupid,
+        username,
+      },
+      select: {
+        username: true,
+      },
+    });
+    console.log('usergorup from prisma');
 
-  if (userGroupError) {
-    return { data: null, error: new Error('Error fetching user group') };
+
+    if (userGroup.length === 0) {
+      return { data: null, error: new Error('User not in group') };
+    }
+
+    // Add the comment
+    const comment = await prisma.comment.create({
+      data: {
+        postid,
+        username,
+        message,
+        created: timestamp,
+      },
+    });
+
+    return { data: comment, error: null };
+  } catch (error: any) {
+    return { data: null, error: new Error(error.message) };
   }
-
-  const isUserInGroup = userGroupData.some((user) => user.username === username);
-
-  if (!isUserInGroup) {
-    return { data: null, error: new Error('User not in group') };
-  }
-
-  const { data, error } = await supabase
-    .from('comment')
-    .insert([{
-      postid,
-      username,
-      message,
-      created: timestamp,
-    }])
-    .select()
-    .single();
-
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
 }
 
 async function getCommentByPost(postid: string): Promise<DatabaseResponse<Partial<Comment>[]>> {
-  const { data, error } = await supabase
-    .from('comment')
-    .select('commentid, username, message, created')
-    .eq('postid', postid)
-    .order('created', { ascending: false });
+  try {
+    // Fetch comments by post ID
+    const comments = await prisma.comment.findMany({
+      where: { postid },
+      select: {
+        commentid: true,
+        username: true,
+        message: true,
+        created: true,
+      },
+      orderBy: {
+        created: 'desc',
+      },
+    });
 
-  return { 
-    data, 
-    error: error ? new Error(error.message) : null 
-  };
+    return { data: comments, error: null };
+  } catch (error: any) {
+    return { data: null, error: new Error(error.message) };
+  }
 }
 
 export { addComment, getCommentByPost };

@@ -11,7 +11,7 @@ datasource db {
 model balance_group_transaction {
   id                  String              @id(map: "balance_group_transaction_pkey1") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   groupid             String              @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type                String?
+  type                String
   groups              groups              @relation(fields: [groupid], references: [groupid], onDelete: NoAction, onUpdate: NoAction)
   balance_transaction balance_transaction @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "balance_group_transaction_id_fkey1")
 }
@@ -19,8 +19,8 @@ model balance_group_transaction {
 model balance_stripe_transaction {
   id                  String              @id(map: "balance_group_transaction_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cardid              String
-  state               String?
-  timeinitiated       DateTime?           @db.Timestamptz(6)
+  state               String
+  timeinitiated       DateTime            @db.Timestamptz(6)
   timeconfirmed       DateTime?           @db.Timestamptz(6)
   balance_transaction balance_transaction @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "balance_group_transaction_id_fkey")
 }
@@ -52,16 +52,16 @@ model groups {
   groupid                   String                      @id @db.Uuid
   groupname                 String                      @db.VarChar(255)
   description               String?
-  buyin                     Float?
+  buyin                     Float
   week                      DateTime?                   @db.Date
-  startdate                 DateTime?                   @db.Timestamptz(6)
+  startdate                 DateTime                    @db.Timestamptz(6)
   timeleft                  DateTime?                   @db.Time(6)
   hostid                    String
-  enddate                   DateTime?                   @db.Timestamptz(6)
+  enddate                   DateTime                    @db.Timestamptz(6)
   pfp                       String?
-  tasksperweek              BigInt?
+  tasksperweek              Int
   lastpfpupdate             DateTime?                   @db.Timestamptz(6)
-  archive                   Boolean?                    @default(false)
+  archive                   Boolean                     @default(false)
   notification_time         DateTime?                   @db.Timestamptz(6)
   balance_group_transaction balance_group_transaction[]
   users                     users                       @relation(fields: [hostid], references: [username], onDelete: NoAction, onUpdate: NoAction)
@@ -82,13 +82,13 @@ model invite {
 }
 
 model notifyveto {
-  notifyvetoid String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  postid       String? @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  username     String? @default(dbgenerated("gen_random_uuid()")) @db.VarChar
-  groupid      String? @db.Uuid
-  groups       groups? @relation(fields: [groupid], references: [groupid], onDelete: NoAction, onUpdate: NoAction)
-  post         post?   @relation(fields: [postid], references: [postid], onDelete: NoAction, onUpdate: NoAction)
-  users        users?  @relation(fields: [username], references: [username], onDelete: NoAction, onUpdate: NoAction)
+  notifyvetoid String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postid       String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username     String @default(dbgenerated("gen_random_uuid()")) @db.VarChar
+  groupid      String @db.Uuid
+  groups       groups @relation(fields: [groupid], references: [groupid], onDelete: NoAction, onUpdate: NoAction)
+  post         post   @relation(fields: [postid], references: [postid], onDelete: NoAction, onUpdate: NoAction)
+  users        users  @relation(fields: [username], references: [username], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model post {
@@ -99,7 +99,6 @@ model post {
   valid      Boolean?
   username   String       @db.VarChar(255)
   groupid    String       @db.Uuid
-  startdate  DateTime?    @db.Date
   timepost   DateTime     @db.Timestamptz(6)
   timecycle  DateTime?    @db.Timestamptz(6)
   veto       String[]     @default([])
@@ -114,9 +113,6 @@ model usergroup {
   usergroupid            String    @id @db.Uuid
   username               String    @db.VarChar(255)
   groupid                String    @db.Uuid
-  strikes                Int?
-  moneypaid              Float?
-  moneyowed              Float?
   post_notification_time DateTime? @db.Timestamptz(6)
   tokens                 String[]
   users                  users     @relation(fields: [username], references: [username], onDelete: NoAction, onUpdate: NoAction, map: "public_usergroup_username_fkey")
@@ -130,7 +126,7 @@ model users {
   pfp                             String?               @db.VarChar(255)
   lastName                        String?
   lastpfpupdate                   DateTime?             @db.Timestamp(6)
-  balance                         Float?                @default(0)
+  balance                         Float                 @default(0)
   stripeid                        String?
   tokens                          String[]              @default([])
   lastlogin                       DateTime?             @db.Timestamptz(6)

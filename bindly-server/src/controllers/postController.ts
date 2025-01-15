@@ -73,7 +73,6 @@ async function createPostController(req: Request, res: Response) {
       photolink,
       videolink,
       caption,
-      startdate,      // changed from starddate
       timepost: time, // map time to timepost
       timecycle
     });

@@ -18,14 +18,14 @@ export interface User {
     groupid: string;
     groupname: string;
     description: string | null;
-    buyin: number | null;
+    buyin: number;
     week: Date | null;
-    startdate: Date | null;
+    startdate: Date;
     timeleft: Date | null; // Match Prisma
     hostid: string;
-    enddate: Date | null;
+    enddate: Date;
     pfp: string | null;
-    tasksperweek: number | null; // Clarify BigInt
+    tasksperweek: number; // Clarify BigInt
     lastpfpupdate: Date | null;
     archive: boolean;
     notification_time: Date | null;
@@ -39,11 +39,10 @@ export interface User {
     valid: boolean | null; // Correct type
     username: string;
     groupid: string;
-    startdate: Date | null;
     timepost: Date;
     timecycle: Date | null;
     veto: string[];
-    likes: string[] | null;
+    likes: string[];
   }
   
   
@@ -59,11 +58,8 @@ export interface User {
     usergroupid: string;
     username: string;
     groupid: string;
-    strikes: number | null;
-    moneypaid: number | null;
-    moneyowed: number | null;
     post_notification_time: Date | null;
-    tokens: string[] | null;
+    tokens: string[];
   }
   
   export interface Invite {
@@ -86,9 +82,9 @@ export interface User {
   
   export interface NotifyVeto {
     notifyvetoid: string;
-    postid: string | null;
-    username: string | null;
-    groupid: string | null;
+    postid: string ;
+    username: string;
+    groupid: string ;
   }
   
   export interface DatabaseResponse<T> {
@@ -111,13 +107,13 @@ export interface BalanceTransaction {
 export interface BalanceStripeTransaction {
   id: string; 
   cardid: string;
-  state: string | null;
-  timeinitiated: string | null; 
-  timeconfirmed: string | null; 
+  state: string;
+  timeinitiated: Date; 
+  timeconfirmed: Date | null; 
 }
 
 export interface BalanceGroupTransaction {
   id: string; // UUID (Foreign key to 'balance_transaction')
   groupid: string; // UUID (Foreign key to 'groups')
-  type: string | null;
+  type: string;
 }

@@ -1,8 +1,11 @@
 import { stripe } from '../initStripe';
-import { supabase } from '../initSupabase';
+import { PrismaClient } from '@prisma/client';
 import { DatabaseResponse, User } from '../types';
 import Stripe from 'stripe';
 import { createPendingStripeBalanceTransaction, finalizeStripeBalanceTransaction } from './balanceTransactions/stripeBalanceTransactions';
+
+const prisma = new PrismaClient();
+
 interface SaveCardResponse {
   setupIntent: string;
   ephemeralKey: string;
@@ -35,20 +38,17 @@ async function saveCard(email: string): Promise<DatabaseResponse<SaveCardRespons
       payment_method_types: ['card'],
     });
 
-    const { error } = await supabase
-      .from('users')
-      .update({ stripeid: customer.id })
-      .eq('email', email);
-
-    if (error) {
-      return { data: null, error: new Error(error.message) };
-    }
+    await prisma.users.update({
+      where: { email },
+      data: { stripeid: customer.id }
+    });
 
     console.log({
       setupIntent: setupIntent.client_secret ?? '',
       ephemeralKey: ephemeralKey.secret ?? '',
       customer: customer.id,
-    }, 'from the transactions data')
+    }, 'from the transactions data');
+
     return {
       data: {
         setupIntent: setupIntent.client_secret ?? '',
@@ -65,7 +65,6 @@ async function saveCard(email: string): Promise<DatabaseResponse<SaveCardRespons
   }
 }
 
-
 async function addMoney(
   customerId: string,
   amount: string,
@@ -80,26 +79,24 @@ async function addMoney(
       error: new Error('Invalid amount provided.'),
     };
   }
-  let transactionId=""
+  let transactionId = "";
 
   try {
-    console.log("Creating pending transaction")
+    console.log("Creating pending transaction");
     // Step 1: Create Pending Transaction
     const { data: pendingTransaction, error: pendingError } = await createPendingStripeBalanceTransaction(
+      prisma,
       cardId,
       amountNumber,
       username
     );
 
-
     if (pendingError) {
       return { data: null, error: pendingError };
     }
 
-
-
     transactionId = pendingTransaction.transactionId;
-    console.log('now creating stripe payment intent', transactionId)
+    console.log('now creating stripe payment intent', transactionId);
 
     // Step 2: Create Stripe PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
@@ -113,21 +110,19 @@ async function addMoney(
     console.log('Stripe PaymentIntent created:', ' now finalizing stripe transaction');
 
     // Step 3: Finalize on Success
-    await finalizeStripeBalanceTransaction(transactionId, cardId, 'Success', new Date(), username, amountNumber, null);
+    await finalizeStripeBalanceTransaction(prisma,transactionId, cardId, 'Success', new Date(), username, amountNumber, null);
 
-    console.log("Stripe transaction finalized")
+    console.log("Stripe transaction finalized");
     return { data: paymentIntent, error: null };
   } catch (error: any) {
     console.log('Error in addMoney:', error.message);
 
     // Step 4: Finalize on Failure
-    await finalizeStripeBalanceTransaction(transactionId, cardId, 'Fail', new Date(),username,amountNumber, error.message,);
+    await finalizeStripeBalanceTransaction(prisma,transactionId, cardId, 'Fail', new Date(), username, amountNumber, error.message);
 
     return { data: null, error: new Error('Payment failed.') };
   }
 }
-
-
 
 async function withdrawMoney(
   customerId: string,

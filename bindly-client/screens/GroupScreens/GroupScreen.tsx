@@ -197,7 +197,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     try {
       // 1. Fetch group data
       
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${groupData.groupid}`, {
+      const response = await fetch(`http://localhost:3000/bindly/group/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -370,58 +370,6 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     setSelectedPostId(null);
   };
 
-  const postComment = async (): Promise<void> => {
-    if (commentText.trim() === '') {
-      return;
-    }
-
-    if (!selectedPostId) {
-      console.error('No post selected for comment');
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/comment/addComment`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            postid: selectedPostId,
-            groupid: groupId,
-            username: user?.username || '',
-            message: commentText.trim(),
-          }),
-        }
-      );
-
-      const { status, body } = await response.json().then((data: any) => ({
-        status: response.status,
-        body: data,
-      }));
-
-      if (status === 200) {
-        addComment(body, selectedPostId);
-        setSelectedPostComments(prevComments => [
-          ...prevComments,
-          {
-            ...body,
-            users: {
-              pfp: user?.pfp || ''
-            }
-          }
-        ]);
-      }
-    } catch (error) {
-      console.log('Fetch error: ', error);
-      Alert.alert(
-        'Network Error',
-        'Unable to connect to the server. Please try again later.'
-      );
-    } finally {
-      setCommentText('');
-    }
-  };
 
   return (
     <View style={styles.container}>

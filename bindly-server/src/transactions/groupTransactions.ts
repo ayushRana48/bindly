@@ -1,10 +1,12 @@
-import { supabase } from '../initSupabase';
+import { PrismaClient } from '@prisma/client';
 import { uploadFile } from './uploadFile';
 import { Group, Post, DatabaseResponse } from '../types';
 import { distributeMoney } from './groupHelpers/leaderboard/distributeMoney';
 import { buildLeaderboardData } from './groupHelpers/leaderboard/leaderboard';
 import { processPosts } from './groupHelpers/veto/processPosts';
 import { updateUserBalance } from './groupHelpers/endGroup/endGroupHelpers';
+
+const prisma = new PrismaClient();
 
 interface LeaderboardWeek {
   weekNum: number;
@@ -27,10 +29,6 @@ interface GroupsResponse {
   archive: Group[];
 }
 
-
-
-
-
 async function createGroup(
   groupid: string,
   groupname: string,
@@ -44,103 +42,93 @@ async function createGroup(
   filePath: string,
   tasksperweek: number
 ): Promise<DatabaseResponse<Group>> {
-  const timestamp = new Date(Date.now()).toISOString();
-  const { fileUrl, error: uploadError } = await uploadFile(filePath, 'groupProfiles', groupid, null, timestamp);
+  try {
+    const timestamp = new Date();
+    const { fileUrl, error: uploadError } = await uploadFile(filePath, 'groupProfiles', groupid, null, timestamp.toISOString());
 
-  if (uploadError) {
-    return { data: null, error: uploadError };
+    if (uploadError) {
+      return { data: null, error: uploadError };
+    }
+
+    const data = await prisma.groups.create({
+      data: {
+        groupid,
+        groupname,
+        description,
+        buyin,
+        week,
+        startdate: new Date(startdate),
+        timeleft,
+        hostid,
+        enddate: new Date(enddate),
+        pfp: fileUrl || "",
+        tasksperweek,
+        lastpfpupdate: timestamp
+      }
+    });
+
+    return { data, error: null };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
   }
-
-  let time = timestamp;
-
-  const { data, error } = await supabase
-    .from('groups')
-    .insert([{
-      groupid,
-      groupname,
-      description,
-      buyin,
-      week,
-      startdate,
-      timeleft,
-      hostid,
-      enddate,
-      pfp: fileUrl || "",
-      tasksperweek,
-      lastpfpupdate: time
-    }])
-    .select()
-    .single();
-
-  return {
-    data,
-    error: error ? new Error(error.message) : null
-  };
 }
 
-// Function to get all groups
 async function getAllGroups(): Promise<DatabaseResponse<GroupsResponse>> {
-  const { data: currentGroups, error } = await supabase
-    .from('groups')
-    .select('*')
-    .eq('archive', 'false');
+  try {
+    const currentGroups = await prisma.groups.findMany({
+      where: { archive: false }
+    });
 
-  if (error) {
-    return { data: null, error: new Error(error.message) };
+    const archive = await prisma.groups.findMany({
+      where: { archive: true }
+    });
+
+    return {
+      data: { current: currentGroups, archive },
+      error: null
+    };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
   }
-
-  const { data: archive, error: archiveError } = await supabase
-    .from('groups')
-    .select('*')
-    .eq('archive', 'true');
-
-  if (archiveError) {
-    return { data: null, error: new Error(archiveError.message) };
-  }
-
-  return {
-    data: { current: currentGroups, archive },
-    error: null
-  };
 }
-
-
 
 async function getLeaderBoard(groupid: string): Promise<DatabaseResponse<LeaderboardEntry[]>> {
   try {
-    const { data: groupData, error: groupError } = await supabase
-      .from('groups')
-      .select('startdate, tasksperweek, buyin')
-      .eq('groupid', groupid)
-      .single();
+    const group = await prisma.groups.findUnique({
+      where: { groupid },
+      select: { startdate: true, tasksperweek: true, buyin: true }
+    });
 
-    if (groupError) {
-      return { data: null, error: new Error(groupError.message) };
+    if (!group) {
+      return { data: null, error: new Error('Group not found') };
     }
 
-    const { startdate, tasksperweek, buyin } = groupData;
-    const startDate = new Date(startdate);
+    const { startdate, tasksperweek, buyin } = group;
+    const startDate = startdate;
 
-    const { data: usersData, error: usersError } = await supabase
-      .from('usergroup')
-      .select('username')
-      .eq('groupid', groupid);
+    const users = await prisma.usergroup.findMany({
+      where: { groupid },
+      select: { username: true }
+    });
 
-    if (usersError) {
-      return { data: null, error: new Error(usersError.message) };
-    }
+    const posts = await prisma.post.findMany({
+      where: {
+        groupid,
+        OR: [
+          { valid: null },
+          { valid: true }
+        ]
+      },
+      select: { username: true, timepost: true }
+    });
 
-    const { data: postsData, error: postsError } = await supabase
-      .from('post')
-      .select('username, timepost')
-      .eq('groupid', groupid)
-      .or('valid.is.null,valid.eq.true');
-
-    if (postsError) {
-      return { data: null, error: new Error(postsError.message) };
-    }
-
-    const leaderboard = buildLeaderboardData(postsData, usersData, startDate, tasksperweek);
+    const leaderboard = buildLeaderboardData(posts, users, startDate, tasksperweek);
 
     let currentPlace = 1;
     for (let i = 0; i < leaderboard.length; i++) {
@@ -150,15 +138,12 @@ async function getLeaderBoard(groupid: string): Promise<DatabaseResponse<Leaderb
       leaderboard[i].place = currentPlace;
     }
 
-
     const updatedLeaderboard = distributeMoney(leaderboard, buyin);
     return { data: updatedLeaderboard, error: null };
   } catch (error) {
     return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
   }
 }
-
-
 
 async function getGroup(groupid: string): Promise<DatabaseResponse<{
   group: Group;
@@ -169,44 +154,33 @@ async function getGroup(groupid: string): Promise<DatabaseResponse<{
   try {
     console.log("Fetching group data for groupid: ", groupid);
 
-    const { data: groupData, error } = await supabase
-      .from("groups")
-      .select(
-        `
-          *,
-          usergroup(
-            *,
-            users(*)
-          ),
-          invite(*),
-          post(
-            *,
-            comment(
-              commentid,
-              username,
-              message,
-              created,
-              users(pfp)
-            )
-          )
-        `
-      )
-      .eq("groupid", groupid)
-      .single();
-
-    if (error) {
-      return {
-        data: null,
-        error: new Error(error.message || "Unknown error"),
-      };
-    }
+    const groupData = await prisma.groups.findUnique({
+      where: { groupid },
+      include: {
+        usergroup: {
+          include: {
+            users: true
+          }
+        },
+        invite: true,
+        post: {
+          include: {
+            comment: {
+              include: {
+                users: {
+                  select: {
+                    pfp: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
 
     if (!groupData) {
-      // No record found for this group
-      return {
-        data: null,
-        error: new Error("Group not found"),
-      };
+      return { data: null, error: new Error('Group not found') };
     }
 
     const { data: processData, error: processError } = await processVeto(groupid);
@@ -214,26 +188,21 @@ async function getGroup(groupid: string): Promise<DatabaseResponse<{
       return { data: null, error: processError };
     }
 
-
-    groupData.post = (groupData.post || [])
-      .filter((p: Post) => p.valid === null || p.valid === true)
-      .sort((a: Post, b: Post) => new Date(b.timepost).getTime() - new Date(a.timepost).getTime())
-      .map((post: any) => ({
+    const filteredPosts = (groupData.post || [])
+      .filter((p:Post) => p.valid === null || p.valid === true)
+      .sort((a:Post, b:Post) => new Date(b.timepost).getTime() - new Date(a.timepost).getTime())
+      .map((post:any) => ({
         ...post,
         comment: post.comment
-          ? post.comment.sort(
-            (a: any, b: any) =>
-              new Date(a.created).getTime() - new Date(b.created).getTime()
-          )
+          ? post.comment.sort((a:any, b:any) => new Date(a.created).getTime() - new Date(b.created).getTime())
           : [],
       }));
 
-
     const data = {
-      group: groupData, // The "groups" row (top-level columns)
+      group: groupData,
       usergroup: groupData.usergroup || [],
       invite: groupData.invite || [],
-      post: groupData.post || [],
+      post: filteredPosts,
     };
 
     return { data, error: null };
@@ -244,28 +213,22 @@ async function getGroup(groupid: string): Promise<DatabaseResponse<{
 
 async function processVeto(groupid: string): Promise<DatabaseResponse<string>> {
   try {
-    const { data: memberData, error: memberError } = await supabase
-      .from('usergroup')
-      .select('username')
-      .eq('groupid', groupid);
-
-    if (memberError) throw memberError;
-
-    const memberCount = memberData.length;
+    const memberCount = await prisma.usergroup.count({
+      where: { groupid }
+    });
 
     if (memberCount <= 2) {
       return { data: 'less than 2 members', error: null };
     }
 
-    const { data: postData, error: postError } = await supabase
-      .from('post')
-      .select('*')
-      .eq('groupid', groupid)
-      .is('valid', null);
+    const posts = await prisma.post.findMany({
+      where: {
+        groupid,
+        valid: null
+      }
+    });
 
-    if (postError) throw postError;
-
-    await processPosts(postData, memberCount, groupid);
+    await processPosts(prisma,posts, memberCount, groupid);
 
     return { data: 'Process completed successfully', error: null };
   } catch (error) {
@@ -274,138 +237,104 @@ async function processVeto(groupid: string): Promise<DatabaseResponse<string>> {
 }
 
 async function getGroupsByHostId(hostid: string): Promise<DatabaseResponse<Group[]>> {
-  const { data, error } = await supabase
-    .from('groups')
-    .select('*')
-    .eq('hostid', hostid);
-
-  return {
-    data,
-    error: error ? new Error(error.message) : null
-  };
+  try {
+    const data = await prisma.groups.findMany({
+      where: { hostid }
+    });
+    return { data, error: null };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
 }
 
 async function updateGroup(
   groupId: string,
   updateParams: Partial<Group>
 ): Promise<DatabaseResponse<Group>> {
-  let newTimeStamp: string | null = null;
-  let fileUrl = updateParams.pfp;
+  try {
+    let newTimeStamp: Date | null = null;
+    let fileUrl = updateParams.pfp;
 
-  if (updateParams.pfp) {
-    newTimeStamp = new Date(Date.now()).toISOString();
-    const { fileUrl: newFileUrl, error: uploadError } = await uploadFile(
-      updateParams.pfp,
-      'groupProfiles',
-      groupId,
-      updateParams.lastpfpupdate?.toString() || null,
-      newTimeStamp
-    );
+    if (updateParams.pfp) {
+      newTimeStamp = new Date();
+      const { fileUrl: newFileUrl, error: uploadError } = await uploadFile(
+        updateParams.pfp,
+        'groupProfiles',
+        groupId,
+        updateParams.lastpfpupdate?.toString() || null,
+        newTimeStamp.toISOString()
+      );
 
-    if (uploadError) {
-      return { data: null, error: uploadError };
+      if (uploadError) {
+        return { data: null, error: uploadError };
+      }
+
+      fileUrl = newFileUrl;
     }
 
-    fileUrl = newFileUrl;
+    const updateData = { 
+      ...updateParams, 
+      pfp: fileUrl,
+      lastpfpupdate: newTimeStamp || undefined
+    };
+
+    const data = await prisma.groups.update({
+      where: { groupid: groupId },
+      data: updateData
+    });
+
+    return { data, error: null };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
   }
-
-  const updateData = { ...updateParams, pfp: fileUrl };
-
-  if (newTimeStamp) {
-    updateData.lastpfpupdate = new Date(newTimeStamp);
-  }
-
-  const { data, error } = await supabase
-    .from('groups')
-    .update(updateData)
-    .eq('groupid', groupId)
-    .select()
-    .single();
-
-  return {
-    data,
-    error: error ? new Error(error.message) : null
-  };
 }
-
 
 async function deleteGroup(groupId: string): Promise<DatabaseResponse<string>> {
   try {
-    const { data: groupData, error: groupError } = await supabase
-      .from('groups')
-      .select('buyin')
-      .eq('groupid', groupId)
-      .single();
+    const group = await prisma.groups.findUnique({
+      where: { groupid: groupId },
+      select: { buyin: true }
+    });
 
-    if (groupError) {
-      return { data: null, error: new Error(groupError.message) };
+    if (!group) {
+      return { data: null, error: new Error('Group not found') };
     }
 
-    const { data: userGroups, error: userGroupError } = await supabase
-      .from('usergroup')
-      .select('username')
-      .eq('groupid', groupId);
+    const userGroups = await prisma.usergroup.findMany({
+      where: { groupid: groupId },
+      select: { username: true }
+    });
 
-    if (userGroupError) {
-      return { data: null, error: new Error(userGroupError.message) };
-    }
-
-    for (const userGroup of userGroups) {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('balance')
-        .eq('username', userGroup.username)
-        .single();
-
-      if (userError) {
-        return { data: null, error: new Error(userError.message) };
+    // Update user balances in a transaction
+    await prisma.$transaction(async (tx:any) => {
+      for (const userGroup of userGroups) {
+        await tx.user.update({
+          where: { username: userGroup.username },
+          data: {
+            balance: {
+              increment: group.buyin
+            }
+          }
+        });
       }
 
-      const newBalance = userData.balance + groupData.buyin;
-
-      const { error: balanceUpdateError } = await supabase
-        .from('users')
-        .update({ balance: newBalance })
-        .eq('username', userGroup.username);
-
-      if (balanceUpdateError) {
-        return { data: null, error: new Error(balanceUpdateError.message) };
-      }
-    }
-
-    const { error: userGroupDeleteError } = await supabase
-      .from('usergroup')
-      .delete()
-      .eq('groupid', groupId);
-
-    if (userGroupDeleteError) {
-      return { data: null, error: new Error(userGroupDeleteError.message) };
-    }
-
-    const { error: inviteError } = await supabase
-      .from('invite')
-      .delete()
-      .eq('groupid', groupId);
-
-    if (inviteError) {
-      return { data: null, error: new Error(inviteError.message) };
-    }
-
-    const { data: groupDelete, error: groupDeleteError } = await supabase
-      .from('groups')
-      .delete()
-      .eq('groupid', groupId);
-
-    if (groupDeleteError) {
-      return { data: null, error: new Error(groupDeleteError.message) };
-    }
+      // Delete related records
+      await tx.usergroup.deleteMany({ where: { groupid: groupId } });
+      await tx.invite.deleteMany({ where: { groupid: groupId } });
+      await tx.group.delete({ where: { groupid: groupId } });
+    });
 
     return { data: 'Successfully deleted group', error: null };
   } catch (error) {
     return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
   }
 }
-
 
 async function endGroups(groupIds: string[]): Promise<DatabaseResponse<string>> {
   try {
@@ -423,10 +352,8 @@ async function endGroups(groupIds: string[]): Promise<DatabaseResponse<string>> 
 
 async function endGroup(groupId: string): Promise<{ error: Error | null }> {
   try {
-    // Process veto for this group
     await processVeto(groupId);
 
-    // Fetch the leaderboard for this group
     const leaderboardResponse = await getLeaderBoard(groupId);
     if (!leaderboardResponse.data) {
       return { error: new Error("Failed to fetch leaderboard for group: " + groupId) };
@@ -434,26 +361,21 @@ async function endGroup(groupId: string): Promise<{ error: Error | null }> {
 
     const leaderboard = leaderboardResponse.data;
 
-    // Go through each user and update their balance and logs
-    for (const entry of leaderboard) {
-      const { username, netMoney } = entry;
-      if (netMoney && netMoney !== 0) {
-        const { error } = await updateUserBalance(username, netMoney, groupId);
-        if (error) {
-          return { error };
+    // Update balances in a transaction
+    await prisma.$transaction(async (tx:any) => {
+      for (const entry of leaderboard) {
+        const { username, netMoney } = entry;
+        if (netMoney && netMoney !== 0) {
+          const { error } = await updateUserBalance(prisma,username, netMoney, groupId);
+          if (error) throw error;
         }
       }
-    }
 
-    // Mark the group as archived
-    const { error: groupUpdateError } = await supabase
-      .from("groups")
-      .update({ archive: true })
-      .eq("groupid", groupId);
-
-    if (groupUpdateError) {
-      return { error: new Error(groupUpdateError.message) };
-    }
+      await tx.group.update({
+        where: { groupid: groupId },
+        data: { archive: true }
+      });
+    });
 
     return { error: null };
   } catch (error) {
@@ -462,11 +384,9 @@ async function endGroup(groupId: string): Promise<{ error: Error | null }> {
   }
 }
 
-
-
 async function processGroups(groups: any[]): Promise<DatabaseResponse<string>> {
   const now = new Date();
-  const groupsToEnd: string[] = groups
+  const groupsToEnd = groups
     .filter(group => {
       const endDate = new Date(group.enddate!);
       return now.getTime() - endDate.getTime() >= 24 * 60 * 60 * 1000;

@@ -1,8 +1,9 @@
+import { PrismaClient } from '@prisma/client';
 import fetch from 'node-fetch';
 import { getAccessToken } from './paypalHelper/tokenUtility';
-import { supabase } from '../initSupabase';
 import { DatabaseResponse } from '../types';
 
+const prisma = new PrismaClient();
 const BASE_URL = 'https://api-m.paypal.com';
 
 interface PayoutItem {
@@ -39,23 +40,21 @@ async function createPayout(
   amount: number, 
   is_venmo: boolean
 ): Promise<DatabaseResponse<PayoutResponse>> {
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('balance')
-    .eq('username', user_id)
-    .single();
-
-  if (userError) {
-    return { data: null, error: new Error(userError.message) };
-  }
-
-  const balance = parseFloat(userData.balance);
-
-  if (balance < amount) {
-    return { data: null, error: new Error('Cannot withdraw more than balance') };
-  }
-
   try {
+    const userData = await prisma.users.findUnique({
+      where: { username: user_id },
+      select: { balance: true }
+    });
+
+    if (!userData) {
+      return { data: null, error: new Error('User not found') };
+    }
+
+    const balance = parseFloat(userData.balance.toString());
+    if (balance < amount) {
+      return { data: null, error: new Error('Cannot withdraw more than balance') };
+    }
+
     const accessToken = await getAccessToken();
 
     const payout: PayoutRequest = {
@@ -96,15 +95,10 @@ async function createPayout(
     }
 
     const newBalance = balance - amount;
-
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ balance: newBalance })
-      .eq('username', user_id);
-
-    if (updateError) {
-      return { data: null, error: new Error(updateError.message) };
-    }
+    await prisma.users.update({
+      where: { username: user_id },
+      data: { balance: newBalance }
+    });
 
     return { data: payoutData, error: null };
   } catch (error) {
