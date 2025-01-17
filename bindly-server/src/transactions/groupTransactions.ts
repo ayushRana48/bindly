@@ -5,6 +5,8 @@ import { distributeMoney } from './groupHelpers/leaderboard/distributeMoney';
 import { buildLeaderboardData } from './groupHelpers/leaderboard/leaderboard';
 import { processPosts } from './groupHelpers/veto/processPosts';
 import { updateUserBalance } from './groupHelpers/endGroup/endGroupHelpers';
+import { createUserGroup } from './usergroupTransactions';
+import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 
@@ -44,37 +46,55 @@ async function createGroup(
 ): Promise<DatabaseResponse<Group>> {
   try {
     const timestamp = new Date();
-    const { fileUrl, error: uploadError } = await uploadFile(filePath, 'groupProfiles', groupid, null, timestamp.toISOString());
 
-    if (uploadError) {
-      return { data: null, error: uploadError };
-    }
+    // Start a transaction
+    return await prisma.$transaction(async (tx) => {
+      // Upload file for group profile picture
+      const { fileUrl, error: uploadError } = await uploadFile(filePath, 'groupProfiles', groupid, null, timestamp.toISOString());
 
-    const data = await prisma.groups.create({
-      data: {
-        groupid,
-        groupname,
-        description,
-        buyin,
-        week,
-        startdate: new Date(startdate),
-        timeleft,
-        hostid,
-        enddate: new Date(enddate),
-        pfp: fileUrl || "",
-        tasksperweek,
-        lastpfpupdate: timestamp
+      if (uploadError) {
+        throw uploadError;
       }
-    });
 
-    return { data, error: null };
+      // Create the group
+      console.log('createGroup called');
+      const groupData = await tx.groups.create({
+        data: {
+          groupid,
+          groupname,
+          description,
+          buyin,
+          week,
+          startdate: new Date(startdate),
+          timeleft,
+          hostid,
+          enddate: new Date(enddate),
+          pfp: fileUrl || "",
+          tasksperweek,
+          lastpfpupdate: timestamp,
+        },
+      });
+      console.log('group created', groupData);
+
+      // Create the user group for the host
+      const usergroupid = uuidv4();
+      console.log('createUserGroup called');
+      const { error: userGroupError } = await createUserGroup(usergroupid, hostid, groupid, tx);
+
+      if (userGroupError) {
+        throw userGroupError;
+      }
+
+      return { data: groupData, error: null };
+    });
   } catch (error) {
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error('Unknown error') 
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Unknown error'),
     };
   }
 }
+
 
 async function getAllGroups(): Promise<DatabaseResponse<GroupsResponse>> {
   try {
@@ -325,6 +345,8 @@ async function deleteGroup(groupId: string): Promise<DatabaseResponse<string>> {
       // Delete related records
       await tx.usergroup.deleteMany({ where: { groupid: groupId } });
       await tx.invite.deleteMany({ where: { groupid: groupId } });
+
+
     });
 
     return { data: 'Successfully deleted group', error: null };

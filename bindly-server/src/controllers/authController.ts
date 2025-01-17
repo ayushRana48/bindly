@@ -34,6 +34,7 @@ async function signInController(req: Request, res: Response) {
 
     try {
         const response = await supabase.auth.signInWithPassword({ email, password });
+        console.log('response', response);
         if (response.error) {
             throw response.error;
         }
@@ -55,6 +56,7 @@ async function signInController(req: Request, res: Response) {
 async function signOutController(req: Request, res: Response) {
     try {
         const { data: { user } } = await supabase.auth.getUser();
+        console.log('user', user);
 
         if (user) {
             const resp = await supabase.auth.signOut();

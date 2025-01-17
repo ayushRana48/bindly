@@ -285,26 +285,35 @@ async function updatePost(postid: string, updateParams: UpdatePostParams): Promi
     };
   }
 }
-
 async function deletePost(postid: string): Promise<DatabaseResponse<{ message: string }>> {
   console.log("in delete post", postid);
   try {
-    // Delete comments associated with the post
-    await prisma.comment.deleteMany({
-      where: { postid }
-    });
+    // Wrap the logic in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete comments associated with the post
+      await tx.comment.deleteMany({
+        where: { postid },
+      });
 
-    // Delete the post
-    await prisma.post.delete({
-      where: { postid }
+      // Delete the post
+      await tx.post.delete({
+        where: { postid },
+      });
+
     });
+    
+
 
     return { data: { message: 'success' }, error: null };
   } catch (error: any) {
     console.log("error in delete post", error);
-    return { data: null, error: error instanceof Error ? error : new Error(error.message) };
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error(error.message),
+    };
   }
 }
+
 
 
 function getOrdinalSuffix(n: number): string {

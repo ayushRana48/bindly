@@ -59,7 +59,7 @@ const InviteItem: React.FC<InviteItemProps> = ({ inviteData, removeInvite }) => 
                 setGroups(g => [...g, inviteData.groups]);
                 removeInvite(inviteId);
                 setModalVisible(false);
-                setUser(u => u ? {...u, balance: body.newBalance} : null);
+                setUser(u => u ? {...u, balance: u.balance - inviteData.groups.buyin} : null);
             } else {
                 if (body.error === "JSON object requested, multiple (or no) rows returned") {
                     Alert.alert('Invalid Invite', "Group is deleted");

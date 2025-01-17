@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseResponse, Invite, Group } from '../types';
@@ -9,8 +9,8 @@ const prisma = new PrismaClient();
 const expo = new Expo();
 
 async function createInvite(
-  senderid: string, 
-  receiverid: string, 
+  senderid: string,
+  receiverid: string,
   groupid: string
 ): Promise<DatabaseResponse<Invite>> {
   try {
@@ -45,50 +45,55 @@ async function createInvite(
   }
 }
 
-
-export async function acceptInvite(
+async function acceptInvite(
   inviteId: string,
   receiverid: string,
   groupid: string,
   groupStartDate: Date,
   groupEndDate: Date
 ): Promise<DatabaseResponse<{ message: string }>> {
+  console.log('acceptInvite called');
+
   const currentDate = new Date();
 
   try {
-    // Validate group dates
-    if (groupStartDate < currentDate) {
-      await deleteInvite(inviteId);
-      return { data: null, error: new Error('Group already started') };
-    }
-
-    if (groupEndDate < currentDate) {
-      await deleteInvite(inviteId);
-      return { data: null, error: new Error('Group already ended') };
-    }
-
-    const usergroupId = uuidv4();
-
-    // Create the user group
-    const { data: userGroupData, error: createUserGroupError } = await createUserGroup(
-      usergroupId,
-      receiverid,
-      groupid
-    );
-
-    if (createUserGroupError) {
-      if (createUserGroupError.message === 'Insufficient Funds') {
-        return { data: null, error: new Error('Insufficient Funds') };
+    // Start a transaction
+    await prisma.$transaction(async (tx) => {
+      // Validate group dates
+      if (groupStartDate < currentDate) {
+        await deleteInvite(inviteId, tx); // Pass transaction to deleteInvite
+        throw new Error('Group already started');
       }
-      throw createUserGroupError;
-    }
 
-    // Delete the invite
-    const { error: deleteError } = await deleteInvite(inviteId);
+      if (groupEndDate < currentDate) {
+        await deleteInvite(inviteId, tx); // Pass transaction to deleteInvite
+        throw new Error('Group already ended');
+      }
 
-    if (deleteError) {
-      throw deleteError;
-    }
+      const usergroupId = uuidv4();
+
+      // Create the user group
+      const { error: createUserGroupError } = await createUserGroup(
+        usergroupId,
+        receiverid,
+        groupid,
+        tx // Pass transaction to createUserGroup
+      );
+
+      if (createUserGroupError) {
+        if (createUserGroupError.message === 'Insufficient Funds') {
+          throw new Error('Insufficient Funds');
+        }
+        throw createUserGroupError;
+      }
+
+      // Delete the invite
+      const { error: deleteError } = await deleteInvite(inviteId, tx);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+    });
 
     return { data: { message: 'Invite accepted successfully' }, error: null };
   } catch (error) {
@@ -100,93 +105,101 @@ export async function acceptInvite(
 }
 
 
-async function getAllInvites(): Promise<DatabaseResponse<Invite[]>> {
-  try {
-    const data = await prisma.invite.findMany();
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: new Error(error.message) };
+  async function getAllInvites(): Promise<DatabaseResponse<Invite[]>> {
+    try {
+      const data = await prisma.invite.findMany();
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: new Error(error.message) };
+    }
   }
-}
 
-async function getInvite(inviteId: string): Promise<DatabaseResponse<Invite>> {
-  try {
-    const data = await prisma.invite.findUnique({
-      where: { inviteid: inviteId }
-    });
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: new Error(error.message) };
+  async function getInvite(inviteId: string): Promise<DatabaseResponse<Invite>> {
+    try {
+      const data = await prisma.invite.findUnique({
+        where: { inviteid: inviteId }
+      });
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: new Error(error.message) };
+    }
   }
-}
 
-async function getInvitesBySender(username: string): Promise<DatabaseResponse<Invite[]>> {
-  try {
-    const data = await prisma.invite.findMany({
-      where: { senderid: username }
-    });
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: new Error(error.message) };
+  async function getInvitesBySender(username: string): Promise<DatabaseResponse<Invite[]>> {
+    try {
+      const data = await prisma.invite.findMany({
+        where: { senderid: username }
+      });
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: new Error(error.message) };
+    }
   }
-}
 
-async function getInvitesByReciever(username: string): Promise<DatabaseResponse<Array<Invite & { groups: Group }>>> {
-  try {
-    const data = await prisma.invite.findMany({
-      where: { receiverid: username },
-      include: { groups: true }
-    });
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: new Error(error.message) };
+  async function getInvitesByReciever(username: string): Promise<DatabaseResponse<Array<Invite & { groups: Group }>>> {
+    try {
+      const data = await prisma.invite.findMany({
+        where: { receiverid: username },
+        include: { groups: true }
+      });
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: new Error(error.message) };
+    }
   }
-}
 
-async function getInvitesByGroupId(groupid: string): Promise<DatabaseResponse<Invite[]>> {
-  try {
-    const data = await prisma.invite.findMany({
-      where: { groupid }
-    });
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: new Error(error.message) };
+  async function getInvitesByGroupId(groupid: string): Promise<DatabaseResponse<Invite[]>> {
+    try {
+      const data = await prisma.invite.findMany({
+        where: { groupid }
+      });
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: new Error(error.message) };
+    }
   }
-}
 
-async function updateInvite(
-  inviteid: string, 
-  updateParams: Partial<Omit<Invite, 'inviteid'>>
-): Promise<DatabaseResponse<Invite>> {
-  try {
-    const data = await prisma.invite.update({
-      where: { inviteid },
-      data: updateParams
-    });
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: new Error(error.message) };
+  async function updateInvite(
+    inviteid: string,
+    updateParams: Partial<Omit<Invite, 'inviteid'>>
+  ): Promise<DatabaseResponse<Invite>> {
+    try {
+      const data = await prisma.invite.update({
+        where: { inviteid },
+        data: updateParams
+      });
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: new Error(error.message) };
+    }
   }
-}
 
-async function deleteInvite(inviteid: string): Promise<DatabaseResponse<Invite>> {
-  try {
-    const data = await prisma.invite.delete({
-      where: { inviteid }
-    });
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: new Error(error.message) };
+  async function deleteInvite(
+    inviteid: string,
+    tx?: Prisma.TransactionClient
+  ): Promise<DatabaseResponse<Invite>> {
+    // Use the provided transaction client if available, otherwise use the global Prisma client
+    const client = tx || prisma;
+  
+    try {
+      const data = await client.invite.delete({
+        where: { inviteid },
+      });
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: new Error(error.message) };
+    }
   }
-}
+  
 
-export { 
-  createInvite, 
-  getAllInvites, 
-  getInvite, 
-  getInvitesByGroupId, 
-  getInvitesBySender, 
-  getInvitesByReciever, 
-  updateInvite, 
-  deleteInvite 
-};
+  export {
+    createInvite,
+    acceptInvite,
+    getAllInvites,
+    getInvite,
+    getInvitesByGroupId,
+    getInvitesBySender,
+    getInvitesByReciever,
+    updateInvite,
+    deleteInvite
+  };

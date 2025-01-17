@@ -12,6 +12,8 @@ async function updateUserBalance(
   const client = tx || prisma; // Use provided transaction or main client
   const time = new Date();
   const transactionId = uuidv4();
+  console.log('updateUserBalance called');
+
 
   try {
     // Check if `tx` is not provided and `client` is a PrismaClient
@@ -28,6 +30,7 @@ async function updateUserBalance(
       select: { balance: true },
     });
 
+    
     if (!user) {
       throw new Error("Failed to fetch user balance for: " + username);
     }
@@ -61,10 +64,13 @@ async function updateUserBalance(
     });
 
     // Update user balance
-    await client.users.update({
+    const  userUpdate =await client.users.update({
       where: { username },
       data: { balance: newBalance },
     });
+    console.log('user balance updated',userUpdate);
+
+    // throw new Error('hahaha funnt error no nees');
 
     return { newBalance, error: null };
   } catch (error) {

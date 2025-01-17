@@ -3,20 +3,18 @@ import {
   createGroup,
   processVeto,
   getLeaderBoard,
-  processGroups,
-  endGroup, 
   getAllGroups, 
   getGroup, 
   getGroupsByHostId, 
   updateGroup, 
   deleteGroup 
 } from '../transactions/groupTransactions';
-import { createUserGroup } from '../transactions/usergroupTransactions';
 import { getUser } from '../transactions/usersTransactions';
 import { v4 as uuidv4 } from 'uuid';
 
+
 async function createGroupController(req: Request, res: Response) {
-  console.log('createGroupController')
+  console.log('createGroupController');
   const groupid = uuidv4();
   const { 
     groupname, 
@@ -40,40 +38,30 @@ async function createGroupController(req: Request, res: Response) {
 
     const { data, error } = await createGroup(
       groupid,
-      groupname, 
-      hostId, 
-      description, 
-      buyin, 
-      week, 
-      startdate, 
+      groupname,
+      hostId,
+      description,
+      buyin,
+      week,
+      startdate,
       timeleft,
       enddate,
       image,
       tasksperweek
     );
 
-    console.log("group data", data)
     if (error) {
       return res.status(400).json({ error: error.message });
-    }
-
-    const usergroupid = uuidv4();
-    const { data: data2, error: error2 } = await createUserGroup(usergroupid, hostId, groupid);
-
-    if (error2) {
-      if (error2.message === 'Insufficient Funds') {
-        return res.status(400).json({ error: 'Insufficient Funds' });
-      }
-      return res.status(400).json({ error: error2.message });
     }
 
     return res.status(200).json(data);
   } catch (error) {
     return res.status(400).json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 }
+
 
 async function getAllGroupsController(req: Request, res: Response) {
   try {

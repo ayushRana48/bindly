@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { processGroups } from './groupTransactions';
 import { DatabaseResponse, Group, UserGroup, User } from '../types';
-import { createGroupBalanceTransaction } from './balanceTransactions/groupBalanceTransactions';
 import { updateUserBalance } from './groupHelpers/endGroup/endGroupHelpers';
 
 const prisma = new PrismaClient();
@@ -15,52 +14,71 @@ interface UserGroupResponse {
   archive: Array<UserGroup & { groups: Group }>;
 }
 
-
 async function createUserGroup(
-  usergroupid: string, 
-  username: string, 
-  groupid: string
+  usergroupid: string,
+  username: string,
+  groupid: string,
+  tx?: Prisma.TransactionClient
 ): Promise<DatabaseResponse<{ data: any; newBalance: number }>> {
+  const client = tx || prisma; // Use the transaction client if provided
+  console.log('createUserGroup called');
   try {
-    const group = await prisma.groups.findUnique({
+    if (!tx) {
+      // Automatically handle transaction for standalone use
+      return await prisma.$transaction((transactionClient) =>
+        createUserGroup(usergroupid, username, groupid, transactionClient)
+      );
+    }
+
+    // Fetch group details within the transaction
+    const group = await client.groups.findUnique({
       where: { groupid },
-      select: { buyin: true }
+      select: { buyin: true },
     });
 
     if (!group) {
-      return { data: null, error: new Error('Group not found') };
+      throw new Error('Group not found');
     }
 
-    console.log("about to create group balance transaction");
+    console.log("About to create group balance transaction");
 
-    const { newBalance, error: transactionError } = await updateUserBalance(prisma, username, -group.buyin, groupid, 'BuyIn');
+    // Update user balance within the transaction
+    const { newBalance, error: transactionError } = await updateUserBalance(
+      client, // Use the transaction client
+      username,
+      -group.buyin,
+      groupid,
+      'BuyIn'
+    );
 
     if (transactionError) {
-      console.log('pushing error', transactionError);
-      return { data: null, error: transactionError };
+      console.log('Transaction error', transactionError);
+      throw transactionError;
     }
 
-    console.log('newBalance', newBalance);
+    console.log('New Balance', newBalance);
 
-    const data = await prisma.usergroup.create({
+    // Create user group within the transaction
+    const data = await client.usergroup.create({
       data: {
         usergroupid,
         username,
-        groupid
-      }
+        groupid,
+      },
     });
 
-    return { 
-      data: { data, newBalance: newBalance || 0 }, 
-      error: null 
+    return {
+      data: { data, newBalance: newBalance || 0 },
+      error: null,
     };
   } catch (error) {
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error('Unknown error') 
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Unknown error'),
     };
   }
 }
+
 
 async function getAllUserGroups(): Promise<DatabaseResponse<Array<UserGroup & { groups: Group }>>> {
   try {
@@ -205,37 +223,55 @@ async function updateUserGroup(
   }
 }
 
+
 async function deleteUserGroup(
-  username: string, 
+  username: string,
   groupId: string
 ): Promise<DatabaseResponse<string>> {
   try {
-    const group = await prisma.groups.findUnique({
-      where: { groupid: groupId },
-      select: { buyin: true }
-    });
+    // Use a transaction
+    await prisma.$transaction(async (tx) => {
+      const group = await tx.groups.findUnique({
+        where: { groupid: groupId },
+        select: { buyin: true },
+      });
 
-    if (!group) {
-      return { data: null, error: new Error('Group not found') };
-    }
-
-    await updateUserBalance(prisma, username, group.buyin, groupId, 'BuyOut');
-
-    await prisma.usergroup.deleteMany({
-      where: {
-        username,
-        groupid: groupId
+      if (!group) {
+        throw new Error('Group not found');
       }
+
+      // Update user balance within the transaction
+      const { error: balanceError } = await updateUserBalance(
+        tx,
+        username,
+        group.buyin,
+        groupId,
+        'BuyOut',
+        tx
+      );
+
+      if (balanceError) {
+        throw balanceError;
+      }
+
+      // Delete user group within the transaction
+      await tx.usergroup.deleteMany({
+        where: {
+          username,
+          groupid: groupId,
+        },
+      });
     });
 
     return { data: 'Successfully deleted', error: null };
   } catch (error) {
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error('Unknown error') 
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Unknown error'),
     };
   }
 }
+
 
 async function getUserGroupByUsernameGroup(
   username: string, 

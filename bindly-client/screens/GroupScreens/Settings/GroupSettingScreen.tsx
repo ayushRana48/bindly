@@ -140,6 +140,7 @@ const GroupSetting: React.FC = () => {
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
+                setUser(u => u ? {...u, balance: u.balance + gd.group.buyin} : null);
                 setGroups(g => g.filter(h => h.groupid !== gd.group.groupid));
                 navigation.navigate("GroupsList");
             } else {
@@ -177,6 +178,7 @@ const GroupSetting: React.FC = () => {
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
+                setUser(u => u ? {...u, balance: u.balance + gd.group.buyin} : null);
                 setGroups(g => g.filter(h => h.groupid !== gd.group.groupid));
                 navigation.navigate("GroupsList");
             } else {
