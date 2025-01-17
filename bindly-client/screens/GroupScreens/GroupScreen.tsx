@@ -216,9 +216,9 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
       setVisiblePosts((res.post || []).slice(0, postsPerPage));
 
       // 4. Fetch post status
-      const postStatusResponse = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/postStatus`, {
+      const postStatusResponse = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({
           username: user?.username || '',
           groupId: groupData.groupid
@@ -263,7 +263,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
 
   const inGroup = async (): Promise<boolean> => {
     try {
-      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/inGroup`, {
+      const response = await fetch(`http://localhost:3000/bindly/usergroup/inGroup`, {
         headers: { 'Content-Type': 'application/json' },
         method: 'PUT',
         body: JSON.stringify({

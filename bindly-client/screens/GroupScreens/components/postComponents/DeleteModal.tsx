@@ -28,12 +28,13 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
 
         try {
             const response = await fetch(
-                `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/deletePost/${postid}`,
+                `http://localhost:3000/bindly/post/deletePost/${postid}`,
                 {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                 }
             );
+            console.log("response", response);
 
             const { status, body } = await response.json().then((data) => ({
                 status: response.status,

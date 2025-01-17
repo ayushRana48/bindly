@@ -36,7 +36,7 @@ const InviteMembersScreen: React.FC = () => {
     const fetchAllAvailableUsers = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
+        const response = await fetch(`http://localhost:3000/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
           headers: { 'Content-Type': 'application/json' },
         });
         const res: InviteMember[] = await response.json(); // Ensure response is typed

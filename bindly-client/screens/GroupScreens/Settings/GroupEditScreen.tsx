@@ -93,7 +93,7 @@ const GroupEditScreen: React.FC = () => {
                 imgBase64 = await blobToBase64(blob);
             }
 
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/updateGroup/${groupId}`, {
+            const response = await fetch(`http://localhost:3000/bindly/group/updateGroup/${groupId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -166,13 +166,14 @@ const GroupEditScreen: React.FC = () => {
                                 showDatePicker,
                                 toggleDatePicker,
                                 onDateChange,
+                                isEditScreen: true,
                             }}
                         />
 
                         {!showDatePicker && (
                             <View style={styles.centeredRow}>
                                 <Pressable style={styles.signUpButton} onPress={submit} disabled={loading}>
-                                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Create</Text>}
+                                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Save</Text>}
                                 </Pressable>
                             </View>
                         )}

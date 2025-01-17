@@ -242,24 +242,6 @@ async function changeHostController(req: Request, res: Response) {
 
 
 
-// async function endGroupController(req: Request, res: Response) {
-//   const { groupid } = req.body;
-
-//   try {
-//     const { data, error } = await endGroup([groupid]);
-
-//     if (error) {
-//       return res.status(400).json({ error: error.message });
-//     }
-
-//     return res.status(200).json(data);
-//   } catch (error) {
-//     return res.status(400).json({ 
-//       error: error instanceof Error ? error.message : 'Unknown error' 
-//     });
-//   }
-// }
-
 
 export {
   createGroupController,
@@ -270,6 +252,5 @@ export {
   deleteGroupController,
   changeHostController,
   getLeaderBoardController,
-  // endGroupController,
   processVetoDemoController
 };

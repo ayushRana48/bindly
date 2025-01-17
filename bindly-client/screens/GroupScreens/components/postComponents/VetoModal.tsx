@@ -29,7 +29,7 @@ const VetoModal: React.FC<VetoModalProps> = ({
         
         try {
             const response = await fetch(
-                `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addVeto`,
+                `http://localhost:3000/bindly/post/addVeto`,
                 {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -64,7 +64,7 @@ const VetoModal: React.FC<VetoModalProps> = ({
         
         try {
             const response = await fetch(
-                `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeVeto`,
+                `http://localhost:3000/bindly/post/removeVeto`,
                 {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },

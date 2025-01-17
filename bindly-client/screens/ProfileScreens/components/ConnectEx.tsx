@@ -9,7 +9,7 @@ interface ConnectExProps {
     text: string;
 }
 
-const LOGGING_URL = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/log';
+const LOGGING_URL = 'http://localhost:3000/log';
 
 async function logToServer(message: string): Promise<void> {
     console.log(`message: ${message}`);

@@ -25,7 +25,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     const getUserByEmail = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users/email/${email}`, {
+        const response = await fetch(`http://localhost:3000/bindly/users/email/${email}`, {
           headers: { 'Content-Type': 'application/json' },
         });
         const data = await response.json();

@@ -46,9 +46,9 @@ const PostActions: React.FC<PostActionsProps> = ({
     const toggleLike = async () => {
         if (loading) return;
 
-        let route = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addLike';
+        let route = 'http://localhost:3000/bindly/post/addLike';
         if (userHasLiked) {
-            route = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/removeLike';
+            route = 'http://localhost:3000/bindly/post/removeLike';
         } else {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }

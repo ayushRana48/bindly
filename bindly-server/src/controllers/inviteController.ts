@@ -7,7 +7,8 @@ import {
   getInvitesBySender, 
   getInvitesByReciever, 
   updateInvite, 
-  deleteInvite 
+  deleteInvite, 
+  acceptInvite
 } from '../transactions/inviteTransactions';
 import { createUserGroup, getUserGroupsByGroupId } from '../transactions/usergroupTransactions';
 import { getAllUsers } from '../transactions/usersTransactions';
@@ -33,9 +34,9 @@ async function createInviteController(req: Request, res: Response) {
 
 async function acceptInviteController(req: Request, res: Response) {
   const { inviteId, receiverid, groupid } = req.body;
-  const usergroupId = uuidv4();
 
   try {
+    // Fetch group details
     const { data: groupData, error: groupError } = await getGroup(groupid);
 
     if (groupError) {
@@ -46,43 +47,23 @@ async function acceptInviteController(req: Request, res: Response) {
       return res.status(400).json({ error: 'Invalid group dates' });
     }
 
-    const currentDate = new Date();
-    const startDate = new Date(groupData.group.startdate);
-    const endDate = new Date(groupData.group.enddate);
-
-    if (startDate < currentDate) {
-      await deleteInvite(inviteId);
-      return res.status(400).json({ error: 'Group already started' });
-    }
-
-    if (endDate < currentDate) {
-      await deleteInvite(inviteId);
-      return res.status(400).json({ error: 'Group already ended' });
-    }
-
-    const { data: userGroupData, error: createUserGroupError } = await createUserGroup(
-      usergroupId, 
-      receiverid, 
-      groupid
+    // Pass validation and transactional logic to `acceptInviteTransaction`
+    const { data, error } = await acceptInvite(
+      inviteId,
+      receiverid,
+      groupid,
+      new Date(groupData.group.startdate),
+      new Date(groupData.group.enddate)
     );
 
-    if (createUserGroupError) {
-      if (createUserGroupError.message === 'Insufficient Funds') {
-        return res.status(400).json({ error: 'Insufficient Funds' });
-      }
-      throw createUserGroupError;
+    if (error) {
+      return res.status(400).json({ error: error.message });
     }
 
-    const { error: deleteError } = await deleteInvite(inviteId);
-
-    if (deleteError) {
-      throw deleteError;
-    }
-
-    return res.status(200).json(userGroupData);
+    return res.status(200).json(data);
   } catch (error) {
-    return res.status(400).json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 }

@@ -28,7 +28,7 @@ const ArchiveGroupScreen: React.FC = () => {
   const getLeaderBoard = async (): Promise<void> => {
     try {
       const response = await fetch(
-        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/getLeaderboard/${groupData.groupid}`,
+        `http://localhost:3000/bindly/group/getLeaderboard/${groupData.groupid}`,
         {
           headers: { 'Content-Type': 'application/json' },
         }

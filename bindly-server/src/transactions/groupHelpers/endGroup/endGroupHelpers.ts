@@ -1,20 +1,31 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
 async function updateUserBalance(
-  prisma: PrismaClient,
+  prisma: PrismaClient | Prisma.TransactionClient, // Accept both
   username: string,
   netMoney: number,
-  groupId: string
-): Promise<{ error: Error | null }> {
+  groupId: string,
+  transactionType: string,
+  tx?: Prisma.TransactionClient // Specifically allow TransactionClient here
+): Promise<{ newBalance: number | null, error: Error | null }> {
+  const client = tx || prisma; // Use provided transaction or main client
+  const time = new Date();
+  const transactionId = uuidv4();
+
   try {
-    const time = new Date();
-    const transactionId = uuidv4();
+    // Check if `tx` is not provided and `client` is a PrismaClient
+    if (!tx && client instanceof PrismaClient) {
+      // Automatically handle transaction for standalone use
+      return await client.$transaction((transactionClient) =>
+        updateUserBalance(transactionClient, username, netMoney, groupId, transactionType, transactionClient)
+      );
+    }
 
     // Fetch and update user balance
-    const user = await prisma.users.findUnique({
+    const user = await client.users.findUnique({
       where: { username },
-      select: { balance: true }
+      select: { balance: true },
     });
 
     if (!user) {
@@ -23,8 +34,12 @@ async function updateUserBalance(
 
     const newBalance = user.balance + netMoney;
 
+    if (newBalance < 0) {
+      throw new Error("New balance is negative, Insufficient funds");
+    }
+
     // Log balance transaction
-    await prisma.balance_transaction.create({
+    await client.balance_transaction.create({
       data: {
         id: transactionId,
         time,
@@ -33,28 +48,30 @@ async function updateUserBalance(
         amount: netMoney,
         state: "Success",
         error: null,
-      }
+      },
     });
 
     // Log group transaction
-    await prisma.balance_group_transaction.create({
+    await client.balance_group_transaction.create({
       data: {
         id: transactionId,
         groupid: groupId,
-        type: "BuyIn",
-      }
+        type: transactionType,
+      },
     });
 
     // Update user balance
-    await prisma.users.update({
+    await client.users.update({
       where: { username },
-      data: { balance: newBalance }
+      data: { balance: newBalance },
     });
 
-    return { error: null };
+    return { newBalance, error: null };
   } catch (error) {
-    console.error("Error in updateUserBalance:", error);
-    return { error: error instanceof Error ? error : new Error("Unknown error") };
+    return {
+      newBalance: null,
+      error: error instanceof Error ? error : new Error("Unknown error"),
+    };
   }
 }
 

@@ -38,7 +38,7 @@ const MemberListItem: React.FC<MemberListItemProps> = ({ memberData, kickMember 
 
         // Uncomment the following code to make the actual API call
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/changeHost`, {
+            const response = await fetch(`http://localhost:3000/bindly/group/changeHost`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ const MemberListItem: React.FC<MemberListItemProps> = ({ memberData, kickMember 
 
     const kickUser = async () => {
         try {
-            const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/kickUser`, {
+            const response = await fetch(`http://localhost:3000/bindly/usergroup/kickUser`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

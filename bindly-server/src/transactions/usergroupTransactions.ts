@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { processGroups } from './groupTransactions';
 import { DatabaseResponse, Group, UserGroup, User } from '../types';
 import { createGroupBalanceTransaction } from './balanceTransactions/groupBalanceTransactions';
+import { updateUserBalance } from './groupHelpers/endGroup/endGroupHelpers';
 
 const prisma = new PrismaClient();
 
@@ -32,13 +33,7 @@ async function createUserGroup(
 
     console.log("about to create group balance transaction");
 
-    const { newBalance, error: transactionError } = await createGroupBalanceTransaction(
-      prisma,
-      username,
-      groupid,
-      'BuyIn',
-      -group.buyin
-    );
+    const { newBalance, error: transactionError } = await updateUserBalance(prisma, username, -group.buyin, groupid, 'BuyIn');
 
     if (transactionError) {
       console.log('pushing error', transactionError);
@@ -224,21 +219,7 @@ async function deleteUserGroup(
       return { data: null, error: new Error('Group not found') };
     }
 
-    const user = await prisma.users.findUnique({
-      where: { username },
-      select: { balance: true }
-    });
-
-    if (!user) {
-      return { data: null, error: new Error('User not found') };
-    }
-
-    const newBalance = user.balance + group.buyin;
-
-    await prisma.users.update({
-      where: { username },
-      data: { balance: newBalance }
-    });
+    await updateUserBalance(prisma, username, group.buyin, groupId, 'BuyOut');
 
     await prisma.usergroup.deleteMany({
       where: {

@@ -3,6 +3,7 @@ import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseResponse, Invite, Group } from '../types';
 import { sendBatchNotifications } from '../utils/sendNotificationUtil';
+import { createUserGroup } from './usergroupTransactions';
 
 const prisma = new PrismaClient();
 const expo = new Expo();
@@ -43,6 +44,61 @@ async function createInvite(
     return { data: null, error: new Error(error.message) };
   }
 }
+
+
+export async function acceptInvite(
+  inviteId: string,
+  receiverid: string,
+  groupid: string,
+  groupStartDate: Date,
+  groupEndDate: Date
+): Promise<DatabaseResponse<{ message: string }>> {
+  const currentDate = new Date();
+
+  try {
+    // Validate group dates
+    if (groupStartDate < currentDate) {
+      await deleteInvite(inviteId);
+      return { data: null, error: new Error('Group already started') };
+    }
+
+    if (groupEndDate < currentDate) {
+      await deleteInvite(inviteId);
+      return { data: null, error: new Error('Group already ended') };
+    }
+
+    const usergroupId = uuidv4();
+
+    // Create the user group
+    const { data: userGroupData, error: createUserGroupError } = await createUserGroup(
+      usergroupId,
+      receiverid,
+      groupid
+    );
+
+    if (createUserGroupError) {
+      if (createUserGroupError.message === 'Insufficient Funds') {
+        return { data: null, error: new Error('Insufficient Funds') };
+      }
+      throw createUserGroupError;
+    }
+
+    // Delete the invite
+    const { error: deleteError } = await deleteInvite(inviteId);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    return { data: { message: 'Invite accepted successfully' }, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Unknown error'),
+    };
+  }
+}
+
 
 async function getAllInvites(): Promise<DatabaseResponse<Invite[]>> {
   try {

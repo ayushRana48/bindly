@@ -55,7 +55,7 @@ const TransferMoney = () => {
         }
 
         setError('');
-        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/paypal/payout`, {
+        fetch(`http://localhost:3000/bindly/paypal/payout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

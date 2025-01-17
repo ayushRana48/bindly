@@ -85,11 +85,12 @@ const NewGroupScreen = () => {
             return;
         }
 
-        if (!buyIn) {
-            setErrorMessage("Please enter buy in");
+        if (buyIn < 0 || isNaN(buyIn)) {
+            setErrorMessage("Buy-in must be a positive number or zero.");
             setLoading(false);
             return;
         }
+        
 
         if (!taskPerWeek) {
             setErrorMessage("Please enter number of tasks per week");
@@ -256,6 +257,7 @@ const NewGroupScreen = () => {
                                 showDatePicker,
                                 toggleDatePicker,
                                 onDateChange,
+                                isEditScreen: false,
                             }}
                         />
 

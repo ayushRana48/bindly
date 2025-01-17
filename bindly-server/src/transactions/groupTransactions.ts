@@ -311,27 +311,25 @@ async function deleteGroup(groupId: string): Promise<DatabaseResponse<string>> {
       select: { username: true }
     });
 
+
     // Update user balances in a transaction
     await prisma.$transaction(async (tx:any) => {
       for (const userGroup of userGroups) {
-        await tx.user.update({
-          where: { username: userGroup.username },
-          data: {
-            balance: {
-              increment: group.buyin
-            }
-          }
-        });
+        console.log("in delete group usergroups", userGroup.username);
+        await updateUserBalance(tx, userGroup.username, group.buyin, groupId, 'BuyOut');
       }
+
+      console.log("updated the balances", groupId);
+
 
       // Delete related records
       await tx.usergroup.deleteMany({ where: { groupid: groupId } });
       await tx.invite.deleteMany({ where: { groupid: groupId } });
-      await tx.group.delete({ where: { groupid: groupId } });
     });
 
     return { data: 'Successfully deleted group', error: null };
   } catch (error) {
+    console.log("error in delete group", error);
     return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
   }
 }
@@ -366,12 +364,12 @@ async function endGroup(groupId: string): Promise<{ error: Error | null }> {
       for (const entry of leaderboard) {
         const { username, netMoney } = entry;
         if (netMoney && netMoney !== 0) {
-          const { error } = await updateUserBalance(prisma,username, netMoney, groupId);
+          const { error } = await updateUserBalance(prisma,username, netMoney, groupId, 'BuyOut');
           if (error) throw error;
         }
       }
 
-      await tx.group.update({
+      await tx.groups.update({
         where: { groupid: groupId },
         data: { archive: true }
       });

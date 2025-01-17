@@ -19,6 +19,7 @@ interface GroupFormProps {
     showDatePicker: boolean;
     toggleDatePicker: () => void;
     onDateChange: (event: DateTimePickerEvent, selectedDate?: Date) => void;
+    isEditScreen: boolean;
 }
 
 const GroupForm: React.FC<GroupFormProps> = ({
@@ -37,6 +38,7 @@ const GroupForm: React.FC<GroupFormProps> = ({
     showDatePicker,
     toggleDatePicker,
     onDateChange,
+    isEditScreen
 }) => {
     const today = new Date();
     const tomorrow = new Date(today);
@@ -79,7 +81,7 @@ const GroupForm: React.FC<GroupFormProps> = ({
                value={startDate}
                onChange={onDateChange}
                style={{ height: 120 }}
-               minimumDate={tomorrow}
+               minimumDate={isEditScreen ? startDate : tomorrow}
            />
            <View style={styles.centeredRow}>
                <Pressable style={styles.doneButton} onPress={toggleDatePicker}>
@@ -100,7 +102,7 @@ const GroupForm: React.FC<GroupFormProps> = ({
             />
         </View>
 
-        <View style={styles.inputContainer}>
+        {!isEditScreen &&  <View style={styles.inputContainer}>
             <Text style={styles.label}>Buy In</Text>
             <TextInput
                 style={styles.input}
@@ -110,7 +112,7 @@ const GroupForm: React.FC<GroupFormProps> = ({
                 placeholder="Buy In"
             />
         </View>
-
+}
         <View style={styles.inputContainer}>
             <Text style={styles.label}>Tasks Per Week</Text>
             <TextInput
