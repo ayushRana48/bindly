@@ -13,6 +13,7 @@ import ImagePickerModal from "./components/ImagePickerModal";
 import GroupForm from "./components/GroupForm";
 import compressImage from "../../../utils/compressImage.js";
 import blobToBase64 from "../../../utils/blobToBase64.js";
+import { checkToken } from "../../../utils/checkToken";
 
 const GroupEditScreen: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -92,10 +93,11 @@ const GroupEditScreen: React.FC = () => {
                 const blob = await (await fetch(compressedUri)).blob();
                 imgBase64 = await blobToBase64(blob);
             }
+            const token = await checkToken();
 
             const response = await fetch(`http://localhost:3000/bindly/group/updateGroup/${groupId}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json" ,'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({
                     groupname: groupName,
                     description,

@@ -7,6 +7,7 @@ import { useGroupsContext } from "../../GroupsContext";
 import backArrow from "../../../assets/backArrow.png";
 import InviteMemberItem from "../components/InviteMemberItem";
 import { InviteMember } from "../../../types"; // Import InviteMember type
+import { checkToken } from "../../../utils/checkToken";
 
 const InviteMembersScreen: React.FC = () => {
   const [users, setUsers] = useState<InviteMember[]>([]); // Use InviteMember type
@@ -36,8 +37,9 @@ const InviteMembersScreen: React.FC = () => {
     const fetchAllAvailableUsers = async () => {
       setLoading(true);
       try {
+        const token = await checkToken();
         const response = await fetch(`http://localhost:3000/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
         });
         const res: InviteMember[] = await response.json(); // Ensure response is typed
         setUsers(res);

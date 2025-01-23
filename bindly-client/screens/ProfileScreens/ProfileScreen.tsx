@@ -18,6 +18,7 @@ import rules from "../../assets/rules.png";
 import wallet from "../../assets/wallet.png";
 //@ts-ignore
 import connect from "../../assets/connect.png";
+import * as SecureStore from "expo-secure-store";
 
 import * as ImagePicker from 'expo-image-picker';
 import compressImage from "../../utils/compressImage";
@@ -26,6 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { removePushTokenAsync } from "../../notificationUtils";
 import { GroupData, RootStackParamList } from "../../types"; // Import necessary types
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { checkToken } from "../../utils/checkToken";
 
 const LOGGING_URL = 'http://localhost:3000/log';
 
@@ -136,10 +138,11 @@ const ProfileScreen = () => {
             const blob = await response.blob();
             imgBase64 = await blobToBase64(blob);
         }
+        const token = await checkToken();
 
         fetch(`http://localhost:3000/bindly/users/updateUser/${user?.username}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             body: JSON.stringify({
                 pfp: imgBase64,
             }),
@@ -162,8 +165,9 @@ const ProfileScreen = () => {
 
     const getUser = async () => {
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/users/email/${email}`, {
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             });
             const data = await response.json();
 
@@ -186,13 +190,16 @@ const ProfileScreen = () => {
         }
         setLoading(true)
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/auth/signOut`, {
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 method: "POST",
             });
             const data = await response.json();
             console.log(data, 'logout data')
             if (response.status === 200) {
+                await SecureStore.deleteItemAsync("accessToken");
+                await SecureStore.deleteItemAsync("refreshToken");          
                 await AsyncStorage.removeItem('userEmail');
                 await removePushTokenAsync(user?.username || '');
                 console.log('removeTest')

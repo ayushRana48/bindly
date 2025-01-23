@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import Modal from 'react-native-modal';
+import { checkToken } from '../../../../utils/checkToken';
 
 interface DeleteModalProps {
     isVisible: boolean;
@@ -27,11 +28,12 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
         setDeleteLoading(true);
 
         try {
+            const token = await checkToken();
             const response = await fetch(
                 `http://localhost:3000/bindly/post/deletePost/${postid}`,
                 {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 }
             );
             console.log("response", response);

@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import { checkToken } from './utils/checkToken';
 
 interface LogData {
   logData: string;
@@ -70,9 +71,11 @@ export async function registerForPushNotificationsAsync(username: string): Promi
         console.log('Registering push notification token with backend...');
         await logToServer('Registering push notification token with backend...');
 
+        const apiToken = await checkToken();
+
         const response = await fetch('http://localhost:3000/bindly/notification/registerToken', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${apiToken}`},
             body: JSON.stringify({
                 username,
                 token
@@ -111,10 +114,11 @@ export async function removePushTokenAsync(username: string): Promise<void> {
 
         if (token) {
             await logToServer(`we have a token so lets remove,${token}`);
+            const apiToken = await checkToken();
 
             const response = await fetch('http://localhost:3000/bindly/notification/removeToken', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${apiToken}`},
                 body: JSON.stringify({
                     username,
                     token

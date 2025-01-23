@@ -17,11 +17,7 @@ interface LeaderboardWeek {
     netMoney?: number;
   }
   
-  interface GroupsResponse {
-    current: Group[];
-    archive: Group[];
-  }
-  
+
   interface UserPosts {
     [username: string]: {
       [weekNum: string]: Date[];

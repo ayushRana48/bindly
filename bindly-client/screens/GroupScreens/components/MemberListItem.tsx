@@ -7,6 +7,7 @@ import { useUserContext } from "../../../UserContext";
 import { RootStackParamList, UserGroup } from "../../../types";
 // @ts-ignore
 import placeholder from '../../../assets/profile.png';
+import { checkToken } from "../../../utils/checkToken";
 
 interface MemberListItemProps {
   memberData: UserGroup
@@ -38,10 +39,12 @@ const MemberListItem: React.FC<MemberListItemProps> = ({ memberData, kickMember 
 
         // Uncomment the following code to make the actual API call
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/group/changeHost`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     username: user?.username,
@@ -75,10 +78,12 @@ const MemberListItem: React.FC<MemberListItemProps> = ({ memberData, kickMember 
 
     const kickUser = async () => {
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/usergroup/kickUser`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     username: user?.username,

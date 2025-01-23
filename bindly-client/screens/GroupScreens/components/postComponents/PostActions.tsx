@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import * as Haptics from 'expo-haptics';
 //@ts-ignore
 import commentIcon from '../../../../assets/comment.png';
+import { checkToken } from '../../../../utils/checkToken';
 
 interface PostActionsProps {
     valid: boolean | null;
@@ -57,9 +58,10 @@ const PostActions: React.FC<PostActionsProps> = ({
         setLoading(true);
 
         try {
+            const token = await checkToken();
             await fetch(route, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({
                     postid,
                     username: currentUsername,

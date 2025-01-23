@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Image, TextInput, TouchableOpacity, KeyboardAvo
 import BottomSheetScrollView from '../BottomSheetScrollView';
 //@ts-ignore
 import placeholder from '../../../../assets/GroupIcon.png';
+import { checkToken } from '../../../../utils/checkToken';
 
 interface CommentsModalProps {
     bottomSheetRef: any;
@@ -44,11 +45,12 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
         }
 
         try {
+            const token = await checkToken();
             const response = await fetch(
                 `http://localhost:3000/bindly/comment/addComment`,
                 {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                     body: JSON.stringify({
                         postid: selectedPostId,
                         groupid: groupId,

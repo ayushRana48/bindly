@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import Modal from 'react-native-modal';
+import { checkToken } from '../../../../utils/checkToken';
 
 interface VetoModalProps {
     isVisible: boolean;
@@ -28,11 +29,12 @@ const VetoModal: React.FC<VetoModalProps> = ({
         setLoading(true);
         
         try {
+            const token = await checkToken();
             const response = await fetch(
                 `http://localhost:3000/bindly/post/addVeto`,
                 {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                     body: JSON.stringify({
                         postid,
                         username,
@@ -63,11 +65,12 @@ const VetoModal: React.FC<VetoModalProps> = ({
         setLoading(true);
         
         try {
+            const token = await checkToken();
             const response = await fetch(
                 `http://localhost:3000/bindly/post/removeVeto`,
                 {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                     body: JSON.stringify({
                         postid,
                         username,

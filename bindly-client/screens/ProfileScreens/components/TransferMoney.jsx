@@ -15,7 +15,7 @@ const TransferMoney = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleWithdrawMoney = () => {
+    const handleWithdrawMoney = async () => {
         if (loading) return;
 
         setLoading(true);
@@ -55,9 +55,10 @@ const TransferMoney = () => {
         }
 
         setError('');
+        const token = await checkToken();
         fetch(`http://localhost:3000/bindly/paypal/payout`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             body: JSON.stringify({
                 user_id: user.username,
                 recipient_email: isVenmo ? phone : email,

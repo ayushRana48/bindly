@@ -5,7 +5,7 @@ import backArrow from '../../assets/backArrow.png'
 import { useUserContext } from "../../UserContext";
 import { BASEROOT_URL } from "@env";
 import VetoItem from "./components/VetoItem";
-
+import { checkToken } from "../../utils/checkToken";
 const VetoScreen = () => {
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation();
@@ -19,8 +19,9 @@ const VetoScreen = () => {
     const getVetos = async () => {
         setLoading(true);
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/post/getInvalid/${user.username}`, {
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             });
 
             if (!response.ok) {

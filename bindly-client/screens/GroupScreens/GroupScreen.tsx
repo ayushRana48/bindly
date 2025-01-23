@@ -34,6 +34,7 @@ import BottomSheetScrollView from './components/BottomSheetScrollView';
 import CommentsModal from "./components/groupScreenComponents/CommentsModal";
 import LikesModal from "./components/groupScreenComponents/LikesModal";
 import GroupHeader from "./components/groupScreenComponents/GroupHeader";
+import { checkToken } from "../../utils/checkToken";
 
 interface GroupScreenProps {
   route: RouteProp<RootStackParamList, 'Group'>;
@@ -91,6 +92,11 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (gd?.group) {
+      getPostStatus();
+    }
+  }, [gd?.post]);
 
 
   useEffect(() => {
@@ -122,6 +128,40 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
       const newPosts = g.post?.map((p: Post) => (p.postid === updatedPost.postid ? updatedPost : p));
       return { ...g, post: newPosts };
     });
+  };
+
+  const getPostStatus = async (): Promise<void> => {
+    const token = await checkToken();
+    const postStatusResponse = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`}, 
+      body: JSON.stringify({
+        username: user?.username || '',
+        groupId: groupData.groupid
+      }),
+    });
+
+    // 5. Handle post status response
+    if (!postStatusResponse.ok) {
+      const errorResponse = await postStatusResponse.json();
+      if (errorResponse.message === 'JSON object requested, multiple (or no) rows returned]') {
+        setCreateStatus('post');
+        return;
+      }
+      throw new Error(errorResponse.error || 'Failed to fetch post status');
+    }
+
+    const postStatusData = await postStatusResponse.json();
+
+    // 6. Update post status state
+    if (postStatusData) {
+      setGroupData((g: GroupData) => ({
+        ...g,
+        createStatus: postStatusData.data,
+        timecycle: postStatusData.startdate
+      }));
+      setCreateStatus(postStatusData.data);
+    }
   };
 
   const updatePostLikes = (updatedPostId: string, username: string): void => {
@@ -196,9 +236,9 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     }
     try {
       // 1. Fetch group data
-      
+      const token = await checkToken();
       const response = await fetch(`http://localhost:3000/bindly/group/${groupData.groupid}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
       });
 
       if (!response.ok) {
@@ -216,36 +256,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
       setVisiblePosts((res.post || []).slice(0, postsPerPage));
 
       // 4. Fetch post status
-      const postStatusResponse = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({
-          username: user?.username || '',
-          groupId: groupData.groupid
-        }),
-      });
-
-      // 5. Handle post status response
-      if (!postStatusResponse.ok) {
-        const errorResponse = await postStatusResponse.json();
-        if (errorResponse.message === 'JSON object requested, multiple (or no) rows returned]') {
-          setCreateStatus('post');
-          return;
-        }
-        throw new Error(errorResponse.error || 'Failed to fetch post status');
-      }
-
-      const postStatusData = await postStatusResponse.json();
-
-      // 6. Update post status state
-      if (postStatusData) {
-        setGroupData((g: GroupData) => ({
-          ...g,
-          createStatus: postStatusData.data,
-          timecycle: postStatusData.startdate
-        }));
-        setCreateStatus(postStatusData.data);
-      }
+      await getPostStatus();
     }
     catch (error) {
       console.error(error);
@@ -263,8 +274,9 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
 
   const inGroup = async (): Promise<boolean> => {
     try {
+      const token = await checkToken();
       const response = await fetch(`http://localhost:3000/bindly/usergroup/inGroup`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
         method: 'PUT',
         body: JSON.stringify({
           username: user?.username || '',

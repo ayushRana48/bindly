@@ -9,6 +9,7 @@ import { useGroupsContext } from "../../GroupsContext";
 import { useUserContext } from "../../../UserContext";
 import LeaderboardItem from "../components/LeaderboardItem";
 import { LeaderboardMember } from "../../../types"; // Import the updated type
+import { checkToken } from "../../../utils/checkToken";
 
 const InfoScreen: React.FC = () => {
   const route = useRoute();
@@ -28,8 +29,9 @@ const InfoScreen: React.FC = () => {
 
   const getLeaderBoard = async (): Promise<void> => {
     try {
+      const token = await checkToken();
       const response = await fetch(`http://localhost:3000/bindly/group/getLeaderboard/${groupData.group.groupid}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
       });
 
       if (!response.ok) {

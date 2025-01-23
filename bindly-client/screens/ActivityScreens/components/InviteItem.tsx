@@ -7,6 +7,7 @@ import { useUserContext } from "../../../UserContext";
 //@ts-ignore
 import placeholder from '../../../assets/GroupIcon.png';
 import { Invite, Group, RootStackParamList } from "../../../types";
+import { checkToken } from "../../../utils/checkToken";
 
 interface InviteItemProps {
     inviteData: Invite;
@@ -42,10 +43,15 @@ const InviteItem: React.FC<InviteItemProps> = ({ inviteData, removeInvite }) => 
         if (accepting) return;
         setAccepting(true);
 
+        const token = await checkToken();
+
         try {
             const response = await fetch(`http://localhost:3000/bindly/invite/acceptInvite`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`, // Add the Bearer token
+                },
                 body: JSON.stringify({
                     inviteId: inviteId,
                     receiverid: user?.username,
@@ -88,10 +94,12 @@ const InviteItem: React.FC<InviteItemProps> = ({ inviteData, removeInvite }) => 
         if (rejecting) return;
         setRejecting(true);
 
+        const token = await checkToken();
+
         try {
             const response = await fetch(`http://localhost:3000/bindly/invite/deleteInvite/${inviteId}`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             });
 
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));

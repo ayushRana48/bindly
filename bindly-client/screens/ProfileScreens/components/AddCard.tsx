@@ -3,6 +3,7 @@ import { View, Button, Alert, StyleSheet, FlatList, Text, Modal, Pressable, Acti
 import { useStripe } from '@stripe/stripe-react-native';
 import { useUserContext } from '../../../UserContext';
 import { StripeCard, User } from '../../../types';
+import { checkToken } from '../../../utils/checkToken';
 
 interface AddCardProps {
     setCards: React.Dispatch<React.SetStateAction<StripeCard[]>>;
@@ -26,10 +27,11 @@ const AddCard: React.FC<AddCardProps> = ({ setCards: setCards2, cards: cards2 })
     const [loadingRemove, setLoadingRemove] = useState<boolean>(false);
 
     const fetchPaymentSheetParams = async (): Promise<PaymentSheetParams> => {
+        const token = await checkToken();
         const response = await fetch(`http://localhost:3000/bindly/stripe/saveCard`, {
             method: 'POST',
             body: JSON.stringify({ email: user?.email }),
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
         });
         return response.json();
     };
@@ -88,7 +90,10 @@ const AddCard: React.FC<AddCardProps> = ({ setCards: setCards2, cards: cards2 })
             }
 
             await confirmPaymentSheetPayment();
-            const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${customerId}`);
+            const token = await checkToken();
+            const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${customerId}`,{
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
+            });
             const data = await response.json();
             
             if (JSON.stringify(cards2) !== JSON.stringify(data.data)) {
@@ -112,13 +117,14 @@ const AddCard: React.FC<AddCardProps> = ({ setCards: setCards2, cards: cards2 })
         
         setLoadingRemove(true);
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/stripe/detachOldPaymentMethods`, {
                 method: 'POST',
                 body: JSON.stringify({ 
                     customerId: user.stripeid, 
                     cardId: cardToDelete 
                 }),
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             });
             
             const data = await response.json();

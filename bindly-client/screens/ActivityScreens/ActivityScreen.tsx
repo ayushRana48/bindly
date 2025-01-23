@@ -5,6 +5,7 @@ import InviteList from "./components/InviteList";
 import { useNavigation } from '@react-navigation/native';
 import { Invite, NotifyVeto, RootStackParamList } from "../../types";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { checkToken } from "../../utils/checkToken";
 
 const ActivityScreen: React.FC = () => {
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -17,8 +18,9 @@ const ActivityScreen: React.FC = () => {
 
   const getAllInvites = async (): Promise<void> => {
     try {
+      const token = await checkToken();
       const response = await fetch(`http://localhost:3000/bindly/invite/getInviteByReciever/${user?.username}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
       });
       const res: Invite[] = await response.json();
       setInvites(res);
@@ -29,8 +31,9 @@ const ActivityScreen: React.FC = () => {
 
   const getNotifyVeto = async (): Promise<void> => {
     try {
+      const token = await checkToken();
       const response = await fetch(`http://localhost:3000/bindly/notifyveto/${user?.username}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json'   ,'Authorization': `Bearer ${token}`},
       });
 
       if (!response.ok) {

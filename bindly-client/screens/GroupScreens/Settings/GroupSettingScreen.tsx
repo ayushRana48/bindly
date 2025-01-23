@@ -9,6 +9,7 @@ import placeholder from "../../../assets/GroupIcon.png";
 import backArrow from '../../../assets/backArrow.png';
 import { GroupData, RootStackParamList } from "../../../types"; // Import necessary types
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { checkToken } from "../../../utils/checkToken";
 const GroupSetting: React.FC = () => {
 
     const [groupName, setGroupName] = useState<string>("");
@@ -55,8 +56,9 @@ const GroupSetting: React.FC = () => {
 
     const getGroup = async () => {
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/group/${gd.group.groupid}`, {
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             });
 
             const res: GroupData = await response.json();
@@ -128,9 +130,10 @@ const GroupSetting: React.FC = () => {
         }
 
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/usergroup/leaveGroup`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({
                     username: user?.username || '',
                     groupId: gd.group.groupid,
@@ -166,9 +169,10 @@ const GroupSetting: React.FC = () => {
         }
 
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/group/deleteGroup`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({
                     username: user?.username || '',
                     groupId: gd.group.groupid,

@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import compressPostImage from "../../../utils/compressPostImage";
 import { Post, GroupData } from "../../../types";
+import { checkToken } from "../../../utils/checkToken";
 
 const EditPostScreen: React.FC = () => {
     const { groupData, setGroupData } = useGroupsContext();
@@ -170,12 +171,13 @@ const EditPostScreen: React.FC = () => {
         const time1 = Date.now();
         let imgPermanentUrl = "";
         let vidPermanentUrl = "";
+        const token = await checkToken();
 
         if (image) {
             try {
                 const response = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`   },
                     body: JSON.stringify({
                         fileName: `${user?.username}-${groupData.group.groupid}`,
                         date: time1,
@@ -217,7 +219,7 @@ const EditPostScreen: React.FC = () => {
             try {
                 const response = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                     body: JSON.stringify({
                         fileName: `${user?.username}-${groupData.group.groupid}`,
                         date: time1,
@@ -260,7 +262,7 @@ const EditPostScreen: React.FC = () => {
             const time = new Date(time1); // Record the start time
 
             const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 method: 'POST',
                 body: JSON.stringify({
                     "username": user?.username,  
@@ -287,7 +289,7 @@ const EditPostScreen: React.FC = () => {
 
             const response = await fetch(`http://localhost:3000/bindly/post/updatePost/${postId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({
                     username: user?.username,
                     groupId: groupData.group.groupid,
@@ -318,7 +320,7 @@ const EditPostScreen: React.FC = () => {
 
                     fetch(`http://localhost:3000/bindly/post/compressVideo`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                         body: JSON.stringify({ videolink: `${user?.username}-${groupData.group.groupid}-${time1}v` }),
                     })
                         .then(response => {
@@ -384,7 +386,7 @@ const EditPostScreen: React.FC = () => {
                                     </Pressable>
                                 ) : null}
                             </View>
-                            <View>
+                            {/* <View>
                                 <Text>Select Video</Text>
                                 <Pressable style={styles.selectMedia} onPress={takeVideo}>
                                     {thumbnail ? (
@@ -400,7 +402,7 @@ const EditPostScreen: React.FC = () => {
                                         <Text style={styles.removeText}>X</Text>
                                     </Pressable>
                                 ) : null}
-                            </View>
+                            </View> */}
                         </View>
                         <View>
                             <Text>caption</Text>

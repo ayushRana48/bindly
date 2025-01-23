@@ -11,6 +11,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 //@ts-ignore
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { checkToken } from '../../../../utils/checkToken';
 
 const screenWidth = Dimensions.get('window').width;
 const width = screenWidth - 48;
@@ -69,9 +70,10 @@ const PostMedia: React.FC<PostMediaProps> = ({
 
         setLoading(true);
         try {
+            const token = await checkToken();
             await fetch('http://localhost:3000/bindly/post/addLike', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({
                     postid,
                     username,

@@ -7,6 +7,8 @@ import { useUserContext } from "../../UserContext";
 import GroupListItem from "./components/GroupListItem";
 import { registerForPushNotificationsAsync } from "../../notificationUtils";
 import { RootStackParamList, Group } from "../../types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { checkToken } from "../../utils/checkToken";
 
 type GroupListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'GroupsList'>;
 
@@ -44,8 +46,15 @@ const GroupListScreen: React.FC = () => {
     const getAllGroups = async () => {
         try {
             setLoading(true)
+            const token = await checkToken();
+
+            // Make the fetch request with the Bearer token
             const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByUsername/${user?.username}`, {
-                headers: { 'Content-Type': 'application/json' },
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`, // Add the Bearer token
+                },
             });
 
             const res = await response.json();
@@ -101,7 +110,7 @@ const GroupListScreen: React.FC = () => {
                 </TouchableOpacity>
             </View>
             {loading ?
-                <ActivityIndicator  size="large"  style={{width:80,marginTop:20,marginHorizontal:'auto'}} color={'dodgerblue'}></ActivityIndicator>
+                <ActivityIndicator size="large" style={{ width: 80, marginTop: 20, marginHorizontal: 'auto' }} color={'dodgerblue'}></ActivityIndicator>
                 :
                 <ScrollView
                     contentContainerStyle={styles.scrollView}
@@ -111,7 +120,7 @@ const GroupListScreen: React.FC = () => {
                 >
                     {
                         filteredGroups.length === 0 ?
-                            (<Pressable onPress={toNewGroup} style={styles.noGroups}><Text style={{color:'white',fontSize:20,fontWeight:'700'}}>Create Group</Text></Pressable>) :
+                            (<Pressable onPress={toNewGroup} style={styles.noGroups}><Text style={{ color: 'white', fontSize: 20, fontWeight: '700' }}>Create Group</Text></Pressable>) :
                             (
                                 <View style={styles.groupList}>
                                     {filteredGroups.map((g, index) => <GroupListItem key={index} groupData={g} activeTab={activeTab} />)}
@@ -184,7 +193,7 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 8,
         marginTop: 50,
-        marginHorizontal:'auto'
+        marginHorizontal: 'auto'
     },
     groupList: {
         marginTop: 20,

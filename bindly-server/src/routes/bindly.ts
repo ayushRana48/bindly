@@ -12,9 +12,20 @@ import * as paypalController from '../controllers/paypalController';
 import * as stravaController from '../controllers/stravaController';
 import * as notificationController from '../controllers/notificationController';
 import * as commentController from '../controllers/commentController';
+import { authenticateUser } from '../middleware/authenticateUser';
 
 const router = Router();
 
+
+
+// Auth routes
+router.post('/auth/signIn', authController.signInController as unknown as RequestHandler);
+router.post('/auth/signUp', authController.signUpController as unknown as RequestHandler);
+router.post('/auth/signOut', authController.signOutController as unknown as RequestHandler);
+router.get('/auth/getUser', authController.getUserController as unknown as RequestHandler);
+router.post('/auth/refreshToken', authController.refreshTokenController as unknown as RequestHandler);
+
+// router.use(authenticateUser as RequestHandler);
 // Users routes
 router.get('/users/', userController.getAllUsersController as unknown as RequestHandler);
 router.get('/users/:username', userController.getUserController as unknown as RequestHandler);
@@ -76,11 +87,7 @@ router.get('/post/getInvalid/:username', postController.getInvalidPostsControlle
 router.post('/comment/addComment', commentController.addCommentController as unknown as RequestHandler);
 router.get('/comment/getComment/:postid', commentController.getCommentByPostController as unknown as RequestHandler);
 
-// Auth routes
-router.post('/auth/signIn', authController.signInController as unknown as RequestHandler);
-router.post('/auth/signUp', authController.signUpController as unknown as RequestHandler);
-router.post('/auth/signOut', authController.signOutController as unknown as RequestHandler);
-router.get('/auth/getUser', authController.getUserController as unknown as RequestHandler);
+
 
 // NotifyVeto routes
 router.get('/notifyveto/:username', notifyvetoController.getNotifyVetoByGroupController as unknown as RequestHandler);

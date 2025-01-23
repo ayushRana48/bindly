@@ -15,6 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, User, Group } from "../../../types";
 import ImagePickerModal from "./components/ImagePickerModal";
 import GroupForm from "./components/GroupForm";
+import { checkToken } from "../../../utils/checkToken";
 
 const NewGroupScreen = () => {
     const today = new Date();
@@ -133,9 +134,10 @@ const NewGroupScreen = () => {
 
 
         try {
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/group/createGroup`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({
                     groupname: groupName,
                     description: description,

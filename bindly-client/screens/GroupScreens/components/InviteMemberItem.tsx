@@ -8,6 +8,7 @@ import { RootStackParamList, User } from "../../../types";
 // @ts-ignore
 import placeholder from '../../../assets/profile.png';
 import { InviteMember } from "../../../types";
+import { checkToken } from "../../../utils/checkToken";
 
 interface InviteMemberItemProps {
     memberData: InviteMember;
@@ -33,10 +34,11 @@ interface InviteMemberItemProps {
         if (inviting) return; // Prevent multiple requests
         setInviting(true);
 
-        try {
+        try {           
+            const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/invite/createInvite`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({
                     senderid: user?.username,
                     receiverid: memberData.username,

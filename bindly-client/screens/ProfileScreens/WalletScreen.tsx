@@ -9,6 +9,7 @@ import AddCard from './components/AddCard';
 import DepositMoney from './components/DepositMoney';
 import TransferMoney from './components/TransferMoney';
 import { StripeCard, RootStackParamList } from '../../types';
+import { checkToken } from '../../utils/checkToken';
 
 interface CardsResponse {
     data: StripeCard[];
@@ -21,17 +22,28 @@ const WalletScreen: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
-        if (user?.stripeid) {
-            setLoading(true);
-            fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${user.stripeid}`)
-                .then(async response => {
-                    const res = await response.json() as CardsResponse;
-                    return res;
-                })
-                .then(data => setCards(data.data))
-                .catch(error => console.error('Error fetching cards:', error))
-                .finally(() => setLoading(false));
-        }
+        const fetchCards = async () => {
+            if (user?.stripeid) {
+                setLoading(true);
+                const token = await checkToken();
+                try {
+                    const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${user.stripeid}`, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                    });
+                    const data = await response.json() as CardsResponse;
+                    setCards(data.data);
+                } catch (error) {
+                    console.error('Error fetching cards:', error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+    
+        fetchCards();
     }, [user]);
 
     const back = (): void => {

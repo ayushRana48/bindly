@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import compressPostImage from "../../../utils/compressPostImage";
 import { GroupData, Post } from "../../../types";
+import { checkToken } from "../../../utils/checkToken";
 
 const CreatePostScreen = () => {
     const { setGroupData, groupData } = useGroupsContext();
@@ -151,9 +152,10 @@ const CreatePostScreen = () => {
     
         if (image) {
             try {
+                const token = await checkToken();
                 const response = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                     body: JSON.stringify({
                         fileName: `${user?.username}-${groupData.group.groupid}`,
                         date: time1,
@@ -193,9 +195,10 @@ const CreatePostScreen = () => {
     
         if (video) {
             try {
+                const token = await checkToken();
                 const response = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                     body: JSON.stringify({
                         fileName: `${user?.username}-${groupData.group.groupid}`,
                         date: time1,
@@ -236,9 +239,9 @@ const CreatePostScreen = () => {
     
         try {
             const time = new Date(time1); // Record the start time
-
+            const token = await checkToken();
             const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             method: 'POST',
             body: JSON.stringify({
                 "username": user?.username,
@@ -276,7 +279,7 @@ const CreatePostScreen = () => {
     
             const response = await fetch(`http://localhost:3000/bindly/post/createPost`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({
                     username: user?.username,
                     groupId: groupData.group.groupid,
@@ -287,6 +290,7 @@ const CreatePostScreen = () => {
                     timecycle:groupData.timecycle
                 }),
             });
+            console.log('response', response);
     
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
     
@@ -309,7 +313,7 @@ const CreatePostScreen = () => {
                     const link = `${user?.username}-${groupData.group.groupid}-${time1}v`
                     fetch(`http://localhost:3000/bindly/post/compressVideo`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
                     
                         body: JSON.stringify({ videolink: link}),
                     })
@@ -374,7 +378,7 @@ const CreatePostScreen = () => {
                                     </Pressable>
                                 ) : null}
                             </View>
-                            <View>
+                            {/* <View>
                                 <Text>Select Video</Text>
                                 <Pressable style={styles.selectMedia} onPress={takeVideo}>
                                     {thumbnail ? (
@@ -390,7 +394,7 @@ const CreatePostScreen = () => {
                                         <Text style={styles.removeText}>X</Text>
                                     </Pressable>
                                 ) : null}
-                            </View>
+                            </View> */}
                         </View>
                         <View>
                             <Text>caption</Text>

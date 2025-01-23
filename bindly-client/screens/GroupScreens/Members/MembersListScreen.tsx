@@ -10,6 +10,7 @@ import backArrow from '../../../assets/backArrow.png';
 //@ts-ignore
 import invite from '../../../assets/invite.png';
 import { UserGroup, RootStackParamList } from "../../../types"; // Import UserGroup type
+import { checkToken } from "../../../utils/checkToken";
 
 const MembersListScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -38,8 +39,9 @@ const MembersListScreen: React.FC = () => {
   const getAllMembers = async () => {
     try {
       setLoading(true);
+      const token = await checkToken();
       const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByGroup/${groupData.group.groupid}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
       });
       const res: { members: UserGroup[] } = await response.json(); // Ensure response is typed
 
@@ -59,8 +61,9 @@ const MembersListScreen: React.FC = () => {
   const getGroup = async () => {
     try {
       setLoading(true);
+      const token = await checkToken();
       const response = await fetch(`http://localhost:3000/bindly/group/${groupData.group.groupid}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
       });
 
       const res = await response.json();

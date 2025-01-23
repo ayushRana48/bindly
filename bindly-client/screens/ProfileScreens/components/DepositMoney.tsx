@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Modal, Pressable, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { useUserContext } from '../../../UserContext';
 import { StripeCard } from '../../../types';
+import { checkToken } from '../../../utils/checkToken';
 
 interface DepositMoneyProps {
     cards: StripeCard[];
@@ -22,7 +23,7 @@ const DepositMoney: React.FC<DepositMoneyProps> = ({ cards }) => {
         }
     }, [cards]);
 
-    const handleAddMoney = (): void => {
+    const handleAddMoney = async (): Promise<void> => {
         if (!cards?.length) {
             Alert.alert('add card');
             return;
@@ -35,9 +36,10 @@ const DepositMoney: React.FC<DepositMoneyProps> = ({ cards }) => {
         }
 
         setError('');
+        const token = await checkToken();
         fetch(`http://localhost:3000/bindly/stripe/addMoney`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             body: JSON.stringify({
                 customerId: user?.stripeid,
                 amount,

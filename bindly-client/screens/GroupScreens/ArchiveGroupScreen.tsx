@@ -25,28 +25,6 @@ const ArchiveGroupScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [leaderboard, setLeaderboard] = useState<LeaderboardMember[]>([]);
 
-  const getLeaderBoard = async (): Promise<void> => {
-    try {
-      const response = await fetch(
-        `http://localhost:3000/bindly/group/getLeaderboard/${groupData.groupid}`,
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        throw new Error(errorResponse.error || 'Failed to fetch group data');
-      }
-
-      const res = await response.json();
-      setLeaderboard(res);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const back = (): void => {
     navigation.navigate('GroupsList');

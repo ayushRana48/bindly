@@ -1,18 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  User, 
-  UserContextType, 
-  UserProviderProps, 
-  ApiResponse 
+import {
+  User,
+  UserContextType,
+  UserProviderProps,
+  ApiResponse
 } from './types';
+import { checkToken } from './utils/checkToken';
 
 export const UserContext = createContext<UserContextType>({
   user: null,
-  setUser: () => {},
+  setUser: () => { },
   email: '',
-  setEmail: () => {},
+  setEmail: () => { },
   loading: false,
-  setLoading: () => {}
+  setLoading: () => { }
 });
 
 export const UserProvider = ({ children }: UserProviderProps) => {
@@ -25,11 +26,19 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     const getUserByEmail = async () => {
       setLoading(true);
       try {
+        console.log('checking token in UserContext');
+        const token = await checkToken();
+        console.log('token in UserContext', token);
+        // Make the fetch request with the Bearer token
         const response = await fetch(`http://localhost:3000/bindly/users/email/${email}`, {
-          headers: { 'Content-Type': 'application/json' },
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`, // Add the Bearer token
+          },
         });
         const data = await response.json();
-        
+
         if (response.status === 200) {
           console.log('set user here', data);
           setUser(data);
@@ -53,14 +62,14 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   }, [email]);
 
   return (
-    <UserContext.Provider 
-      value={{ 
-        user, 
-        setUser, 
-        email, 
-        setEmail, 
-        loading, 
-        setLoading 
+    <UserContext.Provider
+      value={{
+        user,
+        setUser,
+        email,
+        setEmail,
+        loading,
+        setLoading
       }}
     >
       {children}

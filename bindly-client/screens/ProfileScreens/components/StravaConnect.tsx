@@ -4,6 +4,7 @@ import { makeRedirectUri, useAuthRequest, exchangeCodeAsync } from 'expo-auth-se
 import { useUserContext } from '../../../UserContext';
 //@ts-ignore
 import strava from '../../../assets/strava.png';
+import { checkToken } from '../../../utils/checkToken';
 
 interface StravaDiscovery {
   authorizationEndpoint: string;
@@ -66,9 +67,10 @@ const StravaConnect: React.FC = () => {
     setRevokeLoading(true);
 
     try {
+      const token = await checkToken();
       const revokeResponse = await fetch(`http://localhost:3000/bindly/strava/revoke`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
         body: JSON.stringify({
           username: user.username,
           refresh: user.stravarefresh,
@@ -104,9 +106,10 @@ const StravaConnect: React.FC = () => {
         );
 
         if (tokenResponse.refreshToken && user) {
+          const token = await checkToken();
           const saveResponse = await fetch(`http://localhost:3000/bindly/strava/addRefresh`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             body: JSON.stringify({
               username: user.username,
               refresh: tokenResponse.refreshToken,

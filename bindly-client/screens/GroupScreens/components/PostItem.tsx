@@ -24,6 +24,7 @@ import PostMedia from './postComponents/PostMedia';
 import PostActions from './postComponents/PostActions';
 import VetoModal from './postComponents/VetoModal';
 import DeleteModal from './postComponents/DeleteModal';
+import { checkToken } from '../../../utils/checkToken';
 
 const screenWidth = Dimensions.get('window').width;
 const width = screenWidth - 48; // Adjusted for padding/margins
@@ -137,11 +138,12 @@ const PostComponent: React.FC<PostItemProps> = ({
     let route = 'http://localhost:3000/bindly/post/addLike'
     setLoading(true);
     try {
+      const token = await checkToken();
       const response = await fetch(
         route,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
           body: JSON.stringify({
             postid: postid,
             username: user?.username || "",

@@ -17,6 +17,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useUserContext } from "../../UserContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from "../../types";
+import * as SecureStore from "expo-secure-store";
+
 // @ts-ignore
 import logo from "../../assets/logo.png";
 
@@ -43,10 +45,20 @@ const SignInScreen: React.FC = () => {
             });
 
             const data = await response.json();
+            console.log('dataimprotantUser', data);
 
             if (response.status === 200) {
-                setEmail(username.toLowerCase());
                 await AsyncStorage.setItem('userEmail', username.toLowerCase());
+
+                console.log('data.accessToken', data.accessToken);
+                console.log('data.refreshToken', data.refreshToken);
+
+                await SecureStore.setItemAsync("accessToken", data.accessToken);
+                await SecureStore.setItemAsync("refreshToken", data.refreshToken);
+
+                setEmail(username.toLowerCase());
+
+
             } else {
                 if (data.error) {
                     if (data.error.includes('Invalid login credentials')) {
