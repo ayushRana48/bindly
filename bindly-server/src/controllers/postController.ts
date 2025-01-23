@@ -285,6 +285,7 @@ async function removeLikeController(req: Request, res: Response) {
 // Controller for deleting a user
 async function deletePostController(req: Request, res: Response) {
   const { postId } = req.params;
+  const { groupid } = req.body;
 
   try {
     const { data, error } = await deletePost(postId);

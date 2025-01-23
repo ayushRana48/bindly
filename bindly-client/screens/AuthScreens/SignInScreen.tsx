@@ -55,7 +55,8 @@ const SignInScreen: React.FC = () => {
 
                 await SecureStore.setItemAsync("accessToken", data.accessToken);
                 await SecureStore.setItemAsync("refreshToken", data.refreshToken);
-
+                
+                console.log('username.toLowerCase()', username.toLowerCase());
                 setEmail(username.toLowerCase());
 
 

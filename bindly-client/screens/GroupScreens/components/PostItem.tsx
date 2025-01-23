@@ -236,6 +236,7 @@ const PostComponent: React.FC<PostItemProps> = ({
         postid={postid}
         removePost={removePost}
         onDeletePress={handleDeletePress}
+        groupid={groupId}
 
       />
 

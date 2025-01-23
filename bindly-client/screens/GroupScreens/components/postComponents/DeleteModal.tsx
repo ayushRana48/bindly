@@ -10,7 +10,7 @@ interface DeleteModalProps {
     postid: string;
     removePost: (postId: string) => void;
     onDeletePress: () => void;
-
+    groupid: string;
 }
 
 const DeleteModal: React.FC<DeleteModalProps> = ({
@@ -19,7 +19,8 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
     modalStep,
     postid,
     removePost,
-    onDeletePress
+    onDeletePress,
+    groupid
 }) => {
     const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -28,12 +29,14 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
         setDeleteLoading(true);
 
         try {
+            console.log("deletePost", postid, groupid);
             const token = await checkToken();
             const response = await fetch(
                 `http://localhost:3000/bindly/post/deletePost/${postid}`,
                 {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
+                    body: JSON.stringify({ groupid: groupid })
                 }
             );
             console.log("response", response);
@@ -42,7 +45,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
                 status: response.status,
                 body: data,
             }));
-
+            console.log(body,'body')
             if (status === 200) {
                 removePost(postid);
             }

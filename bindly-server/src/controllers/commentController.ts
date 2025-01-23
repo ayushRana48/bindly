@@ -21,6 +21,7 @@ async function addCommentController(req: Request, res: Response) {
 
 async function getCommentByPostController(req: Request, res: Response) {
   const { postid } = req.params;
+  const { groupid } = req.body;
 
   try {
     const { data, error } = await getCommentByPost(postid);
