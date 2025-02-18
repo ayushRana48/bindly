@@ -74,7 +74,8 @@ const GroupEditScreen: React.FC = () => {
         if (loading) return;
         setLoading(true);
 
-        if (!groupName.trim() || !description.trim() || !startDate || !numWeeks || !buyIn || !taskPerWeek) {
+        if (!groupName.trim() || !description.trim() || !startDate || !numWeeks || (!buyIn && buyIn !== 0) || buyIn < 0 || !taskPerWeek) {
+            console.log(groupName, description, startDate, numWeeks, buyIn, taskPerWeek)
             setErrorMessage("Please fill out all fields.");
             setLoading(false);
             return;
@@ -134,11 +135,11 @@ const GroupEditScreen: React.FC = () => {
                         <Pressable style={styles.cancel} onPress={cancel}>
                             <Text style={{ color: "red" }}>Cancel</Text>
                         </Pressable>
-                        <View style={styles.logoContainer}>
+                        {/* <View style={styles.logoContainer}>
                             <Text style={styles.title}>Edit Group</Text>
-                        </View>
+                        </View> */}
 
-                        <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
+                        <View style={{ marginLeft: 'auto', marginRight: 'auto', position: 'relative', marginTop:96 }}>
                             <Image style={{ width: 80, height: 80, borderRadius: 8 }} source={imageSrc} />
                             <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 20 }} onPress={() => setOpenModal(true)}>
                                 <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
@@ -174,8 +175,8 @@ const GroupEditScreen: React.FC = () => {
 
                         {!showDatePicker && (
                             <View style={styles.centeredRow}>
-                                <Pressable style={styles.signUpButton} onPress={submit} disabled={loading}>
-                                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Save</Text>}
+                                <Pressable style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]} onPress={submit} disabled={loading}>
+                                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Edit Group</Text>}
                                 </Pressable>
                             </View>
                         )}
@@ -282,9 +283,9 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     buttonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
+        color: "white",
+        fontWeight: "600",
+        fontSize: 16,
     },
     errorText: {
         color: 'red',
@@ -303,6 +304,20 @@ const styles = StyleSheet.create({
     bold: {
         fontWeight: 'bold',
     },
+    button: {
+        backgroundColor: "dodgerblue",
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        maxWidth: 250,
+      },
+      buttonPressed: {
+        backgroundColor: "#1E90FF",
+        opacity: 0.9,
+      },
 });
 
 

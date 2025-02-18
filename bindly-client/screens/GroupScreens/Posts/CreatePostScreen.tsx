@@ -1,548 +1,300 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, Image, KeyboardAvoidingView, Keyboard, Platform, TouchableWithoutFeedback, Modal, ActivityIndicator } from "react-native";
-import { Video } from 'expo-av';
+import React, { useState } from "react";
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  Pressable, 
+  StyleSheet, 
+  ScrollView, 
+  Alert, 
+  Image, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ActivityIndicator,
+  Modal
+} from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUserContext } from "../../../UserContext";
 import { useGroupsContext } from "../../GroupsContext";
 import * as ImagePicker from 'expo-image-picker';
-import * as VideoThumbnails from 'expo-video-thumbnails';
 import compressPostImage from "../../../utils/compressPostImage";
 import { GroupData, Post } from "../../../types";
 import { checkToken } from "../../../utils/checkToken";
+import { Ionicons } from '@expo/vector-icons';
 
-const CreatePostScreen = () => {
-    const { setGroupData, groupData } = useGroupsContext();
-    const { user } = useUserContext();
+const CreatePostScreen: React.FC = () => {
+  const { setGroupData, groupData } = useGroupsContext();
+  const { user } = useUserContext();
+  const navigation = useNavigation();
 
-    const [caption, setCaption] = useState("");
-    const [image, setImage] = useState("");
-    const [video, setVideo] = useState("");
-    const [thumbnail, setThumbnail] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalContent, setModalContent] = useState("");
-    const [modalIsImage, setIsModalImage] = useState(true);
+  const [caption, setCaption] = useState("");
+  const [image, setImage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
-   
+  const pickImage = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
-    const takeImage = async () => {
-        try {
-            await ImagePicker.requestCameraPermissionsAsync();
-            let result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true,
-                aspect: [9, 16],
-                quality: 1,
-            });
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-            if (!result.canceled) {
-                setImage(result.assets[0].uri);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
+  const removeImage = () => {
+    setImage("");
+  };
 
+  const cancel = () => {
+    navigation.goBack();
+  };
 
-    const takeVideo = async () => {
-        try {
-            await ImagePicker.requestCameraPermissionsAsync();
-            let result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-                allowsEditing: true,
-                aspect: [9, 16],
-                quality: 1,
-                videoMaxDuration: 10 // Set max video length to 10 seconds
-            });
+  const submit = async () => {
+    if (loading) return;
+    setLoading(true);
 
-            if (!result.canceled) {
-                const compressedUri = await compressVideo(result.assets[0].uri);
-                setVideo(result.assets[0].uri);
-                setThumbnail(compressedUri || '');
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
+    if (!caption.trim()) {
+      Alert.alert("Error", "Please enter a caption.");
+      setLoading(false);
+      return;
+    }
+    if (!image) {
+      Alert.alert("Error", "Please add a picture.");
+      setLoading(false);
+      return;
+    }
 
-    const pickImage = async () => {
-        try {
-            let result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [9, 16],
-                quality: 1,
-            });
+    try {
+      const token = await checkToken();
+      const time = new Date();
+      const compressedImage = await compressPostImage(image);
 
-            if (!result.canceled) {
-                setImage(result.assets[0].uri);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
+      // Upload image
+      const uploadResponse = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          fileName: `${user?.username}-${groupData.group.groupid}`,
+          date: time.getTime(),
+          isImage: true,
+        }),
+      });
 
-    const pickVideo = async () => {
-        try {
-            let result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-                allowsEditing: true,
-                aspect: [9, 16],
-                quality: 1,
-                videoMaxDuration: 10 // Set max video length to 10 seconds
-            });
+      const uploadData = await uploadResponse.json();
+      if (uploadResponse.status !== 200) {
+        throw new Error(uploadData.error || 'Failed to get presigned URL');
+      }
 
-            if (!result.canceled) {
-                const compressedUri = await compressVideo(result.assets[0].uri);
-                setVideo(result.assets[0].uri);
-                setThumbnail(compressedUri || '');
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
+      const { permanentUrl, presignedUrl } = uploadData;
 
-    const compressVideo = async (uri: string) => {
-        try {
-            const { uri: compressedUri } = await VideoThumbnails.getThumbnailAsync(
-                uri,
-                {
-                    time: 2000,
-                }
-            );
-            return compressedUri;
-        } catch (e) {
-            console.warn(e);
-        }
-    };
+      // Upload image to presigned URL
+      const blobResponse = await fetch(compressedImage);
+      const blob = await blobResponse.blob();
+      await fetch(presignedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob,
+      });
 
-    const removeImage = () => {
-        setImage("");
-    };
+      // Create post
+      const createPostResponse = await fetch(`http://localhost:3000/bindly/post/createPost`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          username: user?.username,
+          groupId: groupData.group.groupid,
+          photolink: permanentUrl,
+          caption: caption,
+          time: time,
+          timecycle: groupData.timecycle
+        }),
+      });
 
-    const removeVideo = () => {
-        setVideo("");
-        setThumbnail("");
-    };
+      const createPostData = await createPostResponse.json();
+      if (createPostResponse.status !== 200) {
+        throw new Error(createPostData.error || 'Failed to create post');
+      }
 
-    const navigation = useNavigation();
+      setGroupData((g: GroupData) => ({
+        ...g,
+        post: [createPostData as Post, ...g.post],
+        createStatus: 'post'
+      }));
 
-    const cancel = () => {
-        navigation.goBack();
-    };
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error:", error);
+      Alert.alert("Error", "Failed to create post. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const submit = async () => {
-        const d1 = new Date();
-        if (loading) return; // Prevent double click
-        setLoading(true);
-    
-        if (!caption.trim()) {
-            console.error("Please enter caption.");
-            setLoading(false);
-            return;
-        }
-        if (!image && !video) {
-            console.error("Please add picture or video");
-            setLoading(false);
-            return;
-        }
-    
-        const time1 = Date.now();
-        let imgPermanentUrl = "";
-        let vidPermanentUrl = "";
-    
-        if (image) {
-            try {
-                const token = await checkToken();
-                const response = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
-                    body: JSON.stringify({
-                        fileName: `${user?.username}-${groupData.group.groupid}`,
-                        date: time1,
-                        isImage: true,
-                    }),
-                });
-    
-                const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
-                
-                let presignedUrl = "";
-                if (status === 200) {
-                    imgPermanentUrl = body.permanentUrl;
-                    presignedUrl = body.presignedUrl;
-                    const compressImage = await compressPostImage(image)
-                    const blobResp = await fetch(compressImage);
-                    const blob = await blobResp.blob();
-    
-                    const fileResponse = await fetch(presignedUrl, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'image/jpeg', // Adjust this based on the file type
-                        },
-                        body: blob,
-                    });
-    
-                    if (!fileResponse.ok) {
-                        throw new Error('Failed to upload image');
-                    }
-                }
-            } catch (error) {
-                console.log("Fetch error: ", error);
-                Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
-                setLoading(false);
-                return;
-            }
-        }
-    
-        if (video) {
-            try {
-                const token = await checkToken();
-                const response = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
-                    body: JSON.stringify({
-                        fileName: `${user?.username}-${groupData.group.groupid}`,
-                        date: time1,
-                        isImage: false,
-                    }),
-                });
-    
-                const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
-                 
-                let presignedUrl = "";
-                if (status === 200) {
-                    vidPermanentUrl = body.permanentUrl;
-                    presignedUrl = body.presignedUrl;
-    
-                    const blobResp = await fetch(video);
-                    const blob = await blobResp.blob();
-    
-                    const fileResponse = await fetch(presignedUrl, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'video/mp4', // Adjust this based on the file type
-                        },
-                        body: blob,
-                    });
-    
-                    if (!fileResponse.ok) {
-                        throw new Error('Failed to upload video');
-                    }
-                }
-            } catch (error) {
-                console.log("Fetch error: ", error);
-                Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
-                setLoading(false);
-                return;
-            }
-        }
-    
-    
-        try {
-            const time = new Date(time1); // Record the start time
-            const token = await checkToken();
-            const response2 = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
-            headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
-            method: 'POST',
-            body: JSON.stringify({
-                "username": user?.username,
-                "groupId": groupData.group.groupid
-            }),
-            });
-    
-    
-    
-            // if (!response2.ok) {
-            //     const errorResponse = await response2.json();
-            //     if(errorResponse.message=='JSON object requested, multiple (or no) rows returned]'){
-            //         setCreateStatus('post')
-            //     }
-            // }
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Pressable style={styles.cancelButton} onPress={cancel}>
+            <Ionicons name="close" size={24} color="#FF3B30" />
+          </Pressable>
+          <Text style={styles.title}>{groupData.group.groupname}</Text>
+          <Pressable style={styles.submitButton} onPress={submit} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="#007AFF" />
+            ) : (
+              <Text style={styles.submitButtonText}>Post</Text>
+            )}
+          </Pressable>
+        </View>
 
-    
-            const res2 = await response2.json();
-    
-    
-    
-    
-            if (res2) {
-                if(res2.data!=='post'){
-                    setGroupData((g:GroupData) =>{ return {...g, 'createStatus': res2.data,timecycle:res2.startdate}})
-                    Alert.alert('something went wrong')
-                    navigation.goBack()
-                    return
-                }
-            }
-                
-            
-    
-     
-    
-            const response = await fetch(`http://localhost:3000/bindly/post/createPost`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
-                body: JSON.stringify({
-                    username: user?.username,
-                    groupId: groupData.group.groupid,
-                    photolink: imgPermanentUrl,
-                    videolink: vidPermanentUrl,
-                    caption: caption,
-                    time:time,
-                    timecycle:groupData.timecycle
-                }),
-            });
-            console.log('response', response);
-    
-            const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
-    
-            if (status === 200) {
-                console.log(res2.data,'in the creations')
-                setGroupData((g: GroupData) => {
-                    return {
-                        ...g,
-                        post: [body as Post, ...g.post],
-                        'createStatus': res2.data
-                    };
-                });
-        
-    
-                // Navigate to the desired page
-                navigation.goBack()
-    
-                // Call compressVideo API after navigation
-                if (video) {
-                    const link = `${user?.username}-${groupData.group.groupid}-${time1}v`
-                    fetch(`http://localhost:3000/bindly/post/compressVideo`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
-                    
-                        body: JSON.stringify({ videolink: link}),
-                    })
-                    .then(response => {
-                        return response.json()})
-                    .then(data => {
-                        console.log('Video compressed:', data);
-                    })
-                    .catch(error => {
-                        console.log('Compression error:', error);
-                    });
-                }
-            }
-        } catch (error) {
-            console.log("Fetch error: ", error);
-            Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
-        } finally {
-            setLoading(false);
-        }
-    };
-    
+        <View style={styles.imageContainer}>
+          {image ? (
+            <Pressable onPress={() => setModalVisible(true)}>
+              <Image source={{ uri: image }} style={styles.selectedImage} />
+              <Pressable style={styles.removeImageButton} onPress={removeImage}>
+                <Ionicons name="close-circle" size={24} color="#FF3B30" />
+              </Pressable>
+            </Pressable>
+          ) : (
+            <Pressable style={styles.addImageButton} onPress={pickImage}>
+              <Ionicons name="image-outline" size={40} color="#007AFF" />
+              <Text style={styles.addImageText}>Add Photo</Text>
+            </Pressable>
+          )}
+        </View>
 
-    const openModal = (content: string, isImage: boolean) => {
-        setIsModalImage(isImage);
-        setModalContent(content);
-        setModalVisible(true);
-    };
+        <TextInput
+          style={styles.captionInput}
+          multiline
+          numberOfLines={4}
+          maxLength={1000}
+          value={caption}
+          onChangeText={setCaption}
+          placeholder="Write a caption..."
+          placeholderTextColor="#999"
+        />
+        <Text style={styles.characterCount}>{caption.length}/1000</Text>
 
-    const closeModal = () => {
-        setModalVisible(false);
-        setModalContent("");
-    };
-
-    return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        <Modal
+          visible={modalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setModalVisible(false)}
         >
-            <ScrollView contentContainerStyle={styles.container}>
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View>
-                        <Pressable style={styles.cancel} onPress={cancel}>
-                            <Text style={{ color: "red" }}>Cancel</Text>
-                        </Pressable>
-                        <Text style={styles.title}>{groupData.group.groupname}</Text>
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 }}>
-                            <View>
-                                <Text>Select Picture</Text>
-                                <Pressable style={styles.selectMedia} onPress={pickImage}>
-                                    {image ? (
-                                        <Pressable onPress={() => openModal(image, true)}>
-                                            <Image source={{ uri: image }} style={{ width: 140, height: 140, borderRadius: 10 }} />
-                                        </Pressable>
-                                    ) : (
-                                        <Text>Camera</Text>
-                                    )}
-                                </Pressable>
-                                {image ? (
-                                    <Pressable style={styles.remove} onPress={removeImage}>
-                                        <Text style={styles.removeText}>X</Text>
-                                    </Pressable>
-                                ) : null}
-                            </View>
-                            {/* <View>
-                                <Text>Select Video</Text>
-                                <Pressable style={styles.selectMedia} onPress={takeVideo}>
-                                    {thumbnail ? (
-                                        <Pressable onPress={() => openModal(video, false)}>
-                                            <Image source={{ uri: thumbnail }} style={{ width: 140, height: 140, borderRadius: 10 }} />
-                                        </Pressable>
-                                    ) : (
-                                        <Text>Video</Text>
-                                    )}
-                                </Pressable>
-                                {video ? (
-                                    <Pressable style={styles.remove} onPress={removeVideo}>
-                                        <Text style={styles.removeText}>X</Text>
-                                    </Pressable>
-                                ) : null}
-                            </View> */}
-                        </View>
-                        <View>
-                            <Text>caption</Text>
-                            <TextInput
-                                style={styles.captionInput}
-                                multiline={true}
-                                numberOfLines={5}
-                                maxLength={1000}
-                                value={caption}
-                                onChangeText={setCaption}
-                                placeholder="write caption ..."
-                            />
-                            <Text style={{ marginLeft: 'auto', marginRight: 10 }}>{caption.length}/1000</Text>
-                        </View>
-                        <View style={{ alignItems: 'center' }}>
-                            <Pressable style={styles.share} onPress={submit}>
-                                {loading ? <ActivityIndicator color={'white'} /> : <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>Share</Text>}
-                            </Pressable>
-                        </View>
-
-                        <Modal
-                            visible={modalVisible}
-                            transparent={true}
-                            animationType="slide"
-                        >
-                            <View style={styles.modalContainer}>
-                                <View style={styles.modalContent}>
-                                    <Pressable style={styles.modalClose} onPress={closeModal}>
-                                        <Text style={{ color: "red", fontSize: 18 }}>X</Text>
-                                    </Pressable>
-                                    {modalContent && modalIsImage && (
-                                        <Image source={{ uri: modalContent }} style={styles.modalImage} />
-                                    )}
-                                    {modalContent && !modalIsImage && (
-                                        <Video
-                                            source={{ uri: modalContent }}
-                                            style={styles.modalImage}
-                                            useNativeControls
-                                            //@ts-ignore
-                                            resizeMode="contain"
-                                            shouldPlay
-                                            isLooping
-                                        />
-                                    )}
-                                </View>
-                            </View>
-                        </Modal>
-
-                    </View>
-                </TouchableWithoutFeedback>
-            </ScrollView>
-        </KeyboardAvoidingView>
-    );
+          <Pressable style={styles.modalContainer} onPress={() => setModalVisible(false)}>
+            <Image source={{ uri: image }} style={styles.modalImage} resizeMode="contain" />
+          </Pressable>
+        </Modal>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: 'white',
-        padding: 32,
-        flexGrow: 1,
-    },
-    cancel: {
-        position: 'absolute',
-        top: 30,
-        left: 10,
-        height: 40,
-        width: 50,
-        zIndex: 10,
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    selectMedia: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 140,
-        height: 140,
-        borderRadius: 10,
-        backgroundColor: '#e3e3e3',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        alignSelf: 'center',
-        marginBottom: 20,
-        marginTop: 60
-    },
-    share: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'dodgerblue',
-        width: 180,
-        height: 50,
-        padding: 10,
-        borderRadius: 8,
-        marginTop: 40,
-    },
-    remove: {
-        width: 35,
-        height: 35,
-        borderColor: 'black',
-        borderRadius: 20,
-        borderWidth: 1,
-        justifyContent: 'center',  // Center content vertically
-        alignItems: 'center',      // Center content horizontally,
-        position: 'absolute',
-        right: -13,
-        top: 3,
-        backgroundColor: 'white',
-        zIndex: 10
-    },
-    removeText: {
-        fontSize: 16
-    },
-    captionInput: {
-        padding: 10,
-        height: 200,
-        borderColor: 'black',
-        borderWidth: 0.5,
-        borderRadius: 5,
-        backgroundColor: '#f0f0f0'
-    },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    modalContent: {
-        width: '90%',
-        height: '80%',
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 20,
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    modalClose: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        zIndex: 1
-    },
-    modalImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 10,
-        resizeMode: 'contain'
-    }
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 60,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  cancelButton: {
+    padding: 8,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#000',
+  },
+  submitButton: {
+    padding: 8,
+  },
+  submitButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#007AFF',
+  },
+  imageContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  selectedImage: {
+    width: 300,
+    height: 300,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 12,
+  },
+  addImageButton: {
+    width: 300,
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#C7C7CC',
+    borderStyle: 'dashed',
+  },
+  addImageText: {
+    marginTop: 8,
+    fontSize: 17,
+    color: '#007AFF',
+  },
+  captionInput: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    padding: 12,
+    height: 120,
+    borderColor: '#C7C7CC',
+    borderWidth: 1,
+    borderRadius: 8,
+    fontSize: 17,
+    color: '#000',
+  },
+  characterCount: {
+    marginTop: 8,
+    marginRight: 16,
+    textAlign: 'right',
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: '90%',
+    height: '90%',
+  },
 });
 
 export default CreatePostScreen;

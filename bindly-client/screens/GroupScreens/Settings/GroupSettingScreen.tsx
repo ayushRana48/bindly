@@ -58,7 +58,7 @@ const GroupSetting: React.FC = () => {
         try {
             const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/group/${gd.group.groupid}`, {
-                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             });
 
             const res: GroupData = await response.json();
@@ -133,7 +133,7 @@ const GroupSetting: React.FC = () => {
             const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/usergroup/leaveGroup`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                     username: user?.username || '',
                     groupId: gd.group.groupid,
@@ -143,7 +143,7 @@ const GroupSetting: React.FC = () => {
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
-                setUser(u => u ? {...u, balance: u.balance + gd.group.buyin} : null);
+                setUser(u => u ? { ...u, balance: u.balance + gd.group.buyin } : null);
                 setGroups(g => g.filter(h => h.groupid !== gd.group.groupid));
                 navigation.navigate("GroupsList");
             } else {
@@ -172,7 +172,7 @@ const GroupSetting: React.FC = () => {
             const token = await checkToken();
             const response = await fetch(`http://localhost:3000/bindly/group/deleteGroup`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                     username: user?.username || '',
                     groupId: gd.group.groupid,
@@ -182,7 +182,7 @@ const GroupSetting: React.FC = () => {
             const { status, body } = await response.json().then(data => ({ status: response.status, body: data }));
 
             if (status === 200) {
-                setUser(u => u ? {...u, balance: u.balance + gd.group.buyin} : null);
+                setUser(u => u ? { ...u, balance: u.balance + gd.group.buyin } : null);
                 setGroups(g => g.filter(h => h.groupid !== gd.group.groupid));
                 navigation.navigate("GroupsList");
             } else {
@@ -197,69 +197,89 @@ const GroupSetting: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        console.log('user in GroupSettingScreen', user?.username);
+        console.log('gd in GroupSettingScreen', gd.group.hostid);
+        console.log('isPastDate in GroupSettingScreen', isPastDate);
+    }, [user, gd]);
+
     return (
         <ScrollView
             style={styles.container}
             contentContainerStyle={styles.contentContainer}
-            refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-            <Pressable style={styles.cancel} onPress={back}>
+            <Pressable style={styles.backArrow} onPress={back}>
                 <Image style={{ height: 40, width: 40 }} source={backArrow} />
             </Pressable>
 
-            {user?.username === gd.group.hostid && !isPastDate && (
+            {user?.username === gd?.group?.hostid && !isPastDate && (
                 <Pressable style={styles.edit} onPress={toEdit}>
-                    <Text style={{ color: isPastDate ? "gray" : "black", fontSize: 16 }}>Edit</Text>
+                    <Text style={styles.editText}>Edit</Text>
                 </Pressable>
             )}
 
-            <View style={styles.logoContainer}>
-                <Text style={styles.title}>Group Settings</Text>
-            </View>
 
-            <View style={styles.centeredImage}>
-                <Image style={styles.image} source={imageSrc} />
+            <View style={styles.imageContainer}>
+                <Image style={styles.groupImage} source={imageSrc} />
             </View>
 
             <Text style={styles.groupName}>{groupName}</Text>
 
-            <Text style={styles.label}>Task Description</Text>
-            <Text style={styles.input}>{description}</Text>
+            <View style={styles.inputContainer}>
+                <Text style={styles.label}>Task Description</Text>
+                <View style={styles.textContainer}>
+                    <Text style={styles.input}>{description}</Text>
+                </View>
+            </View>
 
-            <Text style={styles.label}>Start Time</Text>
-            <Text style={styles.input}>{formatLocalDateTime(startDate)}</Text>
-            <Text style={styles.label}>End Time</Text>
-            <Text style={styles.input}>{formatLocalDateTime(endDate)}</Text>
+            <View style={styles.inputContainer}>
+                <Text style={styles.label}>Start Time</Text>
+                <View style={styles.textContainer}>
+                    <Text style={styles.input}>{formatLocalDateTime(startDate)}</Text>
+                </View>
+            </View>
 
-            <Text style={styles.label}>Buy In</Text>
-            <Text style={styles.input}>{buyIn}</Text>
+            <View style={styles.inputContainer}>
+                <Text style={styles.label}>End Time</Text>
+                <View style={styles.textContainer}>
+                    <Text style={styles.input}>{formatLocalDateTime(endDate)}</Text>
+                </View>
+            </View>
 
-            <Text style={styles.label}>Tasks Per Week</Text>
-            <Text style={styles.input}>{taskPerWeek}</Text>
+            <View style={styles.inputContainer}>
+                <Text style={styles.label}>Buy In</Text>
+                <View style={styles.textContainer}>
+                    <Text style={styles.input}>{buyIn}</Text>
+                </View>
+            </View>
 
-            <View style={{ alignItems: 'center' }}>
+            <View style={styles.inputContainer}>
+                <Text style={styles.label}>Tasks Per Week</Text>
+                <View style={styles.textContainer}>
+                    <Text style={styles.input}>{taskPerWeek}</Text>
+                </View>
+            </View>
+
+            <View style={styles.buttonContainer}>
                 <Pressable
-                    style={[styles.leaveGroup, { backgroundColor: isPastDate ? 'gray' : '#ed972d' }]}
+                    style={[styles.button, styles.leaveButton, { opacity: isPastDate ? 0.5 : 1 }]}
                     onPress={openLeaveModal}
-                    disabled={leaving}
+                    disabled={leaving || isPastDate}
                 >
                     {leaving ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Leave Group</Text>}
                 </Pressable>
-            </View>
 
-            {user?.username === gd.group.hostid && (
-                <View style={{ alignItems: 'center' }}>
+                {user?.username === gd?.group?.hostid && (
                     <Pressable
-                        style={[styles.deleteGroup, { backgroundColor: isPastDate ? 'gray' : '#f04343' }]}
+                        style={[styles.button, styles.deleteButton, { opacity: isPastDate ? 0.5 : 1 }]}
                         onPress={openDeleteModal}
-                        disabled={deleting}
+                        disabled={deleting || isPastDate}
                     >
                         {deleting ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Delete Group</Text>}
                     </Pressable>
-                </View>
-            )}
+                )}
+            </View>
 
             <Modal
                 animationType="slide"
@@ -267,21 +287,16 @@ const GroupSetting: React.FC = () => {
                 visible={showLeaveModal}
                 onRequestClose={() => setShowLeaveModal(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalView}>
-                        <Text style={styles.modalText}>Are you sure you want to leave?</Text>
-                        <View style={styles.modalButtons}>
-                            <Pressable
-                                style={[styles.button, styles.buttonLeave]}
-                                onPress={leaveGroup}
-                            >
-                                {leaving ? <ActivityIndicator color="white" /> : <Text style={styles.textStyle}>Leave</Text>}
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Leave Group</Text>
+                        <Text style={styles.modalText}>Are you sure you want to leave this group?</Text>
+                        <View style={styles.modalButtonContainer}>
+                            <Pressable style={[styles.modalButton, styles.leaveButton]} onPress={leaveGroup}>
+                                {leaving ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Leave</Text>}
                             </Pressable>
-                            <Pressable
-                                style={[styles.button, styles.buttonCancel]}
-                                onPress={() => setShowLeaveModal(false)}
-                            >
-                                <Text style={styles.textStyle}>Cancel</Text>
+                            <Pressable style={[styles.modalButton, styles.cancelButton]} onPress={() => setShowLeaveModal(false)}>
+                                <Text style={styles.buttonText}>Cancel</Text>
                             </Pressable>
                         </View>
                     </View>
@@ -294,183 +309,170 @@ const GroupSetting: React.FC = () => {
                 visible={showDeleteModal}
                 onRequestClose={() => setShowDeleteModal(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalView}>
-                        <Text style={styles.modalText}>Are you sure you want to delete?</Text>
-                        <View style={styles.modalButtons}>
-                            <Pressable
-                                style={[styles.button, styles.buttonDelete]}
-                                onPress={deleteGroup}
-                            >
-                                {deleting ? <ActivityIndicator color="white" /> : <Text style={styles.textStyle}>Delete</Text>}
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Delete Group</Text>
+                        <Text style={styles.modalText}>Are you sure you want to delete this group?</Text>
+                        <View style={styles.modalButtonContainer}>
+                            <Pressable style={[styles.modalButton, styles.deleteButton]} onPress={deleteGroup}>
+                                {deleting ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Delete</Text>}
                             </Pressable>
-                            <Pressable
-                                style={[styles.button, styles.buttonCancel]}
-                                onPress={() => setShowDeleteModal(false)}
-                            >
-                                <Text style={styles.textStyle}>Cancel</Text>
+                            <Pressable style={[styles.modalButton, styles.cancelButton]} onPress={() => setShowDeleteModal(false)}>
+                                <Text style={styles.buttonText}>Cancel</Text>
                             </Pressable>
                         </View>
                     </View>
                 </View>
             </Modal>
         </ScrollView>
-    );
-};
+    )
+}
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'white',
         flex: 1,
-        paddingTop: 24,
-        paddingHorizontal: 16,
+        backgroundColor: "white",
     },
     contentContainer: {
-        paddingBottom: 50, // Add padding to the bottom
+        padding: 32,
+        paddingBottom: 50,
     },
-    cancel: {
+    backArrow: {
+        position: "absolute",
+        top: 50,
+        left: 20,
+        width: 50,
+        height: 50,
         zIndex: 10,
-        height: 40,
-        width: 40,
-        position: 'absolute',
-        top: 20,
-        left: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     edit: {
-        position: 'absolute',
-        top: 20,
-        right: 10,
+        position: "absolute",
+        top: 50,
+        right: 20,
         zIndex: 10,
-        height: 40,
-        width: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
+    },
+    editText: {
+        fontSize: 16,
+        color: "dodgerblue",
+        fontWeight: "600",
     },
     logoContainer: {
-        marginTop: 36,
-        marginBottom: 36,
-        alignItems: 'center',
+        marginBottom: 32,
+        alignItems: "center",
+        marginTop: 50,
     },
     title: {
-        marginTop: 8,
         fontSize: 24,
-        fontWeight: 'bold',
+        fontWeight: "bold",
+        color: "#333",
     },
-    label: {
-        color: 'gray',
-        marginBottom: 4,
+    imageContainer: {
+        alignItems: "center",
+        marginTop: 48,
+        marginBottom:16
     },
-    input: {
-        marginBottom: 12,
-        height: 32,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 4,
-        padding: 8,
-    },
-    viewMembers: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'dodgerblue',
-        width: 180,
-        height: 40,
-        padding: 10,
-        borderRadius: 8,
-        marginTop: 20,
-    },
-    leaveGroup: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#ed972d',
-        width: 180,
-        height: 40,
-        padding: 10,
-        borderRadius: 8,
-        marginTop: 20,
-    },
-    deleteGroup: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f04343',
-        width: 180,
-        height: 40,
-        padding: 10,
-        borderRadius: 8,
-        marginTop: 20,
-    },
-    centeredImage: {
-        alignItems: 'center',
-    },
-    image: {
+    groupImage: {
         width: 80,
         height: 80,
         borderRadius: 8,
     },
     groupName: {
         fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
+        fontWeight: "bold",
+        color: "#333",
+        textAlign: "center",
+        marginBottom: 24,
     },
-    buttonText: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: '600',
+    inputContainer: {
+        marginBottom: 16,
+        // alignItems: "center",
     },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+    label: {
+        color: "#333",
+        marginBottom: 4,
+        fontSize: 14,
+        fontWeight: "600",
     },
-    modalView: {
-        margin: 20,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 35,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
+    input: {
+        
+        fontSize: 16,
     },
-    modalText: {
-        marginBottom: 15,
-        textAlign: 'center',
-        fontSize: 18,
-        fontWeight: 'bold',
+    textContainer: {
+        height: 40,
+        backgroundColor: "#f8f8f8",
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: "#e0e0e0",
+        fontSize: 16,
+        justifyContent: "center",
+        // alignItems: "center"
     },
-    modalButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        width: '100%',
+    buttonContainer: {
+        alignItems: "center",
+        marginTop: 24,
     },
     button: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        maxWidth: 250,
+        marginBottom: 16,
+    },
+    leaveButton: {
+        backgroundColor: "#ed972d",
+    },
+    deleteButton: {
+        backgroundColor: "#f04343",
+    },
+    buttonText: {
+        color: "white",
+        fontWeight: "600",
+        fontSize: 16,
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+    },
+    modalContent: {
+        width: 300,
+        padding: 20,
+        backgroundColor: "white",
         borderRadius: 10,
-        padding: 10,
-        elevation: 2,
-        marginHorizontal: 10,
-        width: 100,
-        alignItems: 'center',
+        alignItems: "center",
     },
-    buttonLeave: {
-        backgroundColor: '#ed972d',
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        marginBottom: 20,
     },
-    buttonDelete: {
-        backgroundColor: '#f04343',
+    modalText: {
+        fontSize: 16,
+        marginBottom: 20,
+        textAlign: "center",
     },
-    buttonCancel: {
-        backgroundColor: '#2196F3',
+    modalButtonContainer: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        width: "100%",
     },
-    textStyle: {
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
+    modalButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        justifyContent: "center",
+        alignItems: "center",
+        width: 120,
     },
-});
+    cancelButton: {
+        backgroundColor: "#6c757d",
+    },
+})
 
-export default GroupSetting;
+export default GroupSetting
+

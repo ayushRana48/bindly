@@ -201,6 +201,7 @@ const NewGroupScreen = () => {
 
     const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
         if (event.type === 'set' && selectedDate) {
+            console.log('selectedDate in onDateChange', selectedDate);
             setStartDate(selectedDate);
         } else {
             toggleDatePicker();

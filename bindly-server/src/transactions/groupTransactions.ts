@@ -7,6 +7,8 @@ import { processPosts } from './groupHelpers/veto/processPosts';
 import { updateUserBalance } from './groupHelpers/endGroup/endGroupHelpers';
 import { createUserGroup } from './usergroupTransactions';
 import { v4 as uuidv4 } from 'uuid';
+import { redis } from '../initRedis';
+import { getGroupCacheKey,deleteGroupCache } from '../utils/cacheHelpers';
 
 const prisma = new PrismaClient();
 
@@ -165,22 +167,39 @@ async function getLeaderBoard(groupid: string): Promise<DatabaseResponse<Leaderb
   }
 }
 
+
+
+
 async function getGroup(groupid: string): Promise<DatabaseResponse<{
   group: Group;
   usergroup: any[];
   invite: any[];
   post: Post[];
 }>> {
-  try {
-    console.log("Fetching group data for groupid: ", groupid);
+  const cacheKey = getGroupCacheKey(groupid);
 
+  try {
+    // Try to get the data from Redis
+    try {
+      const cachedData = await redis.get(cacheKey);
+      if (cachedData) {
+        console.log("Cache hit for groupid:", groupid);
+        return { data: JSON.parse(cachedData), error: null };
+      }
+    } catch (redisError) {
+      console.error("Redis error:", redisError);
+      // Proceed to fetch from the database if Redis fails
+    }
+    
+    console.log("Cache miss for groupid:", groupid);
+    // Fetch data from the database
     const groupData = await prisma.groups.findUnique({
       where: { groupid },
       include: {
         usergroup: {
           include: {
-            users: true
-          }
+            users: true,
+          },
         },
         invite: true,
         post: {
@@ -189,18 +208,18 @@ async function getGroup(groupid: string): Promise<DatabaseResponse<{
               include: {
                 users: {
                   select: {
-                    pfp: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    pfp: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!groupData) {
-      return { data: null, error: new Error('Group not found') };
+      return { data: null, error: new Error("Group not found") };
     }
 
     const { data: processData, error: processError } = await processVeto(groupid);
@@ -209,12 +228,12 @@ async function getGroup(groupid: string): Promise<DatabaseResponse<{
     }
 
     const filteredPosts = (groupData.post || [])
-      .filter((p:Post) => p.valid === null || p.valid === true)
-      .sort((a:Post, b:Post) => new Date(b.timepost).getTime() - new Date(a.timepost).getTime())
-      .map((post:any) => ({
+      .filter((p: Post) => p.valid === null || p.valid === true)
+      .sort((a: Post, b: Post) => new Date(b.timepost).getTime() - new Date(a.timepost).getTime())
+      .map((post: any) => ({
         ...post,
         comment: post.comment
-          ? post.comment.sort((a:any, b:any) => new Date(a.created).getTime() - new Date(b.created).getTime())
+          ? post.comment.sort((a: any, b: any) => new Date(a.created).getTime() - new Date(b.created).getTime())
           : [],
       }));
 
@@ -225,11 +244,16 @@ async function getGroup(groupid: string): Promise<DatabaseResponse<{
       post: filteredPosts,
     };
 
+    // Cache the data in Redis with a TTL (e.g., 1 hour)
+    await redis.set(cacheKey, JSON.stringify(data), "EX", 3600);
+
     return { data, error: null };
   } catch (error) {
-    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+    return { data: null, error: error instanceof Error ? error : new Error("Unknown error") };
   }
 }
+
+
 
 async function processVeto(groupid: string): Promise<DatabaseResponse<string>> {
   try {
@@ -249,6 +273,8 @@ async function processVeto(groupid: string): Promise<DatabaseResponse<string>> {
     });
 
     await processPosts(prisma,posts, memberCount, groupid);
+
+    await deleteGroupCache(groupid);
 
     return { data: 'Process completed successfully', error: null };
   } catch (error) {
@@ -305,6 +331,8 @@ async function updateGroup(
       where: { groupid: groupId },
       data: updateData
     });
+
+    await deleteGroupCache(groupId);
 
     return { data, error: null };
   } catch (error) {

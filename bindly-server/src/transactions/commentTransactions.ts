@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Comment, DatabaseResponse } from '../types';
+import { getGroupCacheKey, deleteGroupCache } from '../utils/cacheHelpers';
 
 const prisma = new PrismaClient();
 
@@ -39,6 +40,7 @@ async function addComment(
         created: timestamp,
       },
     });
+    await deleteGroupCache(groupid);
 
     return { data: comment, error: null };
   } catch (error: any) {

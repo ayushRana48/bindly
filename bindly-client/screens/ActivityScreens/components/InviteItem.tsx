@@ -185,6 +185,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#f2f2f2',
         height: 80,
+        paddingHorizontal: 16,
     },
     groupName: {
         marginLeft: 10,

@@ -9,6 +9,7 @@ import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { Post, DatabaseResponse } from '../types';
 import { sendBatchNotifications } from '../utils/sendNotificationUtil';
 import { supabase } from '../initSupabase';
+import { deleteGroupCache } from '../utils/cacheHelpers';
 
 const prisma = new PrismaClient();
 const expo = new Expo();
@@ -69,6 +70,7 @@ async function createPost(params: CreatePostParams): Promise<DatabaseResponse<Po
       }
     });
 
+    await deleteGroupCache(groupid);
     return { data, error: null };
   } catch (error: any) {
     return { data: null, error: new Error(error.message) };
@@ -277,6 +279,7 @@ async function updatePost(postid: string, updateParams: UpdatePostParams): Promi
       return { data: null, error: new Error(deleteError2.message) };
     }
 
+    await deleteGroupCache(groupId);
     return { data: updatedPost, error: null };
   } catch (error) {
     return { 
@@ -285,7 +288,7 @@ async function updatePost(postid: string, updateParams: UpdatePostParams): Promi
     };
   }
 }
-async function deletePost(postid: string): Promise<DatabaseResponse<{ message: string }>> {
+async function deletePost(postid: string, groupid: string): Promise<DatabaseResponse<{ message: string }>> {
   console.log("in delete post", postid);
   try {
     // Wrap the logic in a transaction
@@ -299,7 +302,7 @@ async function deletePost(postid: string): Promise<DatabaseResponse<{ message: s
       await tx.post.delete({
         where: { postid },
       });
-
+      await deleteGroupCache(groupid);
     });
     
 

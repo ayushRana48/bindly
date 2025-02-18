@@ -3,7 +3,9 @@ import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseResponse, Invite, Group } from '../types';
 import { sendBatchNotifications } from '../utils/sendNotificationUtil';
-import { createUserGroup } from './usergroupTransactions';
+import { createUserGroup, getUserGroupsByGroupId } from './usergroupTransactions';
+import { deleteGroupCache, deleteGroupMemberCache } from '../utils/cacheHelpers';
+import { getAllUsers } from './usersTransactions';
 
 const prisma = new PrismaClient();
 const expo = new Expo();
@@ -38,7 +40,7 @@ async function createInvite(
       }));
       await sendBatchNotifications(notifications);
     }
-
+    await deleteGroupCache(groupid);
     return { data, error: null };
   } catch (error: any) {
     return { data: null, error: new Error(error.message) };
@@ -88,6 +90,8 @@ async function acceptInvite(
       }
 
       // Delete the invite
+      await deleteGroupCache(groupid);
+      await deleteGroupMemberCache(groupid);
       const { error: deleteError } = await deleteInvite(inviteId, tx);
 
       if (deleteError) {
@@ -159,6 +163,42 @@ async function acceptInvite(
     }
   }
 
+  async function fetchAvailableInvites(groupId:string) {
+    try {
+      const [inviteDataResponse, allUsersResponse, allMembersResponse] = await Promise.all([
+        getInvitesByGroupId(groupId),
+        getAllUsers(),
+        getUserGroupsByGroupId(groupId)
+      ]);
+  
+      if (inviteDataResponse.error || allUsersResponse.error || allMembersResponse.error) {
+        throw new Error('Error fetching data');
+      }
+  
+      const inviteData = inviteDataResponse.data;
+      const allUsers = allUsersResponse.data;
+      const allMembers = allMembersResponse.data;
+  
+      if (!allMembers?.members) {
+        throw new Error('Invalid members data');
+      }
+  
+      const allMemberUsernames = new Set(allMembers.members.map(member => member.username));
+      const invitedUsernames = new Set(inviteData?.map(invite => invite.receiverid) || []);
+  
+      const availableInvites = allUsers?.map(user => ({
+        ...user,
+        invited: invitedUsernames.has(user.username),
+        isMember: allMemberUsernames.has(user.username)
+      })).filter(user => !user.isMember);
+  
+      return availableInvites;
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Error occurred');
+    }
+  }
+  
+
   async function updateInvite(
     inviteid: string,
     updateParams: Partial<Omit<Invite, 'inviteid'>>
@@ -201,5 +241,6 @@ async function acceptInvite(
     getInvitesBySender,
     getInvitesByReciever,
     updateInvite,
-    deleteInvite
+    deleteInvite,
+    fetchAvailableInvites
   };

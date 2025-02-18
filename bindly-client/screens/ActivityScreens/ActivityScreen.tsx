@@ -1,115 +1,113 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { UserProvider, useUserContext } from "../../UserContext";
-import { View, ScrollView, RefreshControl, StyleSheet, Text, Pressable } from "react-native";
-import InviteList from "./components/InviteList";
-import { useNavigation } from '@react-navigation/native';
-import { Invite, NotifyVeto, RootStackParamList } from "../../types";
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { checkToken } from "../../utils/checkToken";
+"use client"
+
+import type React from "react"
+import { useEffect, useState, useCallback } from "react"
+import { View, ScrollView, RefreshControl, StyleSheet, Text } from "react-native"
+import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { Bell } from "lucide-react-native"
+
+import { useUserContext } from "../../UserContext"
+import InviteList from "./components/InviteList"
+import type { Invite, RootStackParamList } from "../../types"
+import { checkToken } from "../../utils/checkToken"
 
 const ActivityScreen: React.FC = () => {
-  const [invites, setInvites] = useState<Invite[]>([]);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [notifyVeto, setNotifyVeto] = useState<NotifyVeto[]>([]);
-  const { user } = useUserContext();
-  const [newVetoLength, setNewVetoLength] = useState<number>(0);
+  const [invites, setInvites] = useState<Invite[]>([])
+  const [refreshing, setRefreshing] = useState<boolean>(false)
+  const { user } = useUserContext()
 
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
 
   const getAllInvites = async (): Promise<void> => {
     try {
-      const token = await checkToken();
+      const token = await checkToken()
       const response = await fetch(`http://localhost:3000/bindly/invite/getInviteByReciever/${user?.username}`, {
-        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
-      });
-      const res: Invite[] = await response.json();
-      setInvites(res);
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      })
+      const res: Invite[] = await response.json()
+      setInvites(res)
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
-  };
+  }
 
-  const getNotifyVeto = async (): Promise<void> => {
-    try {
-      const token = await checkToken();
-      const response = await fetch(`http://localhost:3000/bindly/notifyveto/${user?.username}`, {
-        headers: { 'Content-Type': 'application/json'   ,'Authorization': `Bearer ${token}`},
-      });
-
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        throw new Error(errorResponse.error || 'Failed to fetch group data');
-      }
-
-      const res: NotifyVeto[] = await response.json();
-      if (res.length > 0) {
-        setNotifyVeto(res);
-        setNewVetoLength(res.length);
-      }
-    } catch (error) {
-      console.log('error', error);
-    }
-  };
-
-  // Rest of the component remains the same
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    Promise.all([getAllInvites(), getNotifyVeto()]).then(() => setRefreshing(false));
-  }, []);
+    setRefreshing(true)
+    getAllInvites().then(() => setRefreshing(false))
+  }, []) // Removed getAllInvites from dependencies
 
   useEffect(() => {
-    onRefresh();
-  }, []);
-
-  const toVetoScreen=()=>{
-    setNewVetoLength(0)
-    navigation.navigate('Veto')
-  }
-  
+    onRefresh()
+  }, [onRefresh])
 
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <Text style={{ fontSize: 30, fontWeight: 'bold', textAlign: 'center', alignItems: 'center', marginTop: 60 }}>Activity</Text>
-
-
-        <Pressable style={{borderBottomColor:'gray',borderBottomWidth:1, marginTop: 30, padding:4,flexDirection:'row',alignItems:'center' }} onPress={toVetoScreen}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold'}}>Vetos</Text>
-          {notifyVeto && newVetoLength>0 && <View style={{width:30,height:30,borderRadius:15,backgroundColor:'red',marginLeft:'auto',marginRight:10}}>
-            <Text style={{margin: 'auto',color:'white', textAlign:'center',alignItems:'center',fontSize:15,fontWeight:'bold'}}>{newVetoLength}</Text>
-        
-          </View>}
-
-          {notifyVeto && newVetoLength>0 ?<Text style={{color:'black',fontSize:20,fontWeight:'bold'}}>{">"}</Text>:
-          <Text style={{color:'black',fontSize:20,fontWeight:'bold', marginLeft:'auto'}}>{">"}</Text>}
-
-          
-        </Pressable>
-
-        <View style={{borderBottomColor:'gray',borderBottomWidth:1, marginTop: 30 }}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold'}}>Invites</Text>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Activity</Text>
         </View>
 
-        <InviteList invites={invites} setInvites={setInvites} />
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Bell color="#007AFF" size={24} />
+            <Text style={styles.sectionTitle}>Invites</Text>
+          </View>
+          <InviteList invites={invites} setInvites={setInvites} />
+        </View>
       </ScrollView>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
     flex: 1,
-    padding: 32,
+    backgroundColor: "#f9f9f9",
   },
-  scrollView: {
+  scrollContent: {
     flexGrow: 1,
   },
-});
+  header: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+    backgroundColor: "#FFFFFF",
+    paddingTop: 72, 
+  },
+  headerText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#000000",
+  },
+  section: {
+    backgroundColor: "#FFFFFF",
+    marginTop: 10,
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    borderColor: "#E5E5EA",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginLeft: 12,
+  },
+})
 
-export default ActivityScreen;
+export default ActivityScreen
+

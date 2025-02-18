@@ -8,7 +8,8 @@ import {
   getInvitesByReciever, 
   updateInvite, 
   deleteInvite, 
-  acceptInvite
+  acceptInvite,
+  fetchAvailableInvites
 } from '../transactions/inviteTransactions';
 import { createUserGroup, getUserGroupsByGroupId } from '../transactions/usergroupTransactions';
 import { getAllUsers } from '../transactions/usersTransactions';
@@ -110,33 +111,7 @@ async function getAvailableInvites(req: Request, res: Response) {
   const { groupId } = req.params;
 
   try {
-    const [inviteDataResponse, allUsersResponse, allMembersResponse] = await Promise.all([
-      getInvitesByGroupId(groupId),
-      getAllUsers(),
-      getUserGroupsByGroupId(groupId)
-    ]);
-
-    if (inviteDataResponse.error || allUsersResponse.error || allMembersResponse.error) {
-      throw new Error('Error fetching data');
-    }
-
-    const inviteData = inviteDataResponse.data;
-    const allUsers = allUsersResponse.data;
-    const allMembers = allMembersResponse.data;
-
-    if (!allMembers?.members) {
-      throw new Error('Invalid members data');
-    }
-
-    const allMemberUsernames = new Set(allMembers.members.map(member => member.username));
-    const invitedUsernames = new Set(inviteData?.map(invite => invite.receiverid) || []);
-
-    const availableInvites = allUsers?.map(user => ({
-      ...user,
-      invited: invitedUsernames.has(user.username),
-      isMember: allMemberUsernames.has(user.username)
-    })).filter(user => !user.isMember);
-
+    const availableInvites = await fetchAvailableInvites(groupId);
     return res.status(200).json(availableInvites);
   } catch (error) {
     return res.status(500).json({ 

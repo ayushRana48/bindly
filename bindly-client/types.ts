@@ -181,7 +181,25 @@ export type RootStackParamList = {
   SignUp: undefined;
   ConfirmEmail: undefined;
   LoggedIn: undefined;
-  
+  SignUpScreen1: undefined;
+  SignUpScreen2: {
+    firstName: string;
+    lastName: string;
+    imageSrc: { uri: string };
+    username: string;
+    birthday: Date;
+  };
+  SignUpScreen3: {
+    email: string;
+  },
+  ForgotPasswordEmail: undefined;
+  ForgotPasswordNewPassword: {
+    email: string;
+    token: string;
+  }
+  ForgotPasswordOTP: {
+    email: string;
+  }
   // Profile Stack
   ProfileScreen: undefined;
   Wallet: undefined;
@@ -191,9 +209,17 @@ export type RootStackParamList = {
   // Groups Stack
   GroupsList: undefined;
   NewGroup: undefined;
+  GroupCreation1: undefined
+  GroupCreation2: {
+    groupName: string
+    description: string
+    buyIn: number
+    imageSrc: any
+  }
   Group: { groupData: any };
   GroupEdit: undefined;
   MembersList: undefined;
+  Leaderboard: undefined;
   InviteMembers: undefined;
   CreatePost: undefined;
   EditPost: undefined;

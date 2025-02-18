@@ -13,6 +13,8 @@ import {
 } from '../transactions/usergroupTransactions';
 import { v4 as uuidv4 } from 'uuid';
 import { getGroup } from '../transactions/groupTransactions';
+import { getGroupMemberCacheKey, deleteGroupMemberCache } from '../utils/cacheHelpers';
+import { redis } from '../initRedis';
 // Controller for creating a new user
 async function createUserGroupController(req: Request, res: Response) {
   const { username, groupId } = req.body;
@@ -59,16 +61,30 @@ async function getUserGroupController(req: Request, res: Response) {
 
 async function getUserGroupsByGroupIdController(req: Request, res: Response) {
   const { groupId } = req.params;
+  const cacheKey = getGroupMemberCacheKey(groupId);
 
   try {
+    // Check if the data exists in the cache
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+      console.log(`Cache hit for groupId: ${groupId}`);
+      return res.status(200).json(JSON.parse(cachedData));
+    }
+
+    console.log(`Cache miss for groupId: ${groupId}`);
+    // Fetch data from the database or service
     const { data, error } = await getUserGroupsByGroupId(groupId);
 
     if (error) {
       return res.status(404).json({ error: error.message });
     }
+
+    // Cache the result with a TTL of 1 hour (3600 seconds)
+    await redis.set(cacheKey, JSON.stringify(data), 'EX', 3600);
+
     return res.status(200).json(data);
   } catch (error) {
-    return res.status(404).json({ 
+    return res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Unknown error' 
     });
   }
@@ -154,6 +170,7 @@ async function leaveGroupController(req: Request, res: Response) {
     if (error) {
       return res.status(404).json({ error: error.message });
     }
+    await deleteGroupMemberCache(groupId);
 
     return res.status(200).json({ message: 'Successfully left the group' });
   } catch (error) {
@@ -208,6 +225,8 @@ async function kickUserController(req: Request, res: Response) {
     if (error) {
       return res.status(404).json({ error: error.message });
     }
+    await deleteGroupMemberCache(groupId);
+
 
     return res.status(200).json({ message: 'Successfully kicked user from group' });
   } catch (error) {

@@ -8,6 +8,12 @@ import LoggedInNav from './screens/LoggedInNav';
 import { useUserContext } from './UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from './types';
+import SignUpScreen1 from './screens/AuthScreens/SignUpScreen1';
+import SignUpScreen2 from './screens/AuthScreens/SignUpScreen2';
+import SignUpScreen3 from './screens/AuthScreens/SignUpScreen3';
+import ForgotPasswordEmailScreen from './screens/AuthScreens/ForgotPasswordEmailScreen';
+import ForgotPasswordOTPScreen from './screens/AuthScreens/ForgotPasswordOTPScreen';
+import ForgotPasswordNewPasswordScreen from './screens/AuthScreens/ForgotPasswordNewPasswordScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -46,6 +52,14 @@ const Nav = () => {
                     <>
                         <Stack.Screen name="SignIn" component={SignInScreen} />
                         <Stack.Screen name="SignUp" component={SignUpScreen} />
+                        <Stack.Screen name="SignUpScreen1" component={SignUpScreen1} />
+                        <Stack.Screen name="SignUpScreen2" component={SignUpScreen2} />
+                        <Stack.Screen name="SignUpScreen3" component={SignUpScreen3} />
+                        <Stack.Screen name="ForgotPasswordEmail" component={ForgotPasswordEmailScreen} />
+                        <Stack.Screen name="ForgotPasswordOTP" component={ForgotPasswordOTPScreen} />
+                        <Stack.Screen name="ForgotPasswordNewPassword" component={ForgotPasswordNewPasswordScreen} />
+
+
                         <Stack.Screen name="ConfirmEmail" component={ConfirmEmailScreen} />
                     </>
                 ) : (

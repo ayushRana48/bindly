@@ -4,7 +4,7 @@ import * as userController from '../controllers/usersController';
 import * as groupController from '../controllers/groupController';
 import * as usergroupController from '../controllers/userGroupController';
 import * as postController from '../controllers/postController';
-import * as authController from '../controllers/authController';
+import * as authController from '../controllers/auth/authController';
 import * as inviteController from '../controllers/inviteController';
 import * as notifyvetoController from '../controllers/notifyVetoController';
 import * as stripeController from '../controllers/stripeController';
@@ -27,8 +27,17 @@ router.post('/auth/signUp', authController.signUpController as unknown as Reques
 router.post('/auth/signOut', authController.signOutController as unknown as RequestHandler);
 router.get('/auth/getUser', authController.getUserController as unknown as RequestHandler);
 router.post('/auth/refreshToken', authController.refreshTokenController as unknown as RequestHandler);
+router.post('/auth/refreshToken', authController.refreshTokenController as unknown as RequestHandler);
+router.post('/auth/resendCode', authController.resendSignUpCodeController as unknown as RequestHandler);
+router.post('/auth/verifyCode', authController.verifyOtpController as unknown as RequestHandler);
+router.post('/auth/forgetPasswordCode', authController.forgotPasswordController as unknown as RequestHandler);
+router.post('/auth/verifyOtpForReset', authController.verifyOtpForResetController as unknown as RequestHandler);
+router.post('/auth/resetPassword', authController.resetPasswordController as unknown as RequestHandler);
 
 router.use(authenticateUser as RequestHandler);
+
+
+
 // Users routes
 router.get('/users/', userController.getAllUsersController as unknown as RequestHandler);
 router.get('/users/:username', userController.getUserController as unknown as RequestHandler);

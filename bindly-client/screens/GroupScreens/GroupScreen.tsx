@@ -134,7 +134,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     const token = await checkToken();
     const postStatusResponse = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`}, 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({
         username: user?.username || '',
         groupId: groupData.groupid
@@ -238,7 +238,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
       // 1. Fetch group data
       const token = await checkToken();
       const response = await fetch(`http://localhost:3000/bindly/group/${groupData.groupid}`, {
-        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       });
 
       if (!response.ok) {
@@ -276,7 +276,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     try {
       const token = await checkToken();
       const response = await fetch(`http://localhost:3000/bindly/usergroup/inGroup`, {
-        headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         method: 'PUT',
         body: JSON.stringify({
           username: user?.username || '',
@@ -320,8 +320,18 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     }
   };
 
+  const toLeaderboard = (): void => {
+    if (!loading) {
+      navigation.navigate('Leaderboard');
+    }
+  };
+
   const toMembers = (): void => {
-    navigation.navigate('MembersList');
+    if (!loading) {
+
+      navigation.navigate('MembersList');
+    }
+
   };
 
 
@@ -397,14 +407,6 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
         }}
         style={{ padding: 24 }}
       >
-        <Pressable style={styles.backArrow} onPress={back}>
-          <Image style={{ height: 40, width: 40 }} source={backArrow} />
-        </Pressable>
-        {!loading && (
-          <Pressable style={styles.setting} onPress={setting}>
-            <Image style={{ height: 40, width: 40 }} source={settings} />
-          </Pressable>
-        )}
 
 
         <GroupHeader
@@ -421,7 +423,8 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
           toMembers={toMembers}
           toInfo={toInfo}
           toPost={toPost}
-          styles={styles}
+          toLeaderboard={toLeaderboard}
+        // styles={styles}
         />
         {loading && <ActivityIndicator size="large" color="#0000ff" />}
 

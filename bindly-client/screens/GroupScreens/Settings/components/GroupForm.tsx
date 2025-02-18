@@ -68,7 +68,7 @@ const GroupForm: React.FC<GroupFormProps> = ({
 
         <View style={styles.inputContainer}>
             <Text style={styles.label}>Start Date</Text>
-            <Pressable onPress={toggleDatePicker} style={styles.datePressable}>
+            <Pressable onPress={toggleDatePicker} style={styles.input}>
                 <Text>{formatLocalDateTime(startDate)}</Text>
             </Pressable>
         </View>
@@ -84,7 +84,7 @@ const GroupForm: React.FC<GroupFormProps> = ({
                minimumDate={isEditScreen ? startDate : tomorrow}
            />
            <View style={styles.centeredRow}>
-               <Pressable style={styles.doneButton} onPress={toggleDatePicker}>
+               <Pressable  style={({ pressed }) => [styles.doneButton, pressed && styles.buttonPressed]} onPress={toggleDatePicker}>
                    <Text style={styles.buttonText}>Done</Text>
                </Pressable>
            </View>
@@ -189,11 +189,15 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     input: {
-        height: 32,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 4,
-        padding: 8,
-    },
+        height: 40,
+        backgroundColor: "#f8f8f8",
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: "#e0e0e0",
+        fontSize: 16,
+        justifyContent: "center",
+      },
     datePressable: {
         height: 32,
         padding: 8,
@@ -204,12 +208,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 16,
     },
-    doneButton: {
-        backgroundColor: 'dodgerblue',
-        padding: 8,
-        width: 72,
-        borderRadius: 4,
-    },
+   
     signUpButton: {
         backgroundColor: 'dodgerblue',
         padding: 8,
@@ -238,6 +237,31 @@ const styles = StyleSheet.create({
     bold: {
         fontWeight: 'bold',
     },
+    button: {
+        backgroundColor: "dodgerblue",
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        maxWidth: 250,
+      },
+      buttonPressed: {
+        backgroundColor: "#1E90FF",
+        opacity: 0.9,
+      },
+      doneButton: {
+        backgroundColor: "dodgerblue",
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        justifyContent: "center",
+        alignItems: "center",
+        width: 130,
+        marginBottom:16
+      },
+     
     
     
 });

@@ -1,382 +1,426 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Image, StyleSheet, Pressable, Modal, Alert, TouchableWithoutFeedback, ScrollView, RefreshControl, ActivityIndicator } from "react-native";
-import { useNavigation } from '@react-navigation/native';
-import { useUserContext } from "../../UserContext";
-//@ts-ignore
-import placeholder from "../../assets/profile.png";
-//@ts-ignore
-import camera from "../../assets/Camera.png";
-//@ts-ignore
-import cameraIcon from "../../assets/cameraIcon.png";
-//@ts-ignore
-import galleryIcon from "../../assets/galleryIcon.png";
-//@ts-ignore
-import trashIcon from "../../assets/trashIcon.png";
-//@ts-ignore
-import rules from "../../assets/rules.png";
-//@ts-ignore    
-import wallet from "../../assets/wallet.png";
-//@ts-ignore
-import connect from "../../assets/connect.png";
-import * as SecureStore from "expo-secure-store";
+"use client"
 
-import * as ImagePicker from 'expo-image-picker';
-import compressImage from "../../utils/compressImage";
-import blobToBase64 from "../../utils/blobToBase64";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { removePushTokenAsync } from "../../notificationUtils";
-import { GroupData, RootStackParamList } from "../../types"; // Import necessary types
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { checkToken } from "../../utils/checkToken";
+import type React from "react"
+import { useEffect, useState, useCallback } from "react"
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Pressable,
+  Modal,
+  Alert,
+  TouchableWithoutFeedback,
+  ScrollView,
+  RefreshControl,
+  ActivityIndicator,
+} from "react-native"
+import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { useUserContext } from "../../UserContext"
+import * as SecureStore from "expo-secure-store"
+import * as ImagePicker from "expo-image-picker"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { Camera, Wallet, Book, Users, LogOut, ChevronRight, Plus } from "lucide-react-native"
 
-const LOGGING_URL = 'http://localhost:3000/log';
+import { removePushTokenAsync } from "../../notificationUtils"
+import type { RootStackParamList } from "../../types"
+import { checkToken } from "../../utils/checkToken"
+import compressImage from "../../utils/compressImage"
+import blobToBase64 from "../../utils/blobToBase64"
+
+const LOGGING_URL = "http://localhost:3000/log"
 
 async function logToServer(message: string) {
-  console.log(`message:  ${message}`);
+  console.log(`message: ${message}`)
   try {
     await fetch(LOGGING_URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ logData: message }),
-    });
+    })
   } catch (error) {
-    console.error('Error logging to server:', error);
+    console.error("Error logging to server:", error)
   }
 }
 
+const ProfileScreen: React.FC = () => {
+  const { email, user, setEmail, setUser } = useUserContext()
+  const [imageSrc, setImageSrc] = useState({ uri: user?.pfp || "" })
+  const [openModal, setOpenModal] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [loading, setLoading] = useState(false)
 
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
 
-const ProfileScreen = () => {
+  useEffect(() => {
+    if (user && user.pfp) {
+      setImageSrc({ uri: user.pfp })
+    }
+  }, [user])
 
-    const { email, user, setEmail, setUser } = useUserContext();
-    const [imageSrc, setImageSrc] = useState(placeholder);
-    const [openModal, setOpenModal] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
-    const [loading, setLoading] = useState(false);
+  const toWallet = () => navigation.navigate("Wallet")
+  const toRules = () => navigation.navigate("Rules")
+  const toConnection = () => navigation.navigate("Connection")
 
-    useEffect(() => {
-        if (user && user.pfp) {
-            setImageSrc({ uri: user.pfp });
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    })
+
+    if (!result.canceled) {
+      const compressedUri = await compressImage(result.assets[0].uri)
+      setImageSrc({ uri: compressedUri })
+      setOpenModal(false)
+      submitPicture(compressedUri)
+    }
+  }
+
+  const takeImage = async () => {
+    try {
+      await ImagePicker.requestCameraPermissionsAsync()
+      const result = await ImagePicker.launchCameraAsync({
+        cameraType: ImagePicker.CameraType.front,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      })
+
+      if (!result.canceled) {
+        const compressedUri = await compressImage(result.assets[0].uri)
+        setImageSrc({ uri: compressedUri })
+        setOpenModal(false)
+        submitPicture(compressedUri)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const removeImage = () => {
+    setImageSrc({ uri: "" })
+    setOpenModal(false)
+    submitPicture("")
+  }
+
+  const submitPicture = async (uri: string) => {
+    let imgBase64 = ""
+
+    logToServer("submitting pic in profile screen")
+    logToServer(`uri here: ${uri}`)
+
+    if (uri) {
+      const response = await fetch(uri)
+      const blob = await response.blob()
+      imgBase64 = await blobToBase64(blob)
+    }
+    const token = await checkToken()
+
+    fetch(`http://localhost:3000/bindly/users/updateUser/${user?.username}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        pfp: imgBase64,
+      }),
+    })
+      .then((response) => response.json().then((data) => ({ status: response.status, body: data })))
+      .then(async ({ status, body }) => {
+        if (status === 200) {
+          if (user) {
+            setUser({ ...user, pfp: uri })
+          }
+        } else {
+          Alert.alert("Error", "Failed to update profile picture.")
         }
-    }, [user]);
+      })
+      .catch((error) => {
+        console.log(error)
+        Alert.alert("Network Error", "Unable to connect to the server. Please try again later.")
+      })
+  }
 
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const getUser = async () => {
+    try {
+      const token = await checkToken()
+      const response = await fetch(`http://localhost:3000/bindly/users/email/${email}`, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
 
+      if (response.status === 200) {
+        setUser(data)
+      } else if (data.error) {
+        console.log("Error received:", data.error)
+      }
+    } catch (error) {
+      console.error("Network or server error:", error)
+    }
+  }
 
-    const toWallet = () => {
-          navigation.navigate("Wallet");
-        
-      };
+  const logOut = async () => {
+    if (loading) {
+      console.log("loading")
+      return
+    }
+    setLoading(true)
+    try {
+      const token = await checkToken()
+      const response = await fetch(`http://localhost:3000/bindly/auth/signOut`, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        method: "POST",
+      })
+      const data = await response.json()
+      console.log(data, "logout data")
+      if (response.status === 200) {
+        await SecureStore.deleteItemAsync("accessToken")
+        await SecureStore.deleteItemAsync("refreshToken")
+        await AsyncStorage.removeItem("userEmail")
+        await removePushTokenAsync(user?.username || "")
+        console.log("removeTest")
+        setEmail("")
+      } else if (data.error) {
+        console.log("Error received:", data.error)
+      }
+      else if (data.message == "No user currently signed in") {
+        await SecureStore.deleteItemAsync("accessToken")
+        await SecureStore.deleteItemAsync("refreshToken")
+        await AsyncStorage.removeItem("userEmail")
+        await removePushTokenAsync(user?.username || "")
+        console.log("removeTest2")
+        setEmail("")     
+      }
+    } catch (error) {
+      console.error("Network or server error:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    const toRules = () => {
-        navigation.navigate("Rules");
-    
-    };
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await getUser()
+    setRefreshing(false)
+  }, []) // Modified: Removed getUser from dependencies
 
-    const toConnection = () => {
-        navigation.navigate("Connection");
-    
-    };
+  const renderMenuItem = (icon: React.ReactNode, title: string, onPress: () => void) => (
+    <Pressable style={styles.menuItem} onPress={onPress}>
+      {icon}
+      <Text style={styles.menuItemText}>{title}</Text>
+      <ChevronRight color="#8E8E93" size={20} />
+    </Pressable>
+  )
 
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Profile</Text>
+        </View>
 
-    const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
-
-        if (!result.canceled) {
-            const compressedUri = await compressImage(result.assets[0].uri);
-            setImageSrc({ uri: compressedUri });
-            setOpenModal(false);
-            submitPicture(compressedUri);
-        }
-    };
-
-    const takeImage = async () => {
-        try {
-            await ImagePicker.requestCameraPermissionsAsync();
-            let result = await ImagePicker.launchCameraAsync({
-                cameraType: ImagePicker.CameraType.front,
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 1,
-            });
-
-            if (!result.canceled) {
-                const compressedUri = await compressImage(result.assets[0].uri);
-                setImageSrc({ uri: compressedUri });
-                setOpenModal(false);
-                submitPicture(compressedUri);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    const removeImage = () => {
-        setImageSrc(placeholder);
-        setOpenModal(false);
-        submitPicture("");
-    };
-
-    const submitPicture = async (uri: string) => {
-        let imgBase64 = "";
-
-
-        console.log(uri)
-        logToServer('submitting pic in profile screen')
-        logToServer(`uri here: ${uri}`)
-
-
-        if (uri) {
-            const response = await fetch(uri);
-            const blob = await response.blob();
-            imgBase64 = await blobToBase64(blob);
-        }
-        const token = await checkToken();
-
-        fetch(`http://localhost:3000/bindly/users/updateUser/${user?.username}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
-            body: JSON.stringify({
-                pfp: imgBase64,
-            }),
-        })
-            .then(response => response.json().then(data => ({ status: response.status, body: data })))
-            .then(async ({ status, body }) => {
-                if (status === 200) {
-                    if (user) {
-                        setUser({ ...user, pfp: uri });
-                    }
-                } else {
-                    Alert.alert("Error", "Failed to update profile picture.");
-                }
-            })
-            .catch(error => {
-                console.log(error);
-                Alert.alert("Network Error", "Unable to connect to the server. Please try again later.");
-            });
-    };
-
-    const getUser = async () => {
-        try {
-            const token = await checkToken();
-            const response = await fetch(`http://localhost:3000/bindly/users/email/${email}`, {
-                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
-            });
-            const data = await response.json();
-
-            console.log(data, 'user')
-
-            if (response.status === 200) {
-                setUser(data);
-            } else if (data.error) {
-                console.log('Error received:', data.error);
-            }
-        } catch (error) {
-            console.error('Network or server error:', error);
-        }
-    };
-
-    const logOut = async () => {
-        if(loading){
-            console.log('loading')
-            return
-        }
-        setLoading(true)
-        try {
-            const token = await checkToken();
-            const response = await fetch(`http://localhost:3000/bindly/auth/signOut`, {
-                headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
-                method: "POST",
-            });
-            const data = await response.json();
-            console.log(data, 'logout data')
-            if (response.status === 200) {
-                await SecureStore.deleteItemAsync("accessToken");
-                await SecureStore.deleteItemAsync("refreshToken");          
-                await AsyncStorage.removeItem('userEmail');
-                await removePushTokenAsync(user?.username || '');
-                console.log('removeTest')
-                setEmail('');
-
-
-            } else if (data.error) {
-                console.log('Error received:', data.error);
-            }
-        } catch (error) {
-            console.error('Network or server error:', error);
-        }
-        finally{
-            setLoading(false)
-        }
-    };
-
-    const onRefresh = async () => {
-        setRefreshing(true);
-        await getUser();
-        setRefreshing(false);
-    };
-
-    return (
-        <ScrollView
-            contentContainerStyle={styles.container}
-            refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-        >
-    
-        <Text style={{ fontSize: 30, fontWeight: 'bold', textAlign: 'center', alignItems: 'center', marginTop: 80 }}>Profile</Text>
-            <View style={{ marginTop:40,marginRight:50,flexDirection:'row'}}>
-                <View style={{width:120, position: 'relative' }}>
-                    <Image style={{ width: 120, height: 120, borderRadius: 8 }} source={imageSrc} />
-                    <Pressable style={{ position: 'absolute', bottom: -15, right: -15, borderColor: 'black', borderWidth: 1, borderRadius: 20 }} onPress={() => setOpenModal(true)}>
-                        <Image style={{ width: 40, height: 40, borderRadius: 8 }} source={camera} />
-                    </Pressable>
-                </View>
-                <View style={{marginLeft:40, alignContent:'center'}}>
-                    <Text style={{fontSize:30,fontWeight:700}}>{user?.username}</Text>
-                    <Text style={{fontSize:20,fontWeight:700}}>Balance: ${user?.balance?.toFixed(2)}</Text>
-                </View>
-            </View>
-            <View style={{width:'100%', marginTop:50, borderColor:'black'}}>
-                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15}} onPress={toWallet}>
-                    <Image resizeMode="contain" style={{width:30, height:30}} source={wallet} />
-                    <Text style={{fontSize:18, marginLeft:20, marginVertical:'auto', fontWeight:400}}>Wallet</Text>
-                    <Text style={{fontSize:20, marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
-                </Pressable>
-
-                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15}} onPress={toRules}>
-                    <Image resizeMode="contain"  style={{width:30, height:30}} source={rules} />
-                    <Text style={{fontSize:18, marginLeft:20,textAlign:'center',marginVertical:'auto', fontWeight:400}}>Rules</Text>
-                    <Text style={{fontSize:20,textAlign:'center',marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
-                </Pressable>
-
-                <Pressable style={{flexDirection:'row', borderColor:"gray",borderBottomWidth:1, padding:15}} onPress={toConnection}>
-                    <Image resizeMode="contain"  style={{width:30, height:30}} source={connect} />
-                    <Text style={{fontSize:18, marginLeft:20,textAlign:'center',marginVertical:'auto', fontWeight:400}}>Connections</Text>
-                    <Text style={{fontSize:20,textAlign:'center',marginVertical:'auto', marginLeft:'auto'}}>{'>'}</Text>
-                </Pressable>
-
-            </View>
-            
-
-            <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
-                <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
-                    <View style={styles.modalOverlay}>
-                        <TouchableWithoutFeedback>
-                            <View style={styles.modalContent}>
-                                <Text style={styles.modalTitle}>Group Photo</Text>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
-                                    <Pressable style={styles.modalButton} onPress={takeImage}>
-                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={cameraIcon} />
-                                        <Text>Camera</Text>
-                                    </Pressable>
-                                    <Pressable style={styles.modalButton} onPress={pickImage}>
-                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={galleryIcon} />
-                                        <Text>Gallery</Text>
-                                    </Pressable>
-                                    <Pressable style={styles.modalButton} onPress={removeImage}>
-                                        <Image style={{ width: 40, height: 40, marginBottom: 5 }} source={trashIcon} />
-                                        <Text>Remove</Text>
-                                    </Pressable>
-                                </View>
-                            </View>
-                        </TouchableWithoutFeedback>
-                    </View>
-                </TouchableWithoutFeedback>
-            </Modal>
-
-
-            <Pressable style={styles.pressableButton} onPress={logOut}>
-                {loading ? <ActivityIndicator color={'white'}></ActivityIndicator> : <Text style={{color:'white',fontSize:18,fontWeight:800, textAlign:'center'}}>Log Out</Text>}
+        <View style={styles.profileInfo}>
+          <View style={styles.avatarContainer}>
+            <Image style={styles.avatar} source={imageSrc.uri ? imageSrc : require("../../assets/profile.png")} />
+            <Pressable style={styles.changeAvatarButton} onPress={() => setOpenModal(true)}>
+              <Plus color="#FFFFFF" size={20} />
             </Pressable>
-        </ScrollView>
-    );
-};
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.username}>{user?.username}</Text>
+            <Text style={styles.balance}>Balance: ${user?.balance?.toFixed(2)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.menuContainer}>
+          {renderMenuItem(<Wallet color="#007AFF" size={24} />, "Wallet", toWallet)}
+          {renderMenuItem(<Book color="#007AFF" size={24} />, "Rules", toRules)}
+          {renderMenuItem(<Users color="#007AFF" size={24} />, "Connections", toConnection)}
+        </View>
+
+        <Pressable style={styles.logoutButton} onPress={logOut}>
+          {loading ? (
+            <ActivityIndicator color={"white"} />
+          ) : (
+            <>
+              <LogOut color="#FFFFFF" size={20} />
+              <Text style={styles.logoutButtonText}>Log Out</Text>
+            </>
+          )}
+        </Pressable>
+
+        <Modal visible={openModal} transparent={true} onRequestClose={() => setOpenModal(false)}>
+          <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Change Profile Photo</Text>
+                  <View style={styles.modalButtons}>
+                    <Pressable style={styles.modalButton} onPress={takeImage}>
+                      <Camera color="#007AFF" size={30} />
+                      <Text style={styles.modalButtonText}>Camera</Text>
+                    </Pressable>
+                    <Pressable style={styles.modalButton} onPress={pickImage}>
+                      <Image style={styles.modalButtonIcon} source={require("../../assets/galleryIcon.png")} />
+                      <Text style={styles.modalButtonText}>Gallery</Text>
+                    </Pressable>
+                    <Pressable style={styles.modalButton} onPress={removeImage}>
+                      <Image style={styles.modalButtonIcon} source={require("../../assets/trashIcon.png")} />
+                      <Text style={styles.modalButtonText}>Remove</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </ScrollView>
+    </View>
+  )
+}
 
 const styles = StyleSheet.create({
-    container: {
-        padding: 24,
-        marginTop: -50,
-        flexGrow: 1,
-        backgroundColor: 'white',
-    },
-    logoContainer: {
-        marginBottom: 32,
-        alignItems: 'center',
-    },
-    logo: {
-        width: 60,
-        height: 60,
-    },
-    ProfileText: {
-        marginTop: 30,
-        fontSize: 18,
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    pressableButton: {
-        padding: 10,
-        backgroundColor: 'red',
-        borderRadius: 5,
-        width:200,
-        marginLeft:'auto',
-        marginRight:'auto',
-        marginTop:80
-
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalContent: {
-        width: 350,
-        padding: 20,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        alignItems: 'center',
-        margin: 'auto',
-        justifyContent: 'center',
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 20,
-    },
-    modalButton: {
-        paddingTop: 10,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 5,
-        alignItems: 'center',
-        marginBottom: 10,
-        width: 80,
-        height: 80,
-    },
-    modalButtonText: {
-        fontSize: 16,
-        color: '#333',
-    },
-    cancel: {
-        position: 'absolute',
-        top: 50,
-        left: 30,
-    },
-    wallet: {
+  container: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+    backgroundColor: "#FFFFFF",
+    paddingTop: 72,
     
-        zIndex: 10,
-        width:150,
-        height:150,
-        backgroundColor:'lightgray',
-        borderRadius:20
-      },
-});
+  },
+  headerText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#000000",
+  },
+  profileInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+  },
+  avatarContainer: {
+    position: "relative",
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  changeAvatarButton: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "#007AFF",
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  userInfo: {
+    marginLeft: 20,
+  },
+  username: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#000000",
+  },
+  balance: {
+    fontSize: 16,
+    color: "#8E8E93",
+    marginTop: 4,
+  },
+  menuContainer: {
+    backgroundColor: "#FFFFFF",
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#E5E5EA",
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+  },
+  menuItemText: {
+    fontSize: 17,
+    marginLeft: 15,
+    flex: 1,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FF3B30",
+    borderRadius: 10,
+    padding: 16,
+    marginTop: 40,
+    marginHorizontal: 20,
+  },
+  logoutButtonText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "600",
+    marginLeft: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  modalButton: {
+    alignItems: "center",
+  },
+  modalButtonIcon: {
+    width: 30,
+    height: 30,
+    marginBottom: 8,
+  },
+  modalButtonText: {
+    fontSize: 14,
+    color: "#007AFF",
+  },
+})
 
-export default ProfileScreen;
+export default ProfileScreen
+

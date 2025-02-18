@@ -13,6 +13,9 @@ import ArchiveGroupScreen from './ArchiveGroupScreen';
 import GroupSettingScreen from './Settings/GroupSettingScreen';
 import { useUserContext } from "../../UserContext";
 import { RootStackParamList } from '../../types';
+import GroupCreationScreen1 from './Settings/GroupCreationScreen1';
+import GroupCreationScreen2 from './Settings/GroupCreationScreen2';
+import LeaderboardScreen from './LeaderboardScreen';
 
 
 type GroupNavigatorParamList = Pick<RootStackParamList, 
@@ -27,6 +30,9 @@ type GroupNavigatorParamList = Pick<RootStackParamList,
     | 'Info'
     | 'ArchiveGroup'
     | 'GroupSetting'
+    | 'GroupCreation1'
+    | 'GroupCreation2'
+    | 'Leaderboard'
 >;
 
 const Stack = createNativeStackNavigator<GroupNavigatorParamList>();
@@ -53,6 +59,9 @@ const GroupsNav: React.FC = () => {
             <Stack.Screen name="Info" component={InfoScreen} />
             <Stack.Screen name="ArchiveGroup" component={ArchiveGroupScreen} />
             <Stack.Screen name="GroupSetting" component={GroupSettingScreen} />
+            <Stack.Screen name="GroupCreation1" component={GroupCreationScreen1} />
+            <Stack.Screen name="GroupCreation2" component={GroupCreationScreen2} />
+            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
         </Stack.Navigator>
     );
 };

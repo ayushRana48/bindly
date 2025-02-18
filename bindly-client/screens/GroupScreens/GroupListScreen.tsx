@@ -1,203 +1,209 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, Pressable, Image, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from "react-native";
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useGroupsContext } from "../GroupsContext";
-import { useUserContext } from "../../UserContext";
-import GroupListItem from "./components/GroupListItem";
-import { registerForPushNotificationsAsync } from "../../notificationUtils";
-import { RootStackParamList, Group } from "../../types";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { checkToken } from "../../utils/checkToken";
+"use client"
 
-type GroupListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'GroupsList'>;
+import type React from "react"
+import { useEffect, useState, useCallback } from "react"
+import { View, Text, Pressable, StyleSheet, FlatList, RefreshControl, ActivityIndicator, Platform } from "react-native"
+import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { useGroupsContext } from "../GroupsContext"
+import { useUserContext } from "../../UserContext"
+import GroupListItem from "./components/GroupListItem"
+import { registerForPushNotificationsAsync } from "../../notificationUtils"
+import type { RootStackParamList, Group } from "../../types"
+import { checkToken } from "../../utils/checkToken"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { Plus, Archive } from "lucide-react-native"
+
+type GroupListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "GroupsList">
 
 const GroupListScreen: React.FC = () => {
-    const navigation = useNavigation<GroupListScreenNavigationProp>();
-    const { groups, setGroups, groupData } = useGroupsContext();
-    const { user } = useUserContext();
-    const [refreshing, setRefreshing] = useState<boolean>(false);
-    const [activeTab, setActiveTab] = useState<"current" | "archive">("current");
-    const [archiveGroup, setArchiveGroup] = useState<Group[]>([]);
-    const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
+  const navigation = useNavigation<GroupListScreenNavigationProp>()
+  const { groups, setGroups } = useGroupsContext()
+  const { user } = useUserContext()
+  const [refreshing, setRefreshing] = useState<boolean>(false)
+  const [activeTab, setActiveTab] = useState<"current" | "archive">("current")
+  const [archiveGroups, setArchiveGroups] = useState<Group[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
 
+  useEffect(() => {
+    const checkTokenAndRegister = async () => {
+      await registerForPushNotificationsAsync(user?.username || "")
+    }
+    checkTokenAndRegister()
+  }, [user])
 
+  const toNewGroup = () => {
+    setActiveTab("current")
+    navigation.navigate("GroupCreation1")
+  }
 
-    useEffect(() => {
-        const checkToken = async () => {
-            await registerForPushNotificationsAsync(user?.username || '');
-        };
+  const getAllGroups = async () => {
+    try {
+      setLoading(true)
+      const token = await checkToken()
+      const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByUsername/${user?.username}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const res = await response.json()
+      setGroups(res.current.map((r: any) => r.groups))
+      setArchiveGroups(res.archive.map((r: any) => r.groups))
+    } catch (error) {
+      console.log(error)
+    }
+    setLoading(false)
+  }
 
-        checkToken();
-    }, [user]);
+  useEffect(() => {
+    getAllGroups()
+  }, []) // Removed user dependency
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true)
+    getAllGroups().then(() => setRefreshing(false))
+  }, [])
 
+  const renderItem = ({ item }: { item: Group }) => <GroupListItem groupData={item} activeTab={activeTab} />
 
-    const toNewGroup = () => {
-        setActiveTab("current")
-        navigation.navigate('NewGroup');
-    };
+  const EmptyListComponent = () => (
+    <View style={styles.emptyList}>
+      <Text style={styles.emptyListText}>No groups found</Text>
+      <Pressable style={styles.createGroupButton} onPress={toNewGroup}>
+        <Text style={styles.createGroupButtonText}>Create Group</Text>
+      </Pressable>
+    </View>
+  )
 
-
-
-
-
-    const getAllGroups = async () => {
-        try {
-            setLoading(true)
-            const token = await checkToken();
-
-            // Make the fetch request with the Bearer token
-            const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByUsername/${user?.username}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`, // Add the Bearer token
-                },
-            });
-
-            const res = await response.json();
-            const groupList = res.current.map((r: any) => r.groups)
-            setGroups(groupList);
-            const groupList2 = res.archive.map((r: any) => r.groups)
-            setArchiveGroup(groupList2);
-            console.log('\n\n\n calling GroupData\n \n', groupData)
-        } catch (error) {
-            console.log(error);
-        }
-        setLoading(false)
-    };
-
-    useEffect(() => {
-        getAllGroups();
-    }, []);
-
-
-    useEffect(() => {
-        if (activeTab === "current") {
-            setFilteredGroups(groups);
-        } else {
-            setFilteredGroups(archiveGroup);
-        }
-    }, [activeTab, groups, archiveGroup]);
-
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        getAllGroups().then(() => setRefreshing(false));
-    }, []);
-
-    return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Pressable style={styles.newGroup} onPress={toNewGroup}>
-                    <Image source={require("../../assets/NewGroupIcon.png")} style={styles.newGroupIcon} />
-                </Pressable>
-                <Text style={styles.headerText}>Groups</Text>
-            </View>
-            <View style={styles.tabs}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === "current" && styles.activeTab]}
-                    onPress={() => setActiveTab("current")}
-                >
-                    <Text style={styles.tabText}>Current</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === "archive" && styles.activeTab]}
-                    onPress={() => setActiveTab("archive")}
-                >
-                    <Text style={styles.tabText}>Archive</Text>
-                </TouchableOpacity>
-            </View>
-            {loading ?
-                <ActivityIndicator size="large" style={{ width: 80, marginTop: 20, marginHorizontal: 'auto' }} color={'dodgerblue'}></ActivityIndicator>
-                :
-                <ScrollView
-                    contentContainerStyle={styles.scrollView}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                >
-                    {
-                        filteredGroups.length === 0 ?
-                            (<Pressable onPress={toNewGroup} style={styles.noGroups}><Text style={{ color: 'white', fontSize: 20, fontWeight: '700' }}>Create Group</Text></Pressable>) :
-                            (
-                                <View style={styles.groupList}>
-                                    {filteredGroups.map((g, index) => <GroupListItem key={index} groupData={g} activeTab={activeTab} />)}
-                                </View>
-                            )
-                    }
-                </ScrollView>
-            }
+  return (
+    <View style={styles.container} >
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Groups</Text>
+          <Pressable style={styles.newGroupButton} onPress={toNewGroup}>
+            <Plus color="#007AFF" size={24} />
+          </Pressable>
         </View>
-    );
-};
+        <View style={styles.tabs}>
+          <Pressable
+            style={[styles.tab, activeTab === "current" && styles.activeTab]}
+            onPress={() => setActiveTab("current")}
+          >
+            <Text style={[styles.tabText, activeTab === "current" && styles.activeTabText]}>Current</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.tab, activeTab === "archive" && styles.activeTab]}
+            onPress={() => setActiveTab("archive")}
+          >
+            <Archive color={activeTab === "archive" ? "#007AFF" : "#8E8E93"} size={18} />
+            <Text style={[styles.tabText, activeTab === "archive" && styles.activeTabText]}>Archive</Text>
+          </Pressable>
+        </View>
+        {loading ? (
+          <ActivityIndicator size="large" style={styles.loader} color="#007AFF" />
+        ) : (
+          <FlatList
+            data={activeTab === "current" ? groups : archiveGroups}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.groupid}
+            contentContainerStyle={styles.listContent}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            ListEmptyComponent={EmptyListComponent}
+          />
+        )}
+      </View>
+    </View>
+  )
+}
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: 'white',
-        flex: 1,
-    },
-    header: {
-        paddingTop: 60,
-        width: '100%',
-        zIndex: 10,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 15,
-    },
-    newGroup: {
-        position: 'absolute',
-        width: 45,
-        height: 45,
-        right: 20,
-        top: 40,
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    newGroupIcon: {
-        // width:38,
-        // height:26
-    },
-    headerText: {
-        fontSize: 30,
-        fontWeight: 'bold',
-    },
-    tabs: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        borderBottomWidth: 1,
-        borderColor: '#ccc',
-    },
-    tab: {
-        paddingVertical: 15,
-    },
-    activeTab: {
-        borderBottomWidth: 2,
-        borderColor: 'black',
-    },
-    tabText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    scrollView: {
-        paddingHorizontal: 32,
-    },
-    noGroups: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'dodgerblue',
-        width: 200,
-        height: 50,
-        padding: 10,
-        borderRadius: 8,
-        marginTop: 50,
-        marginHorizontal: 'auto'
-    },
-    groupList: {
-        marginTop: 20,
-    },
-});
+  container: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
+  },
+  content: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+    backgroundColor: "#FFFFFF",
+    paddingTop: 64,
+   
+  },
+  headerText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#000000",
+  },
+  newGroupButton: {
+    padding: 8,
+  },
+  tabs: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#007AFF",
+  },
+  tabText: {
+    fontSize: 16,
+    color: "#8E8E93",
+    marginLeft: 4,
+  },
+  activeTabText: {
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  loader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyList: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 48,
+  },
+  emptyListText: {
+    fontSize: 18,
+    color: "#8E8E93",
+    marginBottom: 16,
+  },
+  createGroupButton: {
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  createGroupButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+})
 
-export default GroupListScreen;
+export default GroupListScreen
+

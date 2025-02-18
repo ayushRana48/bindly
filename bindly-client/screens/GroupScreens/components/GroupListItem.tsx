@@ -1,20 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet } from "react-native";
-import { useNavigation } from '@react-navigation/native';
-import { useGroupsContext } from "../../GroupsContext";
-
-// @ts-ignore
-import placeholder from '../../../assets/GroupIcon.png';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList, Group } from "../../../types";
-
+import type React from "react"
+import { View, Text, Pressable, Image, StyleSheet } from "react-native"
+import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList, Group } from "../../../types"
+import { useEffect, useState } from "react"
+import { useGroupsContext } from "../../GroupsContext"
 interface GroupListItemProps {
-  groupData: Group;
-  activeTab: 'current' | 'archive';
+  groupData: Group
+  activeTab: "current" | "archive"
 }
 
 const GroupListItem: React.FC<GroupListItemProps> = ({ groupData, activeTab }) => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const [imageUrl, setImageUrl] = useState<string>("");
   const {groups}= useGroupsContext()
 
@@ -23,51 +20,78 @@ const GroupListItem: React.FC<GroupListItemProps> = ({ groupData, activeTab }) =
     setImageUrl(groupData?.pfp || "");  
   }, [groupData?.pfp,groups]);
 
-
-
+  
   const toGroup = () => {
-    console.log('yoo we are going to the grrooop')
-      navigation.navigate("Group", { groupData: groupData });
+    navigation.navigate("Group", { groupData: groupData })
   }
-
-
-
 
   return (
     <Pressable style={styles.container} onPress={toGroup}>
       <Image
-        style={{ width: 50, height: 50, borderRadius: 8 }}
-        source={imageUrl ? { uri: imageUrl } : placeholder}
+        style={styles.image}
+        source={groupData?.pfp ? { uri: groupData.pfp } : require("../../../assets/GroupIcon.png")}
       />
-      <Text style={styles.name}>{groupData?.groupname}</Text>
-      <Text style={styles.id}>#{groupData?.groupid?.slice(-4)}</Text>
+      <View style={styles.textContainer}>
+        <Text style={styles.name}>{groupData?.groupname}</Text>
+        <Text style={styles.id}>#{groupData?.groupid?.slice(-4)}</Text>
+      </View>
+      {activeTab === "archive" && (
+        <View style={styles.archivedBadge}>
+          <Text style={styles.archivedText}>Archived</Text>
+        </View>
+      )}
     </Pressable>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
-    padding: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f2f2f2',
-    height: 80,
+    backgroundColor: "white",
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    marginBottom: 12,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  image: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  textContainer: {
+    marginLeft: 12,
+    flex: 1,
   },
   name: {
-    marginLeft: 10,
-    fontSize: 18,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000000",
   },
   id: {
-    color: 'gray',
-    marginLeft: 5,
-    fontSize: 18,
-  },
-  status: {
+    color: "#8E8E93",
     fontSize: 14,
-    marginLeft: 'auto',
+    marginTop: 2,
   },
-});
+  archivedBadge: {
+    backgroundColor: "#FF9500",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  archivedText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+})
 
-export default GroupListItem;
+export default GroupListItem
+

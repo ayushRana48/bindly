@@ -1,95 +1,117 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet, Modal, Alert, TouchableWithoutFeedback } from "react-native";
-import { useNavigation } from '@react-navigation/native';
-import { useGroupsContext } from "../../GroupsContext";
-import { useUserContext } from "../../../UserContext";
+"use client"
+
+import type React from "react"
+import { useEffect, useState } from "react"
+import { View, Text, Image, StyleSheet } from "react-native"
+import { useGroupsContext } from "../../GroupsContext"
 // @ts-ignore
-import placeholder from '../../../assets/profile.png';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from "../../../types";
+import placeholder from "../../../assets/profile.png"
+
 interface LeaderboardItemProps {
-    memberData: {
-      username: string;
-      place: number;
-      netMoney: number;
-      totalCountedPosts: number;
-      totalUnCountedPosts: number;
-      users?: {
-        pfp?: string;
-      };
-    };
+  memberData: {
+    username: string
+    place: number
+    netMoney: number
+    totalCountedPosts: number
+    totalUnCountedPosts: number
+    users?: {
+      pfp?: string
+    }
   }
-  
-  const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ memberData }) => {
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const [imageUrl, setImageUrl] = useState<any>(placeholder);
-    const { groupData } = useGroupsContext();
-    const { user:u } = useUserContext();
+}
+
+const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ memberData }) => {
+  const [imageUrl, setImageUrl] = useState<any>(placeholder)
+  const { groupData } = useGroupsContext()
+
+  useEffect(() => {
+    const user = groupData?.usergroup?.find((user) => user?.username === memberData.username)
+    if (user?.users?.pfp) {
+      setImageUrl({ uri: user.users.pfp })
+    }
+  }, [groupData?.usergroup, memberData.username])
 
 
-    useEffect(()=>{
-        for(let i=0;i<groupData?.usergroup?.length; i++){
-            const user = groupData.usergroup[i];
-            if (user?.username === memberData.username) {
-                if (user?.users?.pfp) {
-                    setImageUrl({uri: user.users.pfp});
-                }
-            }
-        }
-    },[groupData?.usergroup])
+  const losingMoney = (): boolean => {
+    return groupData?.group?.buyin > memberData.netMoney 
+  }
 
-    useEffect(()=>{
-        console.log(memberData)
-    })
-
-
-
-    return (
-        <Pressable style={styles.container}>
-            <Image
-                style={{ width: 50, height: 50, borderRadius: 8 }}
-                source={imageUrl}
-            />
-            <Text style={styles.name}>{memberData.place}  {memberData.username}</Text>
-            <View style={{marginLeft:'auto'}}>
-                <Text style={{fontSize:20}}>${memberData.netMoney.toFixed(2)}</Text>
-                <Text>{memberData.totalCountedPosts} posts</Text>
-                <Text>{memberData.totalUnCountedPosts} uncounted</Text>
-
-            </View>
-        </Pressable>
-    );
-};
+  return (
+    <View style={styles.container}>
+      <View style={styles.rankContainer}>
+        <Text style={styles.rank}>{memberData.place}</Text>
+      </View>
+      <Image style={styles.avatar} source={imageUrl} />
+      <View style={styles.infoContainer}>
+        <Text style={styles.name}>{memberData.username}</Text>
+        <Text style={styles.subText}>
+          {memberData.totalCountedPosts} posts • {memberData.totalUnCountedPosts} uncounted
+        </Text>
+      </View>
+      <View style={styles.moneyContainer}>
+        <Text style={losingMoney() ? styles.moneyRed : styles.money}>${memberData.netMoney.toFixed(2)}</Text>
+      </View>
+    </View>
+  )
+}
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: 'white',
-        padding: 5,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f2f2f2',
-        height: 80,
-    },
-    name: {
-        marginLeft: 10,
-        fontSize: 18,
-    },
-    id: {
-        color: 'gray',
-        marginLeft: 5,
-        fontSize: 18,
-    },
-    status: {
-        fontSize: 14,
-        marginLeft: 'auto',
-        height: 30,
-        width: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#ddd',
-        borderRadius: 15,
-    },
-});
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+  },
+  rankContainer: {
+    width: 30,
+    alignItems: "center",
+    marginRight: 10,
+  },
+  rank: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#555",
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  infoContainer: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  subText: {
+    fontSize: 12,
+    color: "#777",
+  },
+  moneyContainer: {
+    alignItems: "flex-end",
+  },
+  money: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#4CAF50",
+  },
+  moneyRed: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FF4C4C",
+  },
+})
 
-export default LeaderboardItem;
+export default LeaderboardItem
+
