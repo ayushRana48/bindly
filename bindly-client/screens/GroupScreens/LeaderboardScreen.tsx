@@ -21,7 +21,7 @@ const LeaderboardScreen: React.FC = () => {
   const getLeaderBoard = async (): Promise<void> => {
     try {
       const token = await checkToken()
-      const response = await fetch(`http://localhost:3000/bindly/group/getLeaderboard/${groupData.group.groupid}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/getLeaderboard/${groupData.group.groupid}`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       })
 

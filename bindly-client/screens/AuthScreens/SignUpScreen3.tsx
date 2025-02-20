@@ -25,7 +25,7 @@ const SignUpScreen3: React.FC = () => {
     // For now, we'll just navigate to the main app
     if (verificationCode.length === 6) {
       try{
-        const response = await fetch(`http://localhost:3000/bindly/auth/verifyCode`, {
+        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/verifyCode`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, token: verificationCode, type: "signup" }),
@@ -50,7 +50,7 @@ const SignUpScreen3: React.FC = () => {
 
   const resendCode = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/bindly/auth/resendCode`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/resendCode`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

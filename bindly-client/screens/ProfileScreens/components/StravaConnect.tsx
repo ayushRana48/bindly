@@ -13,7 +13,7 @@ interface StravaDiscovery {
 }
 
 
-const LOGGING_URL = 'http://localhost:3000/log';
+const LOGGING_URL = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/log';
 
 async function logToServer(message: string): Promise<void> {
   console.log(`message: ${message}`);
@@ -68,7 +68,7 @@ const StravaConnect: React.FC = () => {
 
     try {
       const token = await checkToken();
-      const revokeResponse = await fetch(`http://localhost:3000/bindly/strava/revoke`, {
+      const revokeResponse = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/strava/revoke`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
         body: JSON.stringify({
@@ -107,7 +107,7 @@ const StravaConnect: React.FC = () => {
 
         if (tokenResponse.refreshToken && user) {
           const token = await checkToken();
-          const saveResponse = await fetch(`http://localhost:3000/bindly/strava/addRefresh`, {
+          const saveResponse = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/strava/addRefresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             body: JSON.stringify({

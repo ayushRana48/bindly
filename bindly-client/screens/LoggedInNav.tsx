@@ -5,11 +5,13 @@ import { GroupsProvider } from './GroupsContext';
 import GroupsNav from './GroupScreens/GroupsNav';
 import ActivityNav from './ActivityScreens/ActivityNav';
 import ProfileNav from './ProfileScreens/ProfileNav';
-
+import BalanceNav from './BalanceScreens/BalanceNav';
+  
 type TabParamList = {
   Groups: undefined;
   Profile: undefined;
   Activities: undefined;
+  Balance: undefined;
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -47,6 +49,17 @@ const LoggedInNav: React.FC = () => {
             tabBarLabel: 'Activity',
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="drafts" size={size} color={color} />
+            ),
+          }}  
+        />
+
+        <Tab.Screen 
+          name="Balance" 
+          component={BalanceNav}
+          options={{
+            tabBarLabel: 'Balance',
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name="attach-money" size={size} color={color} />
             ),
           }}  
         />

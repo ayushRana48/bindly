@@ -135,7 +135,7 @@ const PostComponent: React.FC<PostItemProps> = ({
 
     updatePostLikes(postid, user?.username || "");
 
-    let route = 'http://localhost:3000/bindly/post/addLike'
+    let route = 'https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/addLike'
     setLoading(true);
     try {
       const token = await checkToken();

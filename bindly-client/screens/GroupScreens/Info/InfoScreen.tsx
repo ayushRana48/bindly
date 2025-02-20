@@ -45,7 +45,7 @@ const InfoScreen: React.FC = () => {
     try {
       const token = await checkToken()
       const response = await fetch(
-        `http://localhost:3000/bindly/usergroup/getUsergroupByGroup/${groupData.group.groupid}`,
+        `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByGroup/${groupData.group.groupid}`,
         {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         },

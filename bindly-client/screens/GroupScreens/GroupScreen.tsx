@@ -132,7 +132,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
 
   const getPostStatus = async (): Promise<void> => {
     const token = await checkToken();
-    const postStatusResponse = await fetch(`http://localhost:3000/bindly/post/postStatus`, {
+    const postStatusResponse = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/postStatus`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({
@@ -237,7 +237,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
     try {
       // 1. Fetch group data
       const token = await checkToken();
-      const response = await fetch(`http://localhost:3000/bindly/group/${groupData.groupid}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/group/${groupData.groupid}`, {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       });
 
@@ -275,7 +275,7 @@ const GroupScreen: React.FC<GroupScreenProps> = () => {
   const inGroup = async (): Promise<boolean> => {
     try {
       const token = await checkToken();
-      const response = await fetch(`http://localhost:3000/bindly/usergroup/inGroup`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/inGroup`, {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         method: 'PUT',
         body: JSON.stringify({

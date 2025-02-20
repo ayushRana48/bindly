@@ -27,7 +27,7 @@ const WalletScreen: React.FC = () => {
                 setLoading(true);
                 const token = await checkToken();
                 try {
-                    const response = await fetch(`http://localhost:3000/bindly/stripe/getSavedCards/${user.stripeid}`, {
+                    const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/getSavedCards/${user.stripeid}`, {
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`

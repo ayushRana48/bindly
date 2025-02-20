@@ -7,7 +7,8 @@ import {
   getGroup, 
   getGroupsByHostId, 
   updateGroup, 
-  deleteGroup 
+  deleteGroup, 
+  endGroup
 } from '../transactions/groupTransactions';
 import { getUser } from '../transactions/usersTransactions';
 import { v4 as uuidv4 } from 'uuid';
@@ -229,8 +230,25 @@ async function changeHostController(req: Request, res: Response) {
 }
 
 
+async function endGroupController(req: Request, res: Response) {
+  const { groupId } = req.body;
+
+  try{
+    const {error} = await endGroup(groupId);
+    if(error){
+      return res.status(400).json({ error: error.message });
+    }
+    return res.status(200).json({data:"success"});
+  }catch(error){
+    return res.status(400).json({ 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    });
+  }
 
 
+
+
+}
 export {
   createGroupController,
   getAllGroupsController,
@@ -240,5 +258,6 @@ export {
   deleteGroupController,
   changeHostController,
   getLeaderBoardController,
-  processVetoDemoController
+  processVetoDemoController,
+  endGroupController
 };

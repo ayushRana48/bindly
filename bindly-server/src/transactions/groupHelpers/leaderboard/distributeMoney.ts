@@ -8,6 +8,13 @@ interface LeaderboardWeek {
     unCountedPosts: number;
   }
   
+
+  interface Person {
+    username: string;
+    netMoney: number;
+}
+
+
   interface LeaderboardEntry {
     username: string;
     weeks: LeaderboardWeek[];
@@ -29,6 +36,8 @@ interface LeaderboardWeek {
     members: LeaderboardEntry[];
     quantity: number;
   }
+  
+
   
 
 function distributeMoney(leaderboard: LeaderboardEntry[], buyin: number): LeaderboardEntry[] {
@@ -107,5 +116,51 @@ function distributeMoney(leaderboard: LeaderboardEntry[], buyin: number): Leader
     return rankMembers.flatMap(rank => rank.members);
   }
 
+  function settlePayments(leaderboard: LeaderboardEntry[], buyin: number, groupid:string) {
+    const updatedLeaderboard = distributeMoney(leaderboard, buyin);
+    const receivers: Person[] = [];
+    const payers: Person[] = [];
+
+    // Separate payers and receivers
+    for (const person of updatedLeaderboard) {
+        if ((person?.netMoney || person.netMoney===0) && person.netMoney-buyin > 0) {
+            receivers.push({ username: person.username, netMoney: person.netMoney-buyin });
+        } else if ((person?.netMoney || person.netMoney===0) && person.netMoney-buyin < 0 ) {
+            payers.push({ username: person.username, netMoney: Math.abs(person.netMoney-buyin) }); // Convert to positive
+        }
+    }
+
+
+
+    payers.sort((a, b) => b.netMoney - a.netMoney);
+
+    console.log("receivers",receivers);
+    console.log("payers",payers);
+
+
+    // Match payers with receivers
+    const transactions: { payer_id: string; receiver_id: string; amount: number,groupid:string,paid:boolean }[] = [];
+    let i = 0, j = 0;
+
+    while (i < payers.length && j < receivers.length) {
+        let payer = payers[i];
+        let receiver = receivers[j];
+
+        let transferAmount = Math.min(payer.netMoney, receiver.netMoney); // Settle the smaller amount
+
+        transactions.push({ payer_id: payer.username, receiver_id: receiver.username, amount: transferAmount, groupid: groupid, paid: false });
+
+        // Deduct transferred amount
+        payer.netMoney -= transferAmount;
+        receiver.netMoney -= transferAmount;
+
+        // Move to next person in the list if settled
+        if (payer.netMoney === 0) i++;
+        if (receiver.netMoney === 0) j++;
+    }
+
+    return transactions;
+}
+
   
-  export {distributeMoney}
+  export {settlePayments,distributeMoney}

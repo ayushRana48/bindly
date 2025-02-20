@@ -41,7 +41,7 @@ const GroupListScreen: React.FC = () => {
     try {
       setLoading(true)
       const token = await checkToken()
-      const response = await fetch(`http://localhost:3000/bindly/usergroup/getUsergroupByUsername/${user?.username}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/usergroup/getUsergroupByUsername/${user?.username}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +81,7 @@ const GroupListScreen: React.FC = () => {
     <View style={styles.container} >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.headerText}>Groups</Text>
+          <Text style={styles.headerText}>Groupss</Text>
           <Pressable style={styles.newGroupButton} onPress={toNewGroup}>
             <Plus color="#007AFF" size={24} />
           </Pressable>

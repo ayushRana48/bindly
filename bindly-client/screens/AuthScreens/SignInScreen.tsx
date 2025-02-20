@@ -31,14 +31,14 @@ const SignInScreen: React.FC = () => {
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
 
-  const { email, setEmail, loading: l2 } = useUserContext()
+  const { email, setEmail, loading: l2, refreshUser } = useUserContext()
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
 
   const submit = async (): Promise<void> => {
     if (loading) return
     setLoading(true)
     try {
-      const response = await fetch(`http://localhost:3000/bindly/auth/signIn`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signIn`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -48,7 +48,6 @@ const SignInScreen: React.FC = () => {
       })
 
       const data = await response.json()
-      console.log('data in signInScreen', data);
 
       if (response.status === 200) {
         if (data.error === "Email not verified. Please verify your email to proceed.") {
@@ -59,7 +58,9 @@ const SignInScreen: React.FC = () => {
         await AsyncStorage.setItem("userEmail", username.toLowerCase())
         await SecureStore.setItemAsync("accessToken", data.accessToken)
         await SecureStore.setItemAsync("refreshToken", data.refreshToken)
+        console.log("data in signInScreen", username.toLowerCase());
         setEmail(username.toLowerCase())
+        await refreshUser()
       } else {
         setErrorMessage(data.error || "Unknown error occurred.")
       }

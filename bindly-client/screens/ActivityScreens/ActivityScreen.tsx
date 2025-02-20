@@ -23,7 +23,7 @@ const ActivityScreen: React.FC = () => {
   const getAllInvites = async (): Promise<void> => {
     try {
       const token = await checkToken()
-      const response = await fetch(`http://localhost:3000/bindly/invite/getInviteByReciever/${user?.username}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getInviteByReciever/${user?.username}`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       })
       const res: Invite[] = await response.json()
@@ -36,7 +36,7 @@ const ActivityScreen: React.FC = () => {
   const onRefresh = useCallback(() => {
     setRefreshing(true)
     getAllInvites().then(() => setRefreshing(false))
-  }, []) // Removed getAllInvites from dependencies
+  }, []) 
 
   useEffect(() => {
     onRefresh()
@@ -44,13 +44,15 @@ const ActivityScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
+      
         <View style={styles.header}>
           <Text style={styles.headerText}>Activity</Text>
         </View>
+
+        <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -89,7 +91,6 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: "#FFFFFF",
-    marginTop: 10,
     borderTopWidth: 0,
     borderBottomWidth: 0,
     borderColor: "#E5E5EA",

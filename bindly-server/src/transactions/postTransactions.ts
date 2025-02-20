@@ -110,78 +110,6 @@ async function getPresignedUrl(
   }
 }
 
-async function compressVideo(fileName: string): Promise<DatabaseResponse<any>> {
-  try {
-    console.log('Starting video compression process...');
-
-    const { data: downloadData, error: downloadError } = await supabase
-      .storage
-      .from('posts')
-      .createSignedUrl(fileName, 60);
-
-    if (downloadError) {
-      console.error('Error creating signed URL:', downloadError);
-      return { data: null, error: new Error(downloadError.message) };
-    }
-
-    const response = await fetch(downloadData.signedUrl);
-    if (!response.ok) {
-      return { data: null, error: new Error(`Failed to fetch the video. Status: ${response.status}`) };
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const videoBuffer = Buffer.from(arrayBuffer);
-
-    const tempInputPath = path.join(os.tmpdir(), `${fileName}.mp4`);
-    fs.writeFileSync(tempInputPath, videoBuffer);
-
-    const outputPath = path.join(os.tmpdir(), 'compressed_' + fileName + '.mp4');
-    const ffmpegPath = process.env.AWS_EXECUTION_ENV ? path.join(__dirname, '..', 'bin', 'ffmpeg') : 'ffmpeg';
-
-    await new Promise<void>((resolve, reject) => {
-      execFile(ffmpegPath, [
-        '-i', tempInputPath,
-        '-vf', 'scale=-2:1080',
-        '-c:v', 'libx264',
-        '-crf', '28',
-        '-preset', 'fast',
-        '-f', 'mp4',
-        outputPath
-      ], (error, stdout, stderr) => {
-        if (error) {
-          console.error('ffmpeg error:', error.message);
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
-    });
-
-    const compressedBuffer = fs.readFileSync(outputPath);
-
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from('posts')
-      .upload(fileName, compressedBuffer, {
-        contentType: 'video/mp4',
-        upsert: true,
-      });
-
-    if (uploadError) {
-      return { data: null, error: new Error(uploadError.message) };
-    }
-
-    fs.unlinkSync(tempInputPath);
-    fs.unlinkSync(outputPath);
-
-    return { data: uploadData, error: null };
-  } catch (error) {
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error('Compression process failed') 
-    };
-  }
-}
 
 async function getAllPosts(): Promise<DatabaseResponse<Post[]>> {
   try {
@@ -292,7 +220,7 @@ async function deletePost(postid: string, groupid: string): Promise<DatabaseResp
   console.log("in delete post", postid);
   try {
     // Wrap the logic in a transaction
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // Delete comments associated with the post
       await tx.comment.deleteMany({
         where: { postid },
@@ -637,4 +565,4 @@ async function postStatus(
 
 
 
-export { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, compressVideo, postStatus, addVeto, removeVeto,addLike,removeLike, getInvalidPosts };
+export { createPost, getAllPosts, getPost, getPostsByGroupId, getPostsByUsername, updatePost, deletePost, getPresignedUrl, postStatus, addVeto, removeVeto,addLike,removeLike, getInvalidPosts };

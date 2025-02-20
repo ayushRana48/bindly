@@ -29,7 +29,7 @@ const ForgotPasswordOTPScreen: React.FC = () => {
 
   const handleVerifyOTP = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/bindly/auth/verifyOtpForReset`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/verifyOtpForReset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, token: otp }),
@@ -50,7 +50,7 @@ const ForgotPasswordOTPScreen: React.FC = () => {
 
   const resendCode = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/bindly/auth/forgetPasswordCode`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/forgetPasswordCode`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

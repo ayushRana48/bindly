@@ -30,7 +30,7 @@ const refreshAccessToken = async (): Promise<string> => {
     if (!refreshToken) throw new Error("No refresh token found");
 
     // Make request with refresh token in Authorization header
-    const response = await fetch("http://localhost:3000/bindly/auth/refreshToken", {
+    const response = await fetch("https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/refreshToken", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

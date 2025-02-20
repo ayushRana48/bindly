@@ -78,7 +78,7 @@ const CreatePostScreen: React.FC = () => {
       const compressedImage = await compressPostImage(image);
 
       // Upload image
-      const uploadResponse = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
+      const uploadResponse = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/getPresignedUrl`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
@@ -105,7 +105,7 @@ const CreatePostScreen: React.FC = () => {
       });
 
       // Create post
-      const createPostResponse = await fetch(`http://localhost:3000/bindly/post/createPost`, {
+      const createPostResponse = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/createPost`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({

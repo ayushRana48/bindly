@@ -117,3 +117,24 @@ export interface BalanceGroupTransaction {
   groupid: string; // UUID (Foreign key to 'groups')
   type: string;
 }
+
+
+export interface VenmoBalanceTransaction {
+  id: string;
+  groupid: string;
+  amount: number;
+  receiver_id: string;
+  payer_id: string;
+  time_initiated: Date;
+  time_paid: Date | null;
+  paid: boolean;
+}
+
+
+
+export interface BalanceNotification {
+  id: string;
+  latest_call: Date;
+  initiator: string;
+  receiver: string;
+}

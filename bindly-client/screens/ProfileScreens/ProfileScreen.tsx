@@ -30,7 +30,7 @@ import { checkToken } from "../../utils/checkToken"
 import compressImage from "../../utils/compressImage"
 import blobToBase64 from "../../utils/blobToBase64"
 
-const LOGGING_URL = "http://localhost:3000/log"
+const LOGGING_URL = "https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/log"
 
 async function logToServer(message: string) {
   console.log(`message: ${message}`)
@@ -122,7 +122,7 @@ const ProfileScreen: React.FC = () => {
     }
     const token = await checkToken()
 
-    fetch(`http://localhost:3000/bindly/users/updateUser/${user?.username}`, {
+    fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users/updateUser/${user?.username}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
@@ -148,7 +148,7 @@ const ProfileScreen: React.FC = () => {
   const getUser = async () => {
     try {
       const token = await checkToken()
-      const response = await fetch(`http://localhost:3000/bindly/users/email/${email}`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/users/email/${email}`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       })
       const data = await response.json()
@@ -171,7 +171,7 @@ const ProfileScreen: React.FC = () => {
     setLoading(true)
     try {
       const token = await checkToken()
-      const response = await fetch(`http://localhost:3000/bindly/auth/signOut`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signOut`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         method: "POST",
       })
@@ -218,13 +218,15 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
+   
         <View style={styles.header}>
           <Text style={styles.headerText}>Profile</Text>
         </View>
+
+        <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
 
         <View style={styles.profileInfo}>
           <View style={styles.avatarContainer}>

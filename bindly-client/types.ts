@@ -169,6 +169,7 @@ export interface UserContextType {
   setEmail: React.Dispatch<React.SetStateAction<string>>;
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  refreshUser: () => void;
 }
 
 
@@ -230,6 +231,8 @@ export type RootStackParamList = {
   // Activity Stack
   Activity: undefined;
   Veto: undefined;
+
+  BalanceScreen: undefined;
 };
 
 // Component Props Types

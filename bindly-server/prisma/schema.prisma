@@ -1,6 +1,8 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
+
 
 datasource db {
   provider  = "postgresql"
@@ -69,6 +71,7 @@ model groups {
   notifyveto                notifyveto[]
   post                      post[]
   usergroup                 usergroup[]
+  venmo_balances            venmo_balances[]
 }
 
 model invite {
@@ -120,24 +123,53 @@ model usergroup {
 }
 
 model users {
-  username                        String                @id @db.VarChar(255)
-  email                           String                @unique @db.VarChar(255)
-  firstName                       String
-  pfp                             String?               @db.VarChar(255)
-  lastName                        String?
-  lastpfpupdate                   DateTime?             @db.Timestamp(6)
-  balance                         Float                 @default(0)
-  stripeid                        String?
-  tokens                          String[]              @default([])
-  lastlogin                       DateTime?             @db.Timestamptz(6)
-  timezone                        String?
-  stravarefresh                   String?
-  balance_transaction             balance_transaction[]
-  comment                         comment[]
-  groups                          groups[]
-  invite_invite_receiveridTousers invite[]              @relation("invite_receiveridTousers")
-  invite_invite_senderidTousers   invite[]              @relation("invite_senderidTousers")
-  notifyveto                      notifyveto[]
-  post                            post[]
-  usergroup                       usergroup[]
+  username                                                   String                 @id @db.VarChar(255)
+  email                                                      String                 @unique @db.VarChar(255)
+  firstName                                                  String
+  pfp                                                        String?                @db.VarChar(255)
+  lastName                                                   String?
+  lastpfpupdate                                              DateTime?              @db.Timestamp(6)
+  balance                                                    Float                  @default(0)
+  stripeid                                                   String?
+  tokens                                                     String[]               @default([])
+  lastlogin                                                  DateTime?              @db.Timestamptz(6)
+  timezone                                                   String?
+  stravarefresh                                              String?
+  balance_notification_balance_notification_initiatorTousers balance_notification[] @relation("balance_notification_initiatorTousers")
+  balance_notification_balance_notification_receiverTousers  balance_notification[] @relation("balance_notification_receiverTousers")
+  balance_transaction                                        balance_transaction[]
+  comment                                                    comment[]
+  groups                                                     groups[]
+  invite_invite_receiveridTousers                            invite[]               @relation("invite_receiveridTousers")
+  invite_invite_senderidTousers                              invite[]               @relation("invite_senderidTousers")
+  notifyveto                                                 notifyveto[]
+  post                                                       post[]
+  usergroup                                                  usergroup[]
+  venmo_balances_venmo_balances_payer_idTousers              venmo_balances[]       @relation("venmo_balances_payer_idTousers")
+  venmo_balances_venmo_balances_receiver_idTousers           venmo_balances[]       @relation("venmo_balances_receiver_idTousers")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model venmo_balances {
+  id                                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  payer_id                                String    @db.VarChar
+  receiver_id                             String    @db.VarChar
+  groupid                                 String    @db.Uuid
+  amount                                  Float
+  paid                                    Boolean
+  time_initiated                          DateTime  @default(now()) @db.Timestamptz(6)
+  time_paid                               DateTime? @db.Timestamptz(6)
+  groups                                  groups    @relation(fields: [groupid], references: [groupid], onDelete: NoAction, onUpdate: NoAction)
+  users_venmo_balances_payer_idTousers    users     @relation("venmo_balances_payer_idTousers", fields: [payer_id], references: [username], onDelete: NoAction, onUpdate: NoAction)
+  users_venmo_balances_receiver_idTousers users     @relation("venmo_balances_receiver_idTousers", fields: [receiver_id], references: [username], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model balance_notification {
+  id                                          BigInt   @id @default(autoincrement())
+  latest_call                                 DateTime @default(now()) @db.Timestamptz(6)
+  initiator                                   String?  @db.VarChar
+  receiver                                    String   @db.VarChar
+  users_balance_notification_initiatorTousers users?   @relation("balance_notification_initiatorTousers", fields: [initiator], references: [username], onDelete: NoAction, onUpdate: NoAction)
+  users_balance_notification_receiverTousers  users    @relation("balance_notification_receiverTousers", fields: [receiver], references: [username], onDelete: NoAction, onUpdate: NoAction)
 }

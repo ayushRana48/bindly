@@ -5,7 +5,6 @@ import {
   getInvalidPosts,
   addVeto,
   removeVeto, 
-  compressVideo, 
   getAllPosts, 
   getPost, 
   getPostsByGroupId, 
@@ -88,22 +87,22 @@ async function createPostController(req: Request, res: Response) {
   }
 }
 
-async function compressVideoController(req: Request, res: Response) {
-  const { videolink } = req.body;
+// async function compressVideoController(req: Request, res: Response) {
+//   const { videolink } = req.body;
 
-  try {
-    const { data, error } = await compressVideo(videolink);
+//   try {
+//     const { data, error } = await compressVideo(videolink);
     
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-    return res.status(200).json('successfully compressed');
-  } catch (error) {
-    return res.status(400).json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    });
-  }
-}
+//     if (error) {
+//       return res.status(400).json({ error: error.message });
+//     }
+//     return res.status(200).json('successfully compressed');
+//   } catch (error) {
+//     return res.status(400).json({ 
+//       error: error instanceof Error ? error.message : 'Unknown error' 
+//     });
+//   }
+// }
 
 
 
@@ -311,7 +310,7 @@ export {
   getPostsByGroupIdController,
   getPostsByUsernameController,
   getPresignedUrlController,
-  compressVideoController,
+  // compressVideoController,
   postStatusController,
   addVetoController,
   removeVetoController,

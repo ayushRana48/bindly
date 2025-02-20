@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { uploadFile } from './uploadFile';
 import { Group, Post, DatabaseResponse } from '../types';
-import { distributeMoney } from './groupHelpers/leaderboard/distributeMoney';
+import { distributeMoney, settlePayments } from './groupHelpers/leaderboard/distributeMoney';
 import { buildLeaderboardData } from './groupHelpers/leaderboard/leaderboard';
 import { processPosts } from './groupHelpers/veto/processPosts';
 import { updateUserBalance } from './groupHelpers/endGroup/endGroupHelpers';
@@ -120,8 +120,9 @@ async function getAllGroups(): Promise<DatabaseResponse<GroupsResponse>> {
   }
 }
 
-async function getLeaderBoard(groupid: string): Promise<DatabaseResponse<LeaderboardEntry[]>> {
+async function getLeaderBoard(groupid: string): Promise<DatabaseResponse<{leaderboard:LeaderboardEntry[], buyin:number}>> {
   try {
+    console.log("getLeaderBoard called", groupid);
     const group = await prisma.groups.findUnique({
       where: { groupid },
       select: { startdate: true, tasksperweek: true, buyin: true }
@@ -161,7 +162,7 @@ async function getLeaderBoard(groupid: string): Promise<DatabaseResponse<Leaderb
     }
 
     const updatedLeaderboard = distributeMoney(leaderboard, buyin);
-    return { data: updatedLeaderboard, error: null };
+    return { data: {leaderboard: updatedLeaderboard, buyin: buyin}, error: null };
   } catch (error) {
     return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
   }
@@ -362,14 +363,6 @@ async function deleteGroup(groupId: string): Promise<DatabaseResponse<string>> {
 
     // Update user balances in a transaction
     await prisma.$transaction(async (tx:any) => {
-      for (const userGroup of userGroups) {
-        console.log("in delete group usergroups", userGroup.username);
-        await updateUserBalance(tx, userGroup.username, group.buyin, groupId, 'BuyOut');
-      }
-
-      console.log("updated the balances", groupId);
-
-
       // Delete related records
       await tx.usergroup.deleteMany({ where: { groupid: groupId } });
       await tx.invite.deleteMany({ where: { groupid: groupId } });
@@ -403,26 +396,29 @@ async function endGroup(groupId: string): Promise<{ error: Error | null }> {
     await processVeto(groupId);
 
     const leaderboardResponse = await getLeaderBoard(groupId);
+    console.log("leaderboardResponse", leaderboardResponse);
     if (!leaderboardResponse.data) {
       return { error: new Error("Failed to fetch leaderboard for group: " + groupId) };
     }
 
-    const leaderboard = leaderboardResponse.data;
+    const leaderboard = leaderboardResponse.data.leaderboard;
+    const buyin = leaderboardResponse.data.buyin;
 
     // Update balances in a transaction
-    await prisma.$transaction(async (tx:any) => {
-      for (const entry of leaderboard) {
-        const { username, netMoney } = entry;
-        if (netMoney && netMoney !== 0) {
-          const { error } = await updateUserBalance(prisma,username, netMoney, groupId, 'BuyOut');
-          if (error) throw error;
-        }
-      }
+    const transactions =  settlePayments(leaderboard,buyin, groupId);
 
-      await tx.groups.update({
+    
+    await prisma.$transaction(async (tx:any) => {
+      // Delete related records
+      await prisma.venmo_balances.createMany({
+        data: transactions
+      });
+  
+      await prisma.groups.update({
         where: { groupid: groupId },
         data: { archive: true }
       });
+
     });
 
     return { error: null };

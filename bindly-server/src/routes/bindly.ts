@@ -7,16 +7,16 @@ import * as postController from '../controllers/postController';
 import * as authController from '../controllers/auth/authController';
 import * as inviteController from '../controllers/inviteController';
 import * as notifyvetoController from '../controllers/notifyVetoController';
-import * as stripeController from '../controllers/stripeController';
 import * as paypalController from '../controllers/paypalController';
 import * as stravaController from '../controllers/stravaController';
 import * as notificationController from '../controllers/notificationController';
 import * as commentController from '../controllers/commentController';
+import * as venmoBalanceController from '../controllers/venmoBalanceController';
+import * as balanceNotificationController from '../controllers/balanceNotificationController';
 import { authenticateUser } from '../middleware/authenticateUser';
 import { isGroupMember } from '../middleware/isGroupMember';
 import { isGroupHost } from '../middleware/isGroupHost';
 import { isPoster } from '../middleware/isPoster';
-
 const router = Router();
 
 
@@ -34,7 +34,15 @@ router.post('/auth/forgetPasswordCode', authController.forgotPasswordController 
 router.post('/auth/verifyOtpForReset', authController.verifyOtpForResetController as unknown as RequestHandler);
 router.post('/auth/resetPassword', authController.resetPasswordController as unknown as RequestHandler);
 
+router.get('/venmoBalance/getClientToken', venmoBalanceController.getClientTokenController as unknown as RequestHandler);
+router.post('/venmoBalance/processVenmoPayment', venmoBalanceController.processVenmoPaymentController as unknown as RequestHandler);
+
+
+
 router.use(authenticateUser as RequestHandler);
+
+
+router.post('/balanceNotification', balanceNotificationController.balanceNotificationController as unknown as RequestHandler);
 
 
 
@@ -52,6 +60,8 @@ router.get('/group/getLeaderboard/:groupId', isGroupMember, groupController.getL
 router.delete('/group/deleteGroup', isGroupHost, groupController.deleteGroupController as unknown as RequestHandler);
 router.put('/group/updateGroup/:groupId', isGroupHost, groupController.updateGroupController as unknown as RequestHandler);
 router.put('/group/changeHost', isGroupHost, groupController.changeHostController as unknown as RequestHandler);
+router.post('/group/endGroup', groupController.endGroupController as unknown as RequestHandler);
+
 
 // UserGroup routes
 router.get('/usergroup/getUsergroupByUsername/:username', usergroupController.getUserGroupsByUsernameController as unknown as RequestHandler);
@@ -81,7 +91,7 @@ router.put('/post/removeVeto', isGroupMember, postController.removeVetoControlle
 router.put('/post/addLike', isGroupMember, postController.addLikeController as unknown as RequestHandler);
 router.put('/post/removeLike', isGroupMember, postController.removeLikeController as unknown as RequestHandler);
 router.get('/post/getInvalid/:username', postController.getInvalidPostsController as unknown as RequestHandler);
-router.post('/post/compressVideo', postController.compressVideoController as unknown as RequestHandler);
+// router.post('/post/compressVideo', postController.compressVideoController as unknown as RequestHandler);
 
 
 // Comment routes
@@ -99,10 +109,10 @@ router.post('/notification/registerToken', notificationController.registerTokenC
 router.post('/notification/removeToken', notificationController.removeTokenController as unknown as RequestHandler);
 
 // Stripe routes
-router.post('/stripe/saveCard', stripeController.saveCardController as unknown as RequestHandler);
-router.post('/stripe/addMoney', stripeController.addMoneyController as unknown as RequestHandler);
-router.post('/stripe/detachOldPaymentMethods', stripeController.detachOldPaymentMethods as unknown as RequestHandler);
-router.get('/stripe/getSavedCards/:customerId', stripeController.getSavedCardsController as unknown as RequestHandler);
+// router.post('/stripe/saveCard', stripeController.saveCardController as unknown as RequestHandler);
+// router.post('/stripe/addMoney', stripeController.addMoneyController as unknown as RequestHandler);
+// router.post('/stripe/detachOldPaymentMethods', stripeController.detachOldPaymentMethods as unknown as RequestHandler);
+// router.get('/stripe/getSavedCards/:customerId', stripeController.getSavedCardsController as unknown as RequestHandler);
 
 // PayPal routes
 router.post('/paypal/payout', paypalController.createPayoutController as unknown as RequestHandler);
@@ -113,6 +123,11 @@ router.post('/strava/addRefresh', stravaController.addStravaRefreshController as
 router.post('/strava/reauthorize', stravaController.reauthorizeStravaController as unknown as RequestHandler);
 router.post('/strava/revoke', stravaController.revokeStravaController as unknown as RequestHandler);
 router.get('/strava/getActivities', stravaController.getActivitiesController as unknown as RequestHandler);
+
+
+router.get('/venmoBalance/getBalance/:username', venmoBalanceController.getVenmoBalanceController as unknown as RequestHandler);
+router.post('/venmoBalance/createBalance', venmoBalanceController.createVenmoBalanceController as unknown as RequestHandler);
+router.put('/venmoBalance/updateBalance', venmoBalanceController.updateVenmoBalanceController as unknown as RequestHandler);
 
 
 export default router;
@@ -138,4 +153,8 @@ router.get('/post/:postId', postController.getPostController as unknown as Reque
 router.get('/post/getPostByUsername/:username', postController.getPostsByUsernameController as unknown as RequestHandler);
 
 router.get('/comment/getComment/:postid', commentController.getCommentByPostController as unknown as RequestHandler);
+
+
+//venmo balance routes
+
 

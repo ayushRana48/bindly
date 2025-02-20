@@ -56,7 +56,7 @@ const TransferMoney = () => {
 
         setError('');
         const token = await checkToken();
-        fetch(`http://localhost:3000/bindly/paypal/payout`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/paypal/payout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             body: JSON.stringify({

@@ -14,7 +14,7 @@ interface TokenRegistration {
 
 async function logToServer(message: string): Promise<void> {
     try {
-        await fetch('http://localhost:3000/log', {
+        await fetch('https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/log', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ export async function registerForPushNotificationsAsync(username: string): Promi
 
         const apiToken = await checkToken();
 
-        const response = await fetch('http://localhost:3000/bindly/notification/registerToken', {
+        const response = await fetch('https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/notification/registerToken', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${apiToken}`},
             body: JSON.stringify({
@@ -116,7 +116,7 @@ export async function removePushTokenAsync(username: string): Promise<void> {
             await logToServer(`we have a token so lets remove,${token}`);
             const apiToken = await checkToken();
 
-            const response = await fetch('http://localhost:3000/bindly/notification/removeToken', {
+            const response = await fetch('https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/notification/removeToken', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${apiToken}`},
                 body: JSON.stringify({

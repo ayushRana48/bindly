@@ -78,7 +78,7 @@ const SignUpScreen2: React.FC = () => {
       }
 
       // API request
-      const response = await fetch("http://localhost:3000/bindly/auth/signUp", {
+      const response = await fetch("https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/signUp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

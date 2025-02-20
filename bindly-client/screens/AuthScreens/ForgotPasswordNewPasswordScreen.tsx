@@ -42,7 +42,7 @@ const ForgotPasswordNewPasswordScreen: React.FC = () => {
         console.log("email", email)
         console.log("token", token)
         console.log("newPassword", newPassword)
-      const response = await fetch(`http://localhost:3000/bindly/auth/resetPassword`, {
+      const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/auth/resetPassword`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

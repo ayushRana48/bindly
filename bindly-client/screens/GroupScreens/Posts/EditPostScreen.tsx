@@ -102,7 +102,7 @@ const EditPostScreen: React.FC = () => {
       // Upload image if it's a new one (not a URL)
       let permanentUrl = image
       if (!image.startsWith("http")) {
-        const uploadResponse = await fetch(`http://localhost:3000/bindly/post/getPresignedUrl`, {
+        const uploadResponse = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/getPresignedUrl`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
@@ -131,7 +131,7 @@ const EditPostScreen: React.FC = () => {
       }
 
       // Update post
-      const updatePostResponse = await fetch(`http://localhost:3000/bindly/post/updatePost/${postId}`, {
+      const updatePostResponse = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/updatePost/${postId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({

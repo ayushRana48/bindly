@@ -37,7 +37,7 @@ const DepositMoney: React.FC<DepositMoneyProps> = ({ cards }) => {
 
         setError('');
         const token = await checkToken();
-        fetch(`http://localhost:3000/bindly/stripe/addMoney`, {
+        fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/stripe/addMoney`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
             body: JSON.stringify({

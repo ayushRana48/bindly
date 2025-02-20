@@ -4,8 +4,8 @@ import serverless from 'serverless-http';
 import bodyParser from 'body-parser';
 import bindlyRoutes from './routes/bindly';
 
-const app: Express = express();
-const port: number = 3000;
+const app = express();
+const port = 3000;
 
 app.use((req, res, next) => {
   console.log(`Received request with content-length: ${req.headers['content-length']} bytes`);

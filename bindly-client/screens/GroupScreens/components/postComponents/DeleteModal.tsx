@@ -32,7 +32,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
             console.log("deletePost", postid, groupid);
             const token = await checkToken();
             const response = await fetch(
-                `http://localhost:3000/bindly/post/deletePost/${postid}`,
+                `https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/post/deletePost/${postid}`,
                 {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},

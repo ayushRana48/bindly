@@ -43,20 +43,8 @@ async function createUserGroup(
     console.log("About to create group balance transaction");
 
     // Update user balance within the transaction
-    const { newBalance, error: transactionError } = await updateUserBalance(
-      client, // Use the transaction client
-      username,
-      -group.buyin,
-      groupid,
-      'BuyIn'
-    );
+ 
 
-    if (transactionError) {
-      console.log('Transaction error', transactionError);
-      throw transactionError;
-    }
-
-    console.log('New Balance', newBalance);
 
     // Create user group within the transaction
     const data = await client.usergroup.create({
@@ -68,7 +56,7 @@ async function createUserGroup(
     });
 
     return {
-      data: { data, newBalance: newBalance || 0 },
+      data: { data, newBalance: 0 },
       error: null,
     };
   } catch (error) {
@@ -240,20 +228,7 @@ async function deleteUserGroup(
         throw new Error('Group not found');
       }
 
-      // Update user balance within the transaction
-      const { error: balanceError } = await updateUserBalance(
-        tx,
-        username,
-        group.buyin,
-        groupId,
-        'BuyOut',
-        tx
-      );
-
-      if (balanceError) {
-        throw balanceError;
-      }
-
+     
       // Delete user group within the transaction
       await tx.usergroup.deleteMany({
         where: {

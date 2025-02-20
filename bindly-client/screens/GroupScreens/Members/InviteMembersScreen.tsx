@@ -38,7 +38,7 @@ const InviteMembersScreen: React.FC = () => {
       setLoading(true);
       try {
         const token = await checkToken();
-        const response = await fetch(`http://localhost:3000/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
+        const response = await fetch(`https://pdr2y6st9i.execute-api.us-east-1.amazonaws.com/prod/bindly/invite/getAvailableInvites/${gd.group.groupid}`, {
           headers: { 'Content-Type': 'application/json' ,'Authorization': `Bearer ${token}`},
         });
         const res: InviteMember[] = await response.json(); // Ensure response is typed
